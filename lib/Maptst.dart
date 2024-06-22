@@ -102,18 +102,15 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Map View'),
-//       ),
 //       body: GoogleMap(
 //         onMapCreated: _onMapCreated,
 //         initialCameraPosition: CameraPosition(
 //           target: widget.initialLocation,
-//           zoom: 14.0,
+//           zoom: 15.0,
 //         ),
 //         markers: {
 //           Marker(
-//             markerId: MarkerId('selectedLocation'),
+//             markerId: MarkerId('Location'),
 //             position: widget.initialLocation,
 //           ),
 //         },

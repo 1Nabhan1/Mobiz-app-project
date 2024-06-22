@@ -172,6 +172,7 @@ class RestDatasource {
           bodyJson['code'],
       'address': bodyJson['address'],
       'contact_number': bodyJson['contact_number'],
+      'location':bodyJson['location'],
       'whatsapp_number': bodyJson['whatsapp_number'],
       'email': bodyJson['email'],
       'trn': bodyJson['trn'],

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Models/customerdetails.dart';
 import 'package:mobizapp/Pages/customerdetailscreen.dart';
@@ -11,7 +12,9 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Components/commonwidgets.dart';
+import '../Maptst.dart';
 import '../confg/sizeconfig.dart';
+import 'Mapscreen.dart';
 
 class CustomersDataScreen extends StatefulWidget {
   static const routeName = "/CustomersScreen";
@@ -30,7 +33,6 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
     super.initState();
     getCustomerDetails();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,6 +117,24 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
   }
 
   Widget _customersCard(Data data) {
+
+
+    void _openMapScreen() async {
+      String coordinates = data.location??'';
+
+      List<String> latLngStr = coordinates.split(', ');
+      double latitude = double.parse(latLngStr[0]);
+      double longitude = double.parse(latLngStr[1]);
+      LatLng selectedLocation = LatLng(latitude, longitude);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MapScreen(
+            initialLocation: selectedLocation,
+          ),
+        ),
+      );
+    }
     return InkWell(
       onTap: () {
         Navigator.of(context)
@@ -192,9 +212,11 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                           ),
                         ),
                         const Spacer(),
-                        const Icon(
-                          Icons.arrow_forward,
-                          size: 20,
+                        GestureDetector(onTap: _openMapScreen,
+                          child: const Icon(
+                            CupertinoIcons.map,
+                            size: 20,
+                          ),
                         )
                       ]),
                     ),

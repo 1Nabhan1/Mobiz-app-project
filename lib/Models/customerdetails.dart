@@ -36,6 +36,7 @@ class Data {
   String? whatsappNumber;
   String? email;
   String? trn;
+  String? location;
   String? paymentTerms;
   int? creditLimit;
   int? creditDays;
@@ -57,6 +58,7 @@ class Data {
       this.whatsappNumber,
       this.email,
       this.trn,
+      this.location,
       this.paymentTerms,
       this.creditLimit,
       this.creditDays,
@@ -77,6 +79,7 @@ class Data {
     contactNumber = json['contact_number'];
     whatsappNumber = json['whatsapp_number'];
     email = json['email'];
+    location = json['location'];
     trn = json['trn'];
     paymentTerms = json['payment_terms'];
     creditLimit = json['credit_limit'];
@@ -100,6 +103,7 @@ class Data {
     data['contact_number'] = this.contactNumber;
     data['whatsapp_number'] = this.whatsappNumber;
     data['email'] = this.email;
+    data['location'] = this.location;
     data['trn'] = this.trn;
     data['payment_terms'] = this.paymentTerms;
     data['credit_limit'] = this.creditLimit;

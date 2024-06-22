@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/homepage.dart';
@@ -40,6 +41,23 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     });
   }
 
+  void _getLocation() async {
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    setState(() {
+      _latitude = position.latitude;
+      _longitude = position.longitude;
+    });
+    _updateLocationTextField(_latitude!, _longitude!);
+  }
+
+  void _updateLocationTextField(double latitude, double longitude) {
+    _locationController.text = '$latitude, $longitude';
+  }
+
+  double? _latitude;
+  double? _longitude;
+
   bool _isUpdate = false;
 
   final _formKey = GlobalKey<FormState>();
@@ -49,6 +67,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   var _contactNumberController = TextEditingController();
   var _whatsappNumberController = TextEditingController();
   var _emailController = TextEditingController();
+  var _locationController = TextEditingController();
   final _trnController = TextEditingController();
   final _creditDays = TextEditingController();
   final _creditLimit = TextEditingController();
@@ -395,6 +414,32 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                   validator: _validateEmail,
                                 ),
                                 CommonWidgets.verticalSpace(2),
+                                // decoration: const InputDecoration(
+                                //   focusedBorder: OutlineInputBorder(
+                                //       borderSide: BorderSide(
+                                //           color: AppConfig.colorPrimary)),
+                                //   labelText: 'Address',
+                                //   border: OutlineInputBorder(),
+                                // ),
+                                TextField(
+                                  controller: _locationController,
+                                  readOnly:
+                                      true, // Make the text field read-only
+                                  decoration: InputDecoration(border:OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                  color: AppConfig.colorPrimary)),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    hintText: 'Tap the icon to fetch location',
+                                    suffixIcon: IconButton(
+                                      icon: Icon(Icons.my_location),
+                                      onPressed: _getLocation,
+                                    ),
+                                  ),
+                                  // onTap: _openMapScreen,
+                                ),
+                                CommonWidgets.verticalSpace(2),
                                 TextFormField(
                                   focusNode: trnfocus,
                                   controller: _trnController,
@@ -527,10 +572,10 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                               AppConfig.colorPrimary),
                                     ),
                                     onPressed:
-                                    //     () {
-                                    //   print(_selectedrouteid);
-                                    // },
-                                    _submitForm,
+                                        //     () {
+                                        //   print(_selectedrouteid);
+                                        // },
+                                        _submitForm,
                                     child: Text(
                                       _isUpdate ? 'UPDATE' : 'CREATE',
                                       style: TextStyle(
@@ -674,13 +719,14 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
 
     RestDatasource api = RestDatasource();
     Map<String, dynamic> bodyJson = {
-      'id':id,
+      'id': id,
       "name": _nameController.text,
       "code": _customercode,
       'address': _addressController.text,
       'contact_number': _contactNumberController.text,
       'whatsapp_number': _whatsappNumberController.text,
       'email': _emailController.text,
+      'location':_locationController.text,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,
@@ -774,7 +820,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
         border: OutlineInputBorder(),
       ),
       validator: (value) =>
-      value == null ? 'Please select ${widget.label}' : null,
+          value == null ? 'Please select ${widget.label}' : null,
     );
   }
 }
