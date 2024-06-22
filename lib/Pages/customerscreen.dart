@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Models/customerdetails.dart';
@@ -33,6 +34,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
     super.initState();
     getCustomerDetails();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,11 +119,21 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
   }
 
   Widget _customersCard(Data data) {
-
-
     void _openMapScreen() async {
-      String coordinates = data.location??'';
+      String coordinates = data.location ?? '';
 
+      if (coordinates.isEmpty) {
+        Fluttertoast.showToast(
+          msg: "Location are not available",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+        return; // Exit function if coordinates are empty
+      }
       List<String> latLngStr = coordinates.split(', ');
       double latitude = double.parse(latLngStr[0]);
       double longitude = double.parse(latLngStr[1]);
@@ -135,6 +147,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
         ),
       );
     }
+
     return InkWell(
       onTap: () {
         Navigator.of(context)
@@ -147,11 +160,11 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
           'days': data.creditDays,
           'creditLimit': data.creditLimit,
           'paymentTerms': data.paymentTerms,
-          'provinceId':data.provinceId,
-          'routeId':data.routeId,
-          'trn':data.trn,
-          'whatsappNumber':data.whatsappNumber,
-          'code':data.code,
+          'provinceId': data.provinceId,
+          'routeId': data.routeId,
+          'trn': data.trn,
+          'whatsappNumber': data.whatsappNumber,
+          'code': data.code,
           'balance': '',
           'total': '',
           'id': data.id,
@@ -212,7 +225,8 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                           ),
                         ),
                         const Spacer(),
-                        GestureDetector(onTap: _openMapScreen,
+                        GestureDetector(
+                          onTap: _openMapScreen,
                           child: const Icon(
                             CupertinoIcons.map,
                             size: 20,
