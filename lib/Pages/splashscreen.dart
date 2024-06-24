@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
 
-
 import '../Models/appstate.dart';
 import '../Utilities/sharepref.dart';
 import '../confg/appconfig.dart';
@@ -78,12 +77,15 @@ class _SplashScreenState extends State<SplashScreen> {
       appState.buildNumber = buildNumber;
 
       if (appState.loginState == 'LOGGED_IN') {
-        if (mounted) Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+        if (mounted)
+          Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
       } else {
-        if (mounted) Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+        if (mounted)
+          Navigator.pushReplacementNamed(context, LoginScreen.routeName);
       }
     } else {
-      if (mounted) Navigator.pushReplacementNamed(context, LoginScreen.routeName);
+      if (mounted)
+        Navigator.pushReplacementNamed(context, LoginScreen.routeName);
     }
   }
 
@@ -98,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(TextConfig.logo, height: 250),
+            Image.asset(TextConfig.logo),
             const CircularProgressIndicator(),
             const SizedBox(height: 20),
             Text(

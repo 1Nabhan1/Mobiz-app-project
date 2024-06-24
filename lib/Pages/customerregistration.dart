@@ -81,6 +81,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
 
   String? _selectPaymentTerms;
   String? _customercode;
+  String? _location;
   int? id;
   String? _selectedRoute;
   String? _selectCuCode;
@@ -123,6 +124,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   @override
   void dispose() {
     _nameController.dispose();
+    _locationController.dispose();
     _codeController.dispose();
     _addressController.dispose();
     _contactNumberController.dispose();
@@ -152,6 +154,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
       _contactNumberController.text = params['phone'] ?? '';
       _whatsappNumberController.text = params['whatsappNumber'] ?? '';
       _trnController.text = params['trn'] ?? '';
+      _location = params['location'] ?? 'Click the icon to fetch the data';
       _selectPaymentTerms = params['paymentTerms'] ?? '';
       _selectedProvinceid = params['provinceId'];
       _selectedrouteid = params['routeId'];
@@ -425,13 +428,14 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                   controller: _locationController,
                                   readOnly:
                                       true, // Make the text field read-only
-                                  decoration: InputDecoration(border:OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                  color: AppConfig.colorPrimary)),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
                                     focusedBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
                                             color: AppConfig.colorPrimary)),
-                                    hintText: 'Tap the icon to fetch location',
+                                    hintText: _location,
                                     suffixIcon: IconButton(
                                       icon: Icon(Icons.my_location),
                                       onPressed: _getLocation,
@@ -726,7 +730,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
       'contact_number': _contactNumberController.text,
       'whatsapp_number': _whatsappNumberController.text,
       'email': _emailController.text,
-      'location':_locationController.text,
+      'location': _locationController.text,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,

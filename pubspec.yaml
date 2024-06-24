@@ -54,6 +54,7 @@ dependencies:
 #  flutter_background_geolocation:
   geocoding:
   geolocator:
+  flutter_blue:
 #  esc_pos_printer:
 #  esc_pos_utils:
 

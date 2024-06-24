@@ -26,6 +26,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? phone;
   String? whatsappNumber;
   String? customerType;
+  String? location;
   int? provinceId;
   int? routeId;
   String? code;
@@ -44,6 +45,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       name = params!['name'];
       address = params['address'];
       phone = params!['phone'];
+      location = params['location'];
       whatsappNumber = params['whatsappNumber'];
       customerType = params!['customerType'];
       creditDays = params['days'];
@@ -242,6 +244,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             'phone': phone,
                             'whatsappNumber': whatsappNumber,
                             'email': email,
+                            'location' : location,
                             'payment_terms': customerType,
                             'credit_days': creditDays,
                             'credit_limit': creditLimit,

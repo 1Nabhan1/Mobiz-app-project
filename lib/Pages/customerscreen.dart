@@ -132,7 +132,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
           textColor: Colors.white,
           fontSize: 16.0,
         );
-        return; // Exit function if coordinates are empty
+        return;
       }
       List<String> latLngStr = coordinates.split(', ');
       double latitude = double.parse(latLngStr[0]);
@@ -156,6 +156,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
           'address': data.address,
           'phone': data.contactNumber,
           'mail': data.email,
+          'location' : data.location,
           'customerType': '',
           'days': data.creditDays,
           'creditLimit': data.creditLimit,

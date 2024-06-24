@@ -14,6 +14,7 @@ import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/Utilities/sharepref.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
+import 'package:mobizapp/printtst.dart';
 
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
@@ -252,7 +253,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _iconButtons(icon: Icons.handshake, title: 'Visit'),
+                      GestureDetector(onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => PrinterExample(),));
+                      },  child: _iconButtons(icon: Icons.handshake, title: 'Visit')),
                       _iconButtons(
                           image: 'Assets/Images/van stock.png',
                           title: 'Transfer'),
