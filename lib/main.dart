@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
+import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
 import 'package:mobizapp/Pages/ExpensesPage.dart';
 import 'package:mobizapp/Pages/VIsitsPage.dart';
@@ -18,6 +19,7 @@ import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/Maptst.dart';
+import 'Pages/CustomeSOA.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
 import 'Pages/homeorder.dart';
@@ -81,6 +83,8 @@ class MyApp extends StatelessWidget {
           Expensespage.routeName: (context) => Expensespage(),
           Dayclose.routeName: (context) => Dayclose(),
           Attendance.routeName: (context) => Attendance(),
+          SOA.routeName: (context) => SOA(),
+          Visiit.routeName: (context) => Visiit(),
         });
   }
 }

@@ -124,6 +124,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                 textColor: Colors.white,
                                                 child: const Text('OK'),
                                                 onPressed: () {
+                                                  balanceAmt =
+                                                      num.parse(_paidAmt.text);
                                                   paidAmt =
                                                       num.parse(_paidAmt.text);
                                                   tappedIndices.clear();
@@ -163,7 +165,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                           ),
                           CommonWidgets.verticalSpace(2),
                           SizedBox(
-                            height: SizeConfig.blockSizeVertical * 56,
+                            height: SizeConfig.blockSizeVertical * 55,
                             child: ListView.separated(
                               separatorBuilder: (context, index) {
                                 return CommonWidgets.verticalSpace(1);
@@ -185,7 +187,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                       paymentData.data![index].collection),
                             ),
                           ),
-                          const Spacer(),
+                          // const Spacer(),
                           Container(
                             decoration: BoxDecoration(
                                 borderRadius:
@@ -619,10 +621,17 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     Text(title),
                     const Spacer(),
                     GestureDetector(
-                        onTap: () {
-                          handleTap(index, amount, id);
-                          _showInputDialog(context, index);
-                        },
+                        onTap: tappedIndices.contains(index)
+                            ? () {
+                                _showInputDialog(context, index);
+                              }
+                            : () {
+                                handleTap(index, amount, id);
+                                tappedIndices.add(index);
+                                _showInputDialog(context, index);
+                              },
+                        // handleTap(index, amount, id);
+
                         child: _inputBox(
                           value: "${_payments[index]}",
                           status: true,
@@ -666,6 +675,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 (_expand[index])
                     ? (collection != null)
                         ? ListView.builder(
+                            physics: NeverScrollableScrollPhysics(),
                             // separatorBuilder: (context, index) {
                             //   return CommonWidgets.verticalSpace(0.0);
                             // },
@@ -680,7 +690,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                     .toLowerCase() ==
                                                 "cheque")
                                             ? Text(
-                                                '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType} |  ${collection[index].chequeNo} |  ${collection[index].bank} |  ${collection[index].chequeDate} ')
+                                                '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType} |  ${collection[j].bank}')
+                                            // ${collection[index].chequeNo} |  ${collection[index].bank} |  ${collection[index].chequeDate}
                                             : Text(
                                                 '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType ?? ''} ')
                                         : Text(
@@ -757,11 +768,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'amount': tempPayments,
       'customer_id': cuId,
       'collection_type': dropdownvalue,
-      if (dropdownvalue == "Cheque") "cheque_no": _cheqNo.text,
-      if (dropdownvalue == "Cheque") "bank":
-      // 'canara',
-      _bank.text,
-      if (dropdownvalue == "Cheque") "cheque_date": formattedDate,
+      'bank': _bank.text,
+      'cheque_no': _cheqNo.text,
+      'cheque_date': formattedDate
+      // dropdownvalue,
+      // if (dropdownvalue == "Cheque") "cheque_no": _cheqNo.text,
+      // if (dropdownvalue == "Cheque")
+      //   "bank":
+      //       // 'canara',
+      //       _bank.text,
+      // if (dropdownvalue == "Cheque") "cheque_date": formattedDate,
     };
 // print(dropdownvalue);
 // print('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');

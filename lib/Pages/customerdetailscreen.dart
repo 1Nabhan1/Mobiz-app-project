@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
+import 'package:mobizapp/Pages/CustomeSOA.dart';
+import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/customerorderdetail.dart';
 import 'package:mobizapp/Pages/customerregistration.dart';
 import 'package:mobizapp/Pages/paymentcollection.dart';
@@ -244,20 +246,28 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             'phone': phone,
                             'whatsappNumber': whatsappNumber,
                             'email': email,
-                            'location' : location,
+                            'location': location,
                             'payment_terms': customerType,
                             'credit_days': creditDays,
                             'credit_limit': creditLimit,
                             'paymentTerms': paymentTerms,
                             'trn': trn,
-                            'code':code,
+                            'code': code,
                             'provinceId': provinceId,
                             'routeId': routeId,
-                            'id':id,
+                            'id': id,
                           });
                     },
                     child: _iconButtons(icon: Icons.person_add, title: 'Edit')),
-                _iconButtons(icon: Icons.settings_suggest, title: 'SOA'),
+                GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        SOA.routeName,
+                      );
+                    },
+                    child: _iconButtons(
+                        icon: Icons.settings_suggest, title: 'SOA')),
                 GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(
@@ -292,7 +302,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         'code': code,
                         'paymentTerms': paymentTerms
                       });
-                    }, 
+                    },
                     child:
                         _iconButtons(icon: Icons.inventory, title: 'Return')),
                 InkWell(
@@ -308,7 +318,10 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 _iconButtons(
                     icon: Icons.storefront_rounded, title: 'Customer Stock'),
-                _iconButtons(icon: Icons.bar_chart, title: 'Visit'),
+                GestureDetector(onTap: () {
+                  Navigator.pushNamed(
+                      context, Visiit.routeName,);
+                }, child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
                 _iconButtons(icon: Icons.pie_chart, title: 'Total Sales')
               ]),
             ],
