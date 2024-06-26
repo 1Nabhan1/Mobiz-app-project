@@ -292,7 +292,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         'code': code,
                         'paymentTerms': paymentTerms
                       });
-                    },
+                    }, 
                     child:
                         _iconButtons(icon: Icons.inventory, title: 'Return')),
                 InkWell(
@@ -308,7 +308,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 _iconButtons(
                     icon: Icons.storefront_rounded, title: 'Customer Stock'),
-                _iconButtons(icon: Icons.bar_chart, title: 'NVR'),
+                _iconButtons(icon: Icons.bar_chart, title: 'Visit'),
                 _iconButtons(icon: Icons.pie_chart, title: 'Total Sales')
               ]),
             ],

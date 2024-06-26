@@ -32,7 +32,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   bool tapEnabled = true;
   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   String dropdownvalue = 'Cash';
-
+  String _errorMessage = '';
   // List of items in our dropdown menu
   var items = ['Cash', 'Cheque'];
 
@@ -64,7 +64,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         child: Padding(
           padding: const EdgeInsets.all(18.0),
           child: (_noData && _initDone)
-              ? const Text('No Data')
+              ? Center(child: const Text('No Data'))
               : (!_noData && _initDone)
                   ? SizedBox(
                       height: SizeConfig.safeBlockVertical! * 87,
@@ -459,7 +459,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         ],
                       ),
                     )
-                  : Shimmer.fromColors(
+                  :
+                  // Center(child: Text('No data found'))
+                  Shimmer.fromColors(
                       baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
                       highlightColor: AppConfig.backButtonColor,
                       child: Center(
@@ -586,110 +588,109 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       required int id,
       required List<Collection>? collection}) {
     var pipe = const Text('|');
-    return InkWell(
-      onTap: tappedIndices.contains(index)
-          ? null
-          : () {
-              handleTap(index, amount, id);
-              tappedIndices.add(index);
-            },
-      child: Card(
-        shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(5))),
-        elevation: 3,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(5)),
-            border: Border.all(
-                color: AppConfig.buttonDeactiveColor.withOpacity(0.3)),
-            color: AppConfig.backgroundColor,
-          ),
-          width: SizeConfig.screenWidth,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: SizeConfig.blockSizeHorizontal * 90,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+    return
+        // tappedIndices.contains(index)
+        //     ? null
+        //     : () {
+        //         handleTap(index, amount, id);
+        //         tappedIndices.add(index);
+        //       },
+        Card(
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(5))),
+      elevation: 3,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          border:
+              Border.all(color: AppConfig.buttonDeactiveColor.withOpacity(0.3)),
+          color: AppConfig.backgroundColor,
+        ),
+        width: SizeConfig.screenWidth,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: SizeConfig.blockSizeHorizontal * 90,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title),
+                    const Spacer(),
+                    GestureDetector(
+                        onTap: () {
+                          handleTap(index, amount, id);
+                          _showInputDialog(context, index);
+                        },
+                        child: _inputBox(
+                          value: "${_payments[index]}",
+                          status: true,
+                        )),
+                  ],
+                ),
+                CommonWidgets.verticalSpace(1),
+                InkWell(
+                  onTap: () => setState(() {
+                    _expand[index] = !_expand[index];
+                  }),
+                  child: Row(
                     children: [
-                      Text(title),
+                      Text(
+                        'Amount $amount',
+                        style: const TextStyle(
+                            color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      pipe,
+                      CommonWidgets.horizontalSpace(1),
+                      Text(
+                        'Paid $paid',
+                        style: const TextStyle(
+                            color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      pipe,
+                      CommonWidgets.horizontalSpace(1),
+                      Text(
+                        'Balance $balance',
+                        style: const TextStyle(
+                            color: AppConfig.buttonDeactiveColor),
+                      ),
                       const Spacer(),
-                      GestureDetector(
-                          onTap: () {
-                            _showInputDialog(context, index);
-                          },
-                          child: _inputBox(
-                            value: "${_payments[index]}",
-                            status: true,
-                          )),
+                      const Icon(Icons.keyboard_arrow_down),
                     ],
                   ),
-                  CommonWidgets.verticalSpace(1),
-                  InkWell(
-                    onTap: () => setState(() {
-                      _expand[index] = !_expand[index];
-                    }),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Amount $amount',
-                          style: const TextStyle(
-                              color: AppConfig.buttonDeactiveColor),
-                        ),
-                        CommonWidgets.horizontalSpace(1),
-                        pipe,
-                        CommonWidgets.horizontalSpace(1),
-                        Text(
-                          'Paid $paid',
-                          style: const TextStyle(
-                              color: AppConfig.buttonDeactiveColor),
-                        ),
-                        CommonWidgets.horizontalSpace(1),
-                        pipe,
-                        CommonWidgets.horizontalSpace(1),
-                        Text(
-                          'Balance $balance',
-                          style: const TextStyle(
-                              color: AppConfig.buttonDeactiveColor),
-                        ),
-                        const Spacer(),
-                        const Icon(Icons.keyboard_arrow_down),
-                      ],
-                    ),
-                  ),
-                  (_expand[index]) ? const Divider() : Container(),
-                  (_expand[index])
-                      ? (collection != null)
-                          ? ListView.builder(
-                              // separatorBuilder: (context, index) {
-                              //   return CommonWidgets.verticalSpace(0.0);
-                              // },
-                              itemCount: collection.length,
-                              shrinkWrap: true,
-                              itemBuilder: (context, j) => Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      (collection[j].collectionType != null)
-                                          ? (collection[j]
-                                                      .collectionType!
-                                                      .toLowerCase() ==
-                                                  "cheque")
-                                              ? Text(
-                                                  '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType} |  ${collection[index].chequeNo} ')
-                                              : Text(
-                                                  '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType ?? ''} ')
-                                          : Text(
-                                              '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} '),
-                                      CommonWidgets.verticalSpace(2),
-                                    ],
-                                  ))
-                          : Container()
-                      : Container(),
-                ],
-              ),
+                ),
+                (_expand[index]) ? const Divider() : Container(),
+                (_expand[index])
+                    ? (collection != null)
+                        ? ListView.builder(
+                            // separatorBuilder: (context, index) {
+                            //   return CommonWidgets.verticalSpace(0.0);
+                            // },
+                            itemCount: collection.length,
+                            shrinkWrap: true,
+                            itemBuilder: (context, j) => Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    (collection[j].collectionType != null)
+                                        ? (collection[j]
+                                                    .collectionType!
+                                                    .toLowerCase() ==
+                                                "cheque")
+                                            ? Text(
+                                                '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType} |  ${collection[index].chequeNo} |  ${collection[index].bank} |  ${collection[index].chequeDate} ')
+                                            : Text(
+                                                '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType ?? ''} ')
+                                        : Text(
+                                            '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} '),
+                                    CommonWidgets.verticalSpace(2),
+                                  ],
+                                ))
+                        : Container()
+                    : Container(),
+              ],
             ),
           ),
         ),
@@ -698,18 +699,30 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   Future<void> _getPaymentDetails() async {
-    RestDatasource api = RestDatasource();
-    dynamic response = await api.getDetails(
-        '/api/get_sales_pending_collection?customer_id=$cuId',
-        AppState().token);
+    try {
+      RestDatasource api = RestDatasource();
+      dynamic response = await api.getDetails(
+          '/api/get_sales_pending_collection?customer_id=$cuId',
+          AppState().token);
 
-    if (response['data'] != null) {
-      paymentData = PaymentCollectionData.fromJson(response);
-      _payments = List.generate(paymentData.data!.length, (_) => 0);
-      _godsId = List.generate(paymentData.data!.length, (_) => 0);
-      _expand = List.generate(paymentData.data!.length, (_) => false);
-    } else {
-      _noData = true;
+      if (response != null && response['data'] != null) {
+        paymentData = PaymentCollectionData.fromJson(response);
+        _payments = List.generate(paymentData.data!.length, (_) => 0);
+        _godsId = List.generate(paymentData.data!.length, (_) => 0);
+        _expand = List.generate(paymentData.data!.length, (_) => false);
+      } else {
+        setState(() {
+          _noData = true;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to fetch payment details: $e';
+      });
+    } finally {
+      setState(() {
+        _initDone = true;
+      });
     }
   }
 
@@ -745,10 +758,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'customer_id': cuId,
       'collection_type': dropdownvalue,
       if (dropdownvalue == "Cheque") "cheque_no": _cheqNo.text,
-      if (dropdownvalue == "Cheque") "bank": _bank.text,
+      if (dropdownvalue == "Cheque") "bank":
+      // 'canara',
+      _bank.text,
       if (dropdownvalue == "Cheque") "cheque_date": formattedDate,
     };
-
+// print(dropdownvalue);
+// print('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
     debugPrint('Body Data $bodyJson');
     dynamic resJson =
         await api.sendData(subUrl, AppState().token, jsonEncode(bodyJson));

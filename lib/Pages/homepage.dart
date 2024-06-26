@@ -2,6 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
+import 'package:mobizapp/Pages/Attendance.dart';
+import 'package:mobizapp/Pages/DayClose.dart';
+import 'package:mobizapp/Pages/ExpensesPage.dart';
+import 'package:mobizapp/Pages/VIsitsPage.dart';
 import 'package:mobizapp/Pages/customerscreen.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
 import 'package:mobizapp/Pages/productspage.dart';
@@ -98,7 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 ListTile(
                   title: const Text('Printer'),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PrinterTest(),
+                        ));
+                  },
                 ),
                 ListTile(
                   title: const Text('Log Out'),
@@ -120,7 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
-                children: [CommonWidgets.verticalSpace(2),
+                children: [
+                  CommonWidgets.verticalSpace(2),
                   Center(
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -186,7 +197,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _iconButtons(icon: Icons.menu_book, title: 'Expense'),
+                      GestureDetector(onTap: () {
+                        Navigator.of(context)
+                            .pushNamed(Expensespage.routeName);
+                      }, child: _iconButtons(icon: Icons.menu_book, title: 'Expense')),
                       GestureDetector(
                           onTap: () {
                             Navigator.pushNamed(
@@ -226,7 +240,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _iconButtons(icon: Icons.groups, title: 'Attendence'),
+                      GestureDetector( onTap: () {
+                        Navigator.of(context)
+                            .pushNamed(Attendance.routeName);
+                      }, child: _iconButtons(icon: Icons.groups, title: 'Attendance')),
                       GestureDetector(
                         onTap: () {
                           if (_restrict) {
@@ -253,15 +270,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      GestureDetector(onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => PrinterExample(),));
-                      },  child: _iconButtons(icon: Icons.handshake, title: 'Visit')),
-                      _iconButtons(
-                          image: 'Assets/Images/van stock.png',
-                          title: 'Transfer'),
-                      _iconButtons(
-                          image: 'Assets/Images/day close.png',
-                          title: 'Day close')
+                      GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .pushNamed(Visitspage.routeName);
+                          },
+                          child: _iconButtons(
+                              icon: Icons.handshake, title: 'Visit')),
+                      GestureDetector(
+                        onTap: () {
+                       
+                        },
+                        child: _iconButtons(
+                            image: 'Assets/Images/van stock.png',
+                            title: 'Transfer'),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushNamed(Dayclose.routeName);
+                        },
+                        child: _iconButtons(
+                            image: 'Assets/Images/day close.png',
+                            title: 'Day close'),
+                      )
                     ],
                   )
                 ],

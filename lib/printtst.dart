@@ -1,134 +1,137 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 
-class PrinterExample extends StatefulWidget {
+class PrinterTest extends StatefulWidget {
   @override
-  _PrinterExampleState createState() => _PrinterExampleState();
+  _PrinterTestState createState() => _PrinterTestState();
 }
 
-class _PrinterExampleState extends State<PrinterExample> {
-  String macAddress =
-      'DC:1D:30:00:1D:87'; // Replace with your printer's Bluetooth MAC address
-  BluetoothDevice? printerDevice;
-  bool isPrinting = false;
+class _PrinterTestState extends State<PrinterTest> {
+  BlueThermalPrinter printer = BlueThermalPrinter.instance;
+  List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _selectedDevice;
+  bool _connected = false;
 
-  FlutterBlue flutterBlue = FlutterBlue.instance;
-  BluetoothCharacteristic? writeCharacteristic;
+  // Default Bluetooth device address
+  final String _defaultDeviceAddress = "00:13:7B:84:E9:89";
 
   @override
   void initState() {
     super.initState();
-    connectToPrinter();
+    _initPrinter();
   }
 
-  void connectToPrinter() {
-    flutterBlue.scan(timeout: Duration(seconds: 4)).listen((scanResult) {
-      if (scanResult.device.id.id == macAddress) {
-        print('Found printer: ${scanResult.device.name}');
-        printerDevice = scanResult.device;
-        connectToDevice();
-      }
-    }, onDone: () {
-      if (printerDevice == null) {
-        print('Printer not found');
-        // Handle printer not found scenario
-      }
-    });
-  }
-
-  void connectToDevice() async {
-    if (printerDevice != null) {
-      await printerDevice!.connect();
-      print('Connected to printer: ${printerDevice!.name}');
-      discoverServices();
-    }
-  }
-
-  void discoverServices() async {
-    try {
-      List<BluetoothService> services = await printerDevice!.discoverServices();
-      services.forEach((service) {
-        service.characteristics.forEach((characteristic) {
-          if (characteristic.uuid.toString().toUpperCase() ==
-              "0000FFE1-0000-1000-8000-00805F9B34FB") {
-            writeCharacteristic = characteristic;
-          }
-        });
-      });
-    } catch (e) {
-      print('Failed to discover services: $e');
-    }
-  }
-
-  Future<void> sendPrintData(String data) async {
-    if (writeCharacteristic != null) {
-      try {
-        List<int> bytes = utf8.encode(data);
-        await writeCharacteristic!.write(bytes, withoutResponse: true);
-        print('Data sent to printer: $data');
-      } catch (e) {
-        print('Failed to send data: $e');
-      }
-    } else {
-      print('Characteristic not found');
-    }
-  }
-
-  void printReceipt() {
-    setState(() {
-      isPrinting = true;
-    });
-
-    // Example receipt content
-    String content = '''
-    Sample Store
-    123 Sample St
-    Sample City, ST 12345
-    www.samplestore.com
-    --------------------------------
-    SALE
-    Chicken Sandwich          \$5.00
-    French Fries              \$2.00
-    Iced Tea                  \$1.50
-    --------------------------------
-    Total                   \$8.50
-    Thank you for your visit!
-    ''';
-
-    // Send data to printer
-    sendPrintData(content).then((_) {
+  void _initPrinter() async {
+    bool? isConnected = await printer.isConnected;
+    if (isConnected!) {
       setState(() {
-        isPrinting = false;
+        _connected = true;
       });
+    }
+    _getBluetoothDevices();
+  }
+
+  void _getBluetoothDevices() async {
+    List<BluetoothDevice> devices = await printer.getBondedDevices();
+    BluetoothDevice? defaultDevice;
+
+    for (BluetoothDevice device in devices) {
+      if (device.address == _defaultDeviceAddress) {
+        defaultDevice = device;
+        break;
+      }
+    }
+
+    setState(() {
+      _devices = devices;
+      _selectedDevice = defaultDevice;
     });
   }
 
-  @override
-  void dispose() {
-    printerDevice?.disconnect();
-    super.dispose();
+
+  Future<void> _connect() async {
+    if (_selectedDevice != null) {
+      await printer.connect(_selectedDevice!);
+      setState(() {
+        _connected = true;
+      });
+    }
+  }
+
+  void _disconnect() async {
+    await printer.disconnect();
+    setState(() {
+      _connected = false;
+    });
+  }
+
+  void _print() async {
+    if (_connected) {
+      printer.printNewLine();
+      printer.printCustom("Hello, Bluetooth Printer!", 3, 1);
+      printer.printNewLine();
+      printer.paperCut();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Printer not connected')),
+      );
+    }
+  }
+
+  void _connectAndPrint() async {
+    if (_selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default device not found')),
+      );
+      return;
+    }
+    if (!_connected) {
+      await _connect();
+    }
+    _print();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Print Example'),
+        title: Text('Bluetooth Printer Demo'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: isPrinting ? null : printReceipt,
-              child: Text('Print Receipt'),
-            ),
-            if (isPrinting) SizedBox(height: 20),
-            if (isPrinting) CircularProgressIndicator(),
-          ],
-        ),
+      body: Column(
+        children: [
+          SizedBox(height: 20),
+          DropdownButton<BluetoothDevice>(
+            hint: Text('Select Bluetooth Device'),
+            value: _selectedDevice,
+            onChanged: (BluetoothDevice? value) {
+              setState(() {
+                _selectedDevice = value;
+              });
+            },
+            items: _devices.map((BluetoothDevice device) {
+              return DropdownMenuItem<BluetoothDevice>(
+                value: device,
+                child: Text(device.name ?? ""),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _connected ? _disconnect : _connect,
+            child: Text(_connected ? 'Disconnect' : 'Connect'),
+          ),
+          SizedBox(height: 20),
+          IconButton(
+            icon: Icon(Icons.print),
+            onPressed: _print,
+            iconSize: 50,
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _connectAndPrint,
+            child: Text('Connect and Print using Default Device'),
+          ),
+        ],
       ),
     );
   }

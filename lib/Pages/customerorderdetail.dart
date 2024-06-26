@@ -60,7 +60,6 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _getTypes();
     _selectedDate = DateTime.now();

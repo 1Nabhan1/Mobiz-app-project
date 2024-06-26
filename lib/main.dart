@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobizapp/Pages/Attendance.dart';
+import 'package:mobizapp/Pages/DayClose.dart';
+import 'package:mobizapp/Pages/ExpensesPage.dart';
+import 'package:mobizapp/Pages/VIsitsPage.dart';
 import 'package:mobizapp/Pages/customerdetailscreen.dart';
 import 'package:mobizapp/Pages/customerregistration.dart';
 import 'package:mobizapp/Pages/customerscreen.dart';
@@ -32,7 +36,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false,
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
@@ -72,6 +77,10 @@ class MyApp extends StatelessWidget {
           HomereturnScreen.routeName: (context) => HomereturnScreen(),
           Customerorderdetail.routeName: (context) => Customerorderdetail(),
           Customerreturndetail.routeName: (context) => Customerreturndetail(),
+          Visitspage.routeName: (context) => Visitspage(),
+          Expensespage.routeName: (context) => Expensespage(),
+          Dayclose.routeName: (context) => Dayclose(),
+          Attendance.routeName: (context) => Attendance(),
         });
   }
 }

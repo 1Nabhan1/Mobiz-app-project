@@ -236,15 +236,26 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
                     ),
                   ),
                 ),
-                Text(
-                  (data.customer!.isNotEmpty)
-                      ? data.customer![0].name ?? ''
-                      : '',
-                  style: TextStyle(
-                      fontSize: AppConfig.textCaption3Size,
-                      fontWeight: AppConfig.headLineWeight),
+                Row(
+                  children: [
+                    Text(
+                      (data.customer!.isNotEmpty)
+                          ? data.customer![0].code ?? ''
+                          : '',
+                      style: TextStyle(
+                          fontSize: AppConfig.textCaption3Size,
+                          fontWeight: AppConfig.headLineWeight),
+                    ),Text(' | '), Text(
+                      (data.customer!.isNotEmpty)
+                          ? data.customer![0].name ?? ''
+                          : '',
+                      style: TextStyle(
+                          fontSize: AppConfig.textCaption3Size,
+                          fontWeight: AppConfig.headLineWeight),
+                    ),
+                  ],
                 ),
-                (data.detail!.isNotEmpty)
+                // (data.detail!.isNotEmpty)
                     // ? Text(
                     //     'Type: ${data.detail![0].productType}',
                     //     style: TextStyle(
@@ -252,18 +263,18 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
                     //     ),
                     //   )
 
-                    ? Text(
+                    Text(
                         'Total: ${data.total}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
-                      )
-                    : Text(
-                        'Type:  ',
-                        style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                        ),
                       ),
+                    // : Text(
+                    //     'Type:  ',
+                    //     style: TextStyle(
+                    //       fontSize: AppConfig.textCaption3Size,
+                    //     ),
+                    //   ),
                 Text(
                   'Discount(%): ${data.discount}',
                   style: TextStyle(

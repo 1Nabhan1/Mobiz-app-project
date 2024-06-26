@@ -156,7 +156,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
           'address': data.address,
           'phone': data.contactNumber,
           'mail': data.email,
-          'location' : data.location,
+          'location': data.location,
           'customerType': '',
           'days': data.creditDays,
           'creditLimit': data.creditLimit,
@@ -228,9 +228,10 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                         const Spacer(),
                         GestureDetector(
                           onTap: _openMapScreen,
-                          child: const Icon(
-                            CupertinoIcons.map,
-                            size: 20,
+                          child: Image.asset(
+                            'Assets/Images/vecteezy_google-maps-icon_16716478.png',
+                            fit: BoxFit.cover,
+                            height: 30,
                           ),
                         )
                       ]),
