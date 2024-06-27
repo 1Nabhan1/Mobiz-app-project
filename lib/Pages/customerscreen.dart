@@ -13,7 +13,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Components/commonwidgets.dart';
-import '../Maptst.dart';
+import '../tst.dart';
 import '../confg/sizeconfig.dart';
 import 'Mapscreen.dart';
 

@@ -18,8 +18,9 @@ import 'package:mobizapp/Pages/splashscreen.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
-import 'package:mobizapp/Maptst.dart';
+import 'package:mobizapp/tst.dart';
 import 'Pages/CustomeSOA.dart';
+import 'Pages/Expense_add.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
 import 'Pages/homeorder.dart';
@@ -84,7 +85,8 @@ class MyApp extends StatelessWidget {
           Dayclose.routeName: (context) => Dayclose(),
           Attendance.routeName: (context) => Attendance(),
           SOA.routeName: (context) => SOA(),
-          Visiit.routeName: (context) => Visiit(),
+          CustomerVisit.routeName: (context) => CustomerVisit(),
+          ExpenseAdd.routeName: (context) => ExpenseAdd(),
         });
   }
 }

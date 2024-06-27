@@ -9,7 +9,7 @@ import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
-import 'package:mobizapp/Maptst.dart';
+import 'package:mobizapp/tst.dart';
 
 import 'customerreturndetails.dart';
 
@@ -318,10 +318,20 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 _iconButtons(
                     icon: Icons.storefront_rounded, title: 'Customer Stock'),
-                GestureDetector(onTap: () {
-                  Navigator.pushNamed(
-                      context, Visiit.routeName,);
-                }, child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
+                GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, CustomerVisit.routeName,
+                          arguments: {
+                            'name': name,
+                            'code': code,
+                            'email':email,
+                            'paymentTerms': paymentTerms,
+                            'address': address,
+                            'phone': phone,
+                            'id': id,
+                          });
+                    },
+                    child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
                 _iconButtons(icon: Icons.pie_chart, title: 'Total Sales')
               ]),
             ],
