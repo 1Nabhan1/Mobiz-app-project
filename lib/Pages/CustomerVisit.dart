@@ -121,10 +121,11 @@ class _CustomerVisitState extends State<CustomerVisit> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 10),
                       child: Text(
                         "$code | $name | $payment\n$email\n$address\n$phone",
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Colors.grey, fontSize: 17),
                       ),
                     ),
                     SizedBox(height: 20),
@@ -204,14 +205,14 @@ class _CustomerVisitState extends State<CustomerVisit> {
                     ),
                     SizedBox(height: 20),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text("Reason"),
                           Container(
                             height: MediaQuery.of(context).size.height * .03,
-                            width: MediaQuery.of(context).size.width * .70,
+                            width: MediaQuery.of(context).size.width * .72,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(2),
                                 border: Border.all()),
@@ -247,27 +248,30 @@ class _CustomerVisitState extends State<CustomerVisit> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Remarks"),
-                        SizedBox(
-                          child: TextFormField(
-                            controller: remark,
-                            maxLines: 3,
-                            decoration: InputDecoration(
-                                hintText: 'Enter here',
-                                hintStyle:
-                                    TextStyle(fontWeight: FontWeight.w300),
-                                border: OutlineInputBorder(
-                                    borderSide: BorderSide())),
+                    SizedBox(height: 30),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Remarks"),
+                          SizedBox(
+                            child: TextFormField(
+                              controller: remark,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                  hintText: 'Enter here',
+                                  hintStyle:
+                                      TextStyle(fontWeight: FontWeight.w300),
+                                  border: OutlineInputBorder(
+                                      borderSide: BorderSide())),
+                            ),
+                            // height: MediaQuery.of(context).size.height * .2,
+                            width: MediaQuery.of(context).size.width * .72,
                           ),
-                          // height: MediaQuery.of(context).size.height * .2,
-                          width: MediaQuery.of(context).size.width * .72,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     SizedBox(height: 40),
                     Center(
@@ -284,7 +288,7 @@ class _CustomerVisitState extends State<CustomerVisit> {
                           postData();
                         },
                         child: SizedBox(
-                          width: 120,
+                          width: 60,
                           child: Center(
                             child: Text(
                               "Save",
@@ -298,7 +302,7 @@ class _CustomerVisitState extends State<CustomerVisit> {
                 ),
               );
             } else {
-              return Text('No data available');
+              return Center(child: Text('No data available'));
             }
           },
         ),
@@ -323,7 +327,7 @@ class _CustomerVisitState extends State<CustomerVisit> {
         CommonWidgets.showDialogueBox(
                 context: context, title: "", msg: "Data Inserted Successfully")
             .then((value) =>
-                Navigator.pushReplacementNamed(context, CustomersDataScreen.routeName));
+                Navigator.pushReplacementNamed(context, HomeScreen.routeName));
       }
       print('Request successful');
       print('Response: ${response.body}');

@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import 'dart:convert';
-
+import '../Components/commonwidgets.dart';
 import '../Models/Expense_model.dart';
 import '../Models/appstate.dart';
-import '../Components/commonwidgets.dart'; // Your common widgets file
-import '../confg/appconfig.dart'; // AppConfig file with colorPrimary etc.
+import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
-import 'Expense_add.dart'; // SizeConfig file
+import 'Expense_add.dart';
 
 class Expensespage extends StatefulWidget {
   static const routeName = "/Expensespage";
@@ -89,28 +88,11 @@ class _ExpensespageState extends State<Expensespage> {
               child: Shimmer.fromColors(
                 baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
                 highlightColor: AppConfig.backButtonColor,
-                child: Center(
-                  child: Column(
-                    children: [
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                    ],
+                child: ListView.builder(
+                  itemCount: 6,
+                  itemBuilder: (context, index) => CommonWidgets.loadingContainers(
+                    height: SizeConfig.blockSizeVertical * 10,
+                    width: SizeConfig.blockSizeHorizontal * 90,
                   ),
                 ),
               ),
@@ -128,11 +110,9 @@ class _ExpensespageState extends State<Expensespage> {
                 String detailText = '';
 
                 if (expenseDetail.status == 'Approved') {
-                  detailText = expenseDetail.approvedReason ??
-                      'No approval reason provided';
+                  detailText = expenseDetail.approvedReason ?? 'No approval reason provided';
                 } else if (expenseDetail.status == 'Rejected') {
-                  detailText = expenseDetail.rejectedReason ??
-                      'No rejection reason provided';
+                  detailText = expenseDetail.rejectedReason ?? 'No rejection reason provided';
                 }
 
                 return Padding(
@@ -156,13 +136,14 @@ class _ExpensespageState extends State<Expensespage> {
                               children: [
                                 Flexible(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                          '${expenseDetail.inDate} | ${expenseDetail.invoiceNo}'),
+                                        '${expenseDetail.inDate} | ${expenseDetail.invoiceNo ?? ""}',
+                                      ),
                                       Text(
-                                          '${expenseDetail.description} | ${expenseDetail.expenses![0].name}'),
+                                        '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} | ${expenseDetail.description}',
+                                      ),
                                       if (expenseDetail.status != 'Pending')
                                         Row(
                                           children: [
@@ -175,7 +156,7 @@ class _ExpensespageState extends State<Expensespage> {
                                     ],
                                   ),
                                 ),
-                                Text(expenseDetail.status!),
+                                Text(expenseDetail.status),
                               ],
                             ),
                             if (isExpandedList[index])
@@ -183,9 +164,24 @@ class _ExpensespageState extends State<Expensespage> {
                                 padding: const EdgeInsets.only(top: 10.0),
                                 child: Column(
                                   children: [
-                                    Divider(color: Colors.grey.shade300),
-                                    Text(
-                                        'More details about the expense will be shown here.'),
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: expenseDetail.documents.map((document) {
+                                        return Image.network(
+                                          'https://mobiz-api.yes45.in/uploads/expense/${document.documentName}',
+                                          height: 100,
+                                          width: 100,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Icon(
+                                              Icons.broken_image,
+                                              size: 100,
+                                              color: Colors.grey,
+                                            );
+                                          },
+                                        );
+                                      }).toList(),
+                                    ),
                                   ],
                                 ),
                               ),

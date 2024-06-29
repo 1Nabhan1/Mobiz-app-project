@@ -24,6 +24,7 @@ import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
+import 'offLoadRequest.dart';
 import 'saleinvoices.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -197,10 +198,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      GestureDetector(onTap: () {
-                        Navigator.of(context)
-                            .pushNamed(Expensespage.routeName);
-                      }, child: _iconButtons(icon: Icons.menu_book, title: 'Expense')),
+                      GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .pushNamed(Expensespage.routeName);
+                          },
+                          child: _iconButtons(
+                              icon: Icons.menu_book, title: 'Expense')),
                       GestureDetector(
                           onTap: () {
                             Navigator.pushNamed(
@@ -240,10 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      GestureDetector( onTap: () {
-                        Navigator.of(context)
-                            .pushNamed(Attendance.routeName);
-                      }, child: _iconButtons(icon: Icons.groups, title: 'Attendance')),
+                      GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .pushNamed(Attendance.routeName);
+                          },
+                          child: _iconButtons(
+                              icon: Icons.groups, title: 'Attendance')),
                       GestureDetector(
                         onTap: () {
                           if (_restrict) {
@@ -260,9 +267,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: Icons.question_answer,
                             title: 'Van Stock Request'),
                       ),
-                      _iconButtons(
-                        icon: Icons.receipt_long,
-                        title: 'Off Load Request',
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(
+                              context, OffLoadRequestScreen.routeName);
+                        },
+                        child: _iconButtons(
+                          icon: Icons.receipt_long,
+                          title: 'Off Load Request',
+                        ),
                       )
                     ],
                   ),
@@ -278,9 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _iconButtons(
                               icon: Icons.handshake, title: 'Visit')),
                       GestureDetector(
-                        onTap: () {
-                       
-                        },
+                        onTap: () {},
                         child: _iconButtons(
                             image: 'Assets/Images/van stock.png',
                             title: 'Transfer'),

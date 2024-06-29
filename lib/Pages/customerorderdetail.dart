@@ -649,54 +649,52 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                       //     borderRadius:
                       //         const BorderRadius.all(Radius.circular(10))),
                       child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: DropdownButton(
-                          isDense: true,
-                          icon: const SizedBox(),
-                          alignment: Alignment.center,
-                          underline: Container(),
-                          value: selectedTypeData[index],
-                          style: TextStyle(
+                          fit: BoxFit.contain,
+                          child: DropdownButton(
+                            isDense: true,
+                            icon: const SizedBox(),
+                            alignment: Alignment.center,
+                            underline: Container(),
+                            value: selectedTypeData[index],
+                            style: TextStyle(
                               color: AppConfig.colorPrimary,
                               fontWeight: FontWeight.w500,
-                              fontSize: AppConfig.textCaption3Size),
-                          onChanged: (String? newValue) async {
-                            selectedTypeData[index] = newValue!;
-                            if (newValue.toString().toLowerCase() == 'foc') {
-                              print('is this working');
-                              await SaleskHistory.updateSaleItem(
-                                  data['icode'], 'selectedType', 'FOC');
-                              for (var i in stocks[index]['unitData']) {
-                                // for (var k in i['units']) {
-                                if (i['name'] == selectedValue[index]) {
-                                  _rateData[index].text = '0';
-                                }
-                                // }
-                              }
-                              tax = 0;
-                              total = 0;
-                              _calculateTotal();
-                            } else {
-                              await SaleskHistory.updateSaleItem(
-                                  data['icode'], 'selectedType', newValue);
-
-                              for (var i in stocks[index]['unitData']) {
-                                for (var k in i['units']) {
-                                  if (k['name'] == selectedValue[index]) {
-                                    _rateData[index].text =
-                                        i['price'].toString();
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                            onChanged: (String? newValue) async {
+                              selectedTypeData[index] = newValue!;
+                              if (newValue.toString().toLowerCase() == 'foc' ||
+                                  newValue.toString().toLowerCase() ==
+                                      'change') {
+                                print('is this working');
+                                await SaleskHistory.updateSaleItem(
+                                    data['icode'], 'selectedType', newValue);
+                                for (var i in stocks[index]['unitData']) {
+                                  if (i['name'] == selectedValue[index]) {
+                                    _rateData[index].text = '0';
                                   }
                                 }
+                                tax = 0;
+                                total = 0;
+                                _calculateTotal();
+                              } else {
+                                await SaleskHistory.updateSaleItem(
+                                    data['icode'], 'selectedType', newValue);
+                                for (var i in stocks[index]['unitData']) {
+                                  for (var k in i['units']) {
+                                    if (k['name'] == selectedValue[index]) {
+                                      _rateData[index].text =
+                                          i['price'].toString();
+                                    }
+                                  }
+                                }
+                                total = 0;
+                                tax = 0;
+                                _calculateTotal();
                               }
-
-                              total = 0;
-                              tax = 0;
-                              _calculateTotal();
-                            }
-                          },
-                          items: typeItems[index],
-                        ),
-                      ),
+                            },
+                            items: typeItems[index],
+                          )),
                     ),
                     CommonWidgets.horizontalSpace(1),
                     const Text('|'),

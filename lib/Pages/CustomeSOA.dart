@@ -113,7 +113,6 @@ class _SOAState extends State<SOA> {
                               minHeight: 25.0,
                             ),
                             decoration: BoxDecoration(
-                              // borderRadius: BorderRadius.circular(2),
                               color: isOutstandingSelected
                                   ? AppConfig.colorPrimary
                                   : Colors.transparent,
@@ -145,7 +144,6 @@ class _SOAState extends State<SOA> {
                               minHeight: 25.0,
                             ),
                             decoration: BoxDecoration(
-                              // borderRadius: BorderRadius.circular(2),
                               color: !isOutstandingSelected
                                   ? AppConfig.colorPrimary
                                   : Colors.transparent,
@@ -244,7 +242,8 @@ class _SOAState extends State<SOA> {
             width: double.infinity,
             height: 35,
             color: Colors.grey,
-            child: Table(defaultVerticalAlignment: TableCellVerticalAlignment.bottom,border: TableBorder(bottom: WidgetStateBorderSide.resolveWith((states) {},)),
+            child: Table(
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               columnWidths: {
                 0: FlexColumnWidth(1.3),
                 1: FlexColumnWidth(),
@@ -287,41 +286,93 @@ class _SOAState extends State<SOA> {
                     ),
                   ],
                 ),
-                for (int i = 0; i < data.length; i++)
-                  TableRow(
-                    decoration: BoxDecoration(
-                      color: (i == 1 || i == 3) ? Colors.grey.shade300 : Colors.transparent,
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child:Text(data[i]["Date"]!),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(data[i]["Reference"]!),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(data[i]["Amount"]!),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(data[i]["Payment"]!),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(data[i]["Balance"]!),
-                      ),
-                    ],
-                  ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 250,top: 210),
-            child: Text("Balance Due 800.00",style: TextStyle(fontSize: 15,fontWeight: FontWeight.bold),),
-          )
+          Expanded(
+            child: ListView.builder(
+              itemCount: data.length + 1, // Increment the item count by 1
+              itemBuilder: (context, index) {
+                if (index == data.length) {
+                  // Last item
+                  return Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(top: 8.0),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(21.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Balance Due 800.00",
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Regular row
+                  return Column(
+                    children: [
+                      Table(
+                        columnWidths: {
+                          0: FlexColumnWidth(1.3),
+                          1: FlexColumnWidth(),
+                          2: FlexColumnWidth(),
+                          3: FlexColumnWidth(),
+                          4: FlexColumnWidth(),
+                        },
+                        children: [
+                          TableRow(
+                            decoration: BoxDecoration(
+                              color: (index == 1 || index == 3)
+                                  ? Colors.grey.shade300
+                                  : Colors.transparent,
+                            ),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(data[index]["Date"]!),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(data[index]["Reference"]!),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(data[index]["Amount"]!),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(data[index]["Payment"]!),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(data[index]["Balance"]!),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
         ],
       ),
     );

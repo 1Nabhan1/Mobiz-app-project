@@ -1,25 +1,27 @@
+// expense_detail.dart
 class ExpenseDetail {
-  final int? id;
-  final String? invoiceNo;
-  final String? inDate;
-  final String? inTime;
-  final int? expenseId;
-  final String? amount;
-  final String? description;
-  final String? status;
-  final String? rejectedReason;
-  final String? approvedReason;
-  final int? storeId;
-  final int? vanId;
-  final int? userId;
-  final String? createdAt;
-  final String? updatedAt;
-  final String? deletedAt;
-  final List<Expense>? expenses;
+  int id;
+  String? invoiceNo;
+  String inDate;
+  String inTime;
+  int expenseId;
+  String amount;
+  String description;
+  String status;
+  String? rejectedReason;
+  String? approvedReason;
+  int storeId;
+  int vanId;
+  int userId;
+  DateTime createdAt;
+  DateTime updatedAt;
+  DateTime? deletedAt;
+  List<Expense> expense;
+  List<Document> documents;
 
   ExpenseDetail({
-    this.id,
-    required this.invoiceNo,
+    required this.id,
+    this.invoiceNo,
     required this.inDate,
     required this.inTime,
     required this.expenseId,
@@ -34,13 +36,11 @@ class ExpenseDetail {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
-    required this.expenses,
+    required this.expense,
+    required this.documents,
   });
 
   factory ExpenseDetail.fromJson(Map<String, dynamic> json) {
-    var expenseList = json['expense'] as List;
-    List<Expense> expenses = expenseList.map((e) => Expense.fromJson(e)).toList();
-
     return ExpenseDetail(
       id: json['id'],
       invoiceNo: json['invoice_no'],
@@ -55,22 +55,23 @@ class ExpenseDetail {
       storeId: json['store_id'],
       vanId: json['van_id'],
       userId: json['user_id'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      deletedAt: json['deleted_at'],
-      expenses: expenses,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
+      expense: (json['expense'] as List).map((e) => Expense.fromJson(e)).toList(),
+      documents: (json['documents'] as List).map((e) => Document.fromJson(e)).toList(),
     );
   }
 }
 
 class Expense {
-  final int? id;
-  final String? name;
-  final String? description;
-  final int? storeId;
-  final String? createdAt;
-  final String? updatedAt;
-  final String? deletedAt;
+  int id;
+  String name;
+  String? description;
+  int storeId;
+  DateTime createdAt;
+  DateTime updatedAt;
+  DateTime? deletedAt;
 
   Expense({
     required this.id,
@@ -88,9 +89,41 @@ class Expense {
       name: json['name'],
       description: json['description'],
       storeId: json['store_id'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      deletedAt: json['deleted_at'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
+    );
+  }
+}
+
+class Document {
+  int id;
+  int expenseDetailId;
+  String documentName;
+  int storeId;
+  DateTime createdAt;
+  DateTime updatedAt;
+  DateTime? deletedAt;
+
+  Document({
+    required this.id,
+    required this.expenseDetailId,
+    required this.documentName,
+    required this.storeId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  factory Document.fromJson(Map<String, dynamic> json) {
+    return Document(
+      id: json['id'],
+      expenseDetailId: json['expense_detail_id'],
+      documentName: json['document_name'],
+      storeId: json['store_id'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
     );
   }
 }

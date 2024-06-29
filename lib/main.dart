@@ -9,6 +9,7 @@ import 'package:mobizapp/Pages/customerregistration.dart';
 import 'package:mobizapp/Pages/customerscreen.dart';
 import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
+import 'package:mobizapp/Pages/offLoadRequest.dart';
 import 'package:mobizapp/Pages/paymentcollection.dart';
 import 'package:mobizapp/Pages/productspage.dart';
 import 'package:mobizapp/Pages/receiptscreen.dart';
@@ -29,6 +30,8 @@ import 'Pages/saleinvoices.dart';
 import 'Pages/salesselectproductorder.dart';
 import 'Pages/salesselectproductreturn.dart';
 import 'Pages/salesselectproducts.dart';
+import 'Pages/selectProductScreenOFF.dart';
+import 'Pages/vanstockoff.dart';
 
 void main() {
   runApp(const MyApp());
@@ -87,6 +90,9 @@ class MyApp extends StatelessWidget {
           SOA.routeName: (context) => SOA(),
           CustomerVisit.routeName: (context) => CustomerVisit(),
           ExpenseAdd.routeName: (context) => ExpenseAdd(),
+          OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
+          VanStocksoff.routeName: (context) => VanStocksoff(),
+          SelectProductsScreenoff.routeName: (context) => SelectProductsScreenoff(),
         });
   }
 }

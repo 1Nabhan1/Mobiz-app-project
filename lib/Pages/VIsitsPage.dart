@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
- import '../Models/visit_model.dart';
+import '../Models/visit_model.dart';
+import 'package:intl/intl.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 
@@ -34,6 +35,11 @@ class _VisitspageState extends State<Visitspage> {
     } else {
       throw Exception('Failed to load customer visits');
     }
+  }
+
+  String formatTime(String time) {
+    final DateTime dateTime = DateFormat("HH:mm:ss").parse(time);
+    return DateFormat("hh:mm a").format(dateTime);
   }
 
   @override
@@ -99,19 +105,6 @@ class _VisitspageState extends State<Visitspage> {
                 CustomerVisit visit = visits[index];
                 Customer customer = visit.customer[0];
                 Reason reason = visit.reason[0];
-                // return ListTile(
-                //   title: Text('${customer.name} (${customer.code ?? 'No Code'})'),
-                //   subtitle: Column(
-                //     crossAxisAlignment: CrossAxisAlignment.start,
-                //     children: [
-                //       Text('Visit Date: ${visit.inDate}'),
-                //       Text('Visit Time: ${visit.inTime}'),
-                //       Text('Visit Type: ${visit.visitType ?? 'Unknown'}'),
-                //       Text('Reason: ${reason.reason}'),
-                //       Text('Description: ${visit.description}'),
-                //     ],
-                //   ),
-                // );
                 return Padding(
                   padding: const EdgeInsets.all(15.0),
                   child:  Container(
@@ -131,11 +124,15 @@ class _VisitspageState extends State<Visitspage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      "${customer.code ?? 'No Code'} | ${customer.name}",
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "${customer.code ?? 'No Code'} | ${customer.name} - ${customer.address}",
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
                                     ),
-                                    Text("${visit.inDate} | ${visit.inTime}"),
+                                    Text("${visit.inDate}   ${formatTime(visit.inTime)}"),
                                     Text("Reason: ${reason.reason}"),
                                     Text("Remarks: ${visit.description}"),
                                   ],
