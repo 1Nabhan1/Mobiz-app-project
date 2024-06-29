@@ -43,7 +43,7 @@ class _SalesScreenState extends State<SalesScreen> {
   num tax = 0;
   int? id;
   String? name;
-
+  String? _previousRate;
   TypesData typeDetails = TypesData();
 
   List<String?> selectedValue = [" "];
@@ -590,25 +590,41 @@ class _SalesScreenState extends State<SalesScreen> {
                             fontWeight: FontWeight.w500,
                             fontSize: AppConfig.textCaption3Size),
                         onChanged: (String? newValue) async {
+                          String? oldValue = selectedTypeData[index];
                           selectedTypeData[index] = newValue!;
-                          if (newValue.toString().toLowerCase() == 'foc') {
-                            print('is this working');
+
+                          if (newValue.toLowerCase() == 'foc' ||
+                              newValue.toLowerCase() == 'change') {
                             await SaleskHistory.updateSaleItem(
                                 data['icode'], 'selectedType', 'FOC');
                             for (var i in stocks[index]['unitData']) {
-                              // for (var k in i['units']) {
                               if (i['name'] == selectedValue[index]) {
+                                // Store the old rate before setting it to zero
+                                _previousRate = _rateData[index].text;
                                 _rateData[index].text = '0';
                               }
-                              // }
                             }
                             tax = 0;
                             total = 0;
                             _calculateTotal();
+                          } else if (newValue.toLowerCase() == 'normal') {
+                            await SaleskHistory.updateSaleItem(
+                                data['icode'], 'selectedType', newValue);
+                            for (var i in stocks[index]['unitData']) {
+                              for (var k in i['units']) {
+                                if (k['name'] == selectedValue[index]) {
+                                  // Restore the previous rate
+                                  _rateData[index].text =
+                                      _previousRate ?? i['price'].toString();
+                                }
+                              }
+                            }
+                            total = 0;
+                            tax = 0;
+                            _calculateTotal();
                           } else {
                             await SaleskHistory.updateSaleItem(
                                 data['icode'], 'selectedType', newValue);
-
                             for (var i in stocks[index]['unitData']) {
                               for (var k in i['units']) {
                                 if (k['name'] == selectedValue[index]) {
@@ -616,7 +632,6 @@ class _SalesScreenState extends State<SalesScreen> {
                                 }
                               }
                             }
-
                             total = 0;
                             tax = 0;
                             _calculateTotal();

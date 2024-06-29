@@ -177,7 +177,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
                                       Row(
                                         children: [
                                           Text(
-                                            '${salesReturnItem.returnType[0].name} | ${salesReturnItem.units[0].name}',
+                                            '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name}',
                                           ),
                                         ],
                                       )
