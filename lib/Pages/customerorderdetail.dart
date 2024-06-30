@@ -46,6 +46,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
   num tax = 0;
   int? id;
   String? name;
+  String? _previousRate;
   String? code;
   String? payment;
 
@@ -657,44 +658,47 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                             underline: Container(),
                             value: selectedTypeData[index],
                             style: TextStyle(
-                              color: AppConfig.colorPrimary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                            onChanged: (String? newValue) async {
-                              selectedTypeData[index] = newValue!;
-                              if (newValue.toString().toLowerCase() == 'foc' ||
-                                  newValue.toString().toLowerCase() ==
-                                      'change') {
-                                print('is this working');
-                                await SaleskHistory.updateSaleItem(
-                                    data['icode'], 'selectedType', newValue);
-                                for (var i in stocks[index]['unitData']) {
-                                  if (i['name'] == selectedValue[index]) {
-                                    _rateData[index].text = '0';
+                                color: AppConfig.colorPrimary,
+                                fontWeight: FontWeight.w500,
+                                fontSize: AppConfig.textCaption3Size),
+                            onChanged:  (String? newValue) async {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedTypeData[index] = newValue;
+                                });
+
+                                if (newValue.toLowerCase() == 'foc' ||
+                                    newValue.toLowerCase() == 'change') {
+                                  _previousRate = _rateData[index].text;
+                                  _rateData[index].text = '0';
+                                } else if (newValue.toLowerCase() == 'Normal') {
+                                  if (_previousRate != null) {
+                                    _rateData[index].text = _previousRate!;
+                                  } else {
+                                    // Set to the default rate if _previousRate is not set
+                                    for (var unit in data['unitData']) {
+                                      if (unit['name'] == selectedValue[index]) {
+                                        _rateData[index].text = unit['price'];
+                                      }
+                                    }
                                   }
-                                }
-                                tax = 0;
-                                total = 0;
-                                _calculateTotal();
-                              } else {
-                                await SaleskHistory.updateSaleItem(
-                                    data['icode'], 'selectedType', newValue);
-                                for (var i in stocks[index]['unitData']) {
-                                  for (var k in i['units']) {
-                                    if (k['name'] == selectedValue[index]) {
-                                      _rateData[index].text =
-                                          i['price'].toString();
+                                } else {
+                                  // Handle 'Change' case or other cases
+                                  for (var unit in data['unitData']) {
+                                    if (unit['name'] == selectedValue[index]) {
+                                      _rateData[index].text = unit['price'];
                                     }
                                   }
                                 }
+
                                 total = 0;
                                 tax = 0;
                                 _calculateTotal();
                               }
                             },
                             items: typeItems[index],
-                          )),
+                          ),
+                      ),
                     ),
                     CommonWidgets.horizontalSpace(1),
                     const Text('|'),

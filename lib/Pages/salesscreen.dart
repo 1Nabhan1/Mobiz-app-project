@@ -589,49 +589,36 @@ class _SalesScreenState extends State<SalesScreen> {
                             color: AppConfig.colorPrimary,
                             fontWeight: FontWeight.w500,
                             fontSize: AppConfig.textCaption3Size),
-                        onChanged: (String? newValue) async {
-                          String? oldValue = selectedTypeData[index];
-                          selectedTypeData[index] = newValue!;
+                        onChanged:  (String? newValue) async {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedTypeData[index] = newValue;
+                            });
 
-                          if (newValue.toLowerCase() == 'foc' ||
-                              newValue.toLowerCase() == 'change') {
-                            await SaleskHistory.updateSaleItem(
-                                data['icode'], 'selectedType', 'FOC');
-                            for (var i in stocks[index]['unitData']) {
-                              if (i['name'] == selectedValue[index]) {
-                                // Store the old rate before setting it to zero
-                                _previousRate = _rateData[index].text;
-                                _rateData[index].text = '0';
+                            if (newValue.toLowerCase() == 'foc' ||
+                                newValue.toLowerCase() == 'change') {
+                              _previousRate = _rateData[index].text;
+                              _rateData[index].text = '0';
+                            } else if (newValue.toLowerCase() == 'Normal') {
+                              if (_previousRate != null) {
+                                _rateData[index].text = _previousRate!;
+                              } else {
+                                // Set to the default rate if _previousRate is not set
+                                for (var unit in data['unitData']) {
+                                  if (unit['name'] == selectedValue[index]) {
+                                    _rateData[index].text = unit['price'];
+                                  }
+                                }
                               }
-                            }
-                            tax = 0;
-                            total = 0;
-                            _calculateTotal();
-                          } else if (newValue.toLowerCase() == 'normal') {
-                            await SaleskHistory.updateSaleItem(
-                                data['icode'], 'selectedType', newValue);
-                            for (var i in stocks[index]['unitData']) {
-                              for (var k in i['units']) {
-                                if (k['name'] == selectedValue[index]) {
-                                  // Restore the previous rate
-                                  _rateData[index].text =
-                                      _previousRate ?? i['price'].toString();
+                            } else {
+                              // Handle 'Change' case or other cases
+                              for (var unit in data['unitData']) {
+                                if (unit['name'] == selectedValue[index]) {
+                                  _rateData[index].text = unit['price'];
                                 }
                               }
                             }
-                            total = 0;
-                            tax = 0;
-                            _calculateTotal();
-                          } else {
-                            await SaleskHistory.updateSaleItem(
-                                data['icode'], 'selectedType', newValue);
-                            for (var i in stocks[index]['unitData']) {
-                              for (var k in i['units']) {
-                                if (k['name'] == selectedValue[index]) {
-                                  _rateData[index].text = i['price'].toString();
-                                }
-                              }
-                            }
+
                             total = 0;
                             tax = 0;
                             _calculateTotal();
@@ -651,39 +638,49 @@ class _SalesScreenState extends State<SalesScreen> {
                     //       fontSize: AppConfig.textCaption3Size),
                     // ),
                     // CommonWidgets.horizontalSpace(0.7),
-                    SizedBox(
-                      height: SizeConfig.blockSizeVertical * 2.5,
-                      child: DropdownButton(
-                        icon: const SizedBox(),
-                        isDense: true,
-                        alignment: Alignment.center,
-                        underline: Container(),
-                        value: selectedValue[index],
-                        style: TextStyle(
-                            color: AppConfig.colorPrimary,
-                            fontWeight: FontWeight.w500,
-                            fontSize: AppConfig.textCaption3Size),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedValue[index] = newValue.toString();
-                          });
+                    // SizedBox(
+                    //   height: SizeConfig.blockSizeVertical * 2.5,
+                    //   child: DropdownButton(
+                    //     value: selectedTypeData[index],
+                    //     onChanged: (String? newValue) async {
+                    //       if (newValue != null) {
+                    //         setState(() {
+                    //           selectedTypeData[index] = newValue;
+                    //         });
+                    //
+                    //         if (newValue.toLowerCase() == 'foc' ||
+                    //             newValue.toLowerCase() == 'change') {
+                    //           _previousRate = _rateData[index].text;
+                    //           _rateData[index].text = '0';
+                    //         } else if (newValue.toLowerCase() == 'Normal') {
+                    //           if (_previousRate != null) {
+                    //             _rateData[index].text = _previousRate!;
+                    //           } else {
+                    //             // Set to the default rate if _previousRate is not set
+                    //             for (var unit in data['unitData']) {
+                    //               if (unit['name'] == selectedValue[index]) {
+                    //                 _rateData[index].text = unit['price'];
+                    //               }
+                    //             }
+                    //           }
+                    //         } else {
+                    //           // Handle 'Change' case or other cases
+                    //           for (var unit in data['unitData']) {
+                    //             if (unit['name'] == selectedValue[index]) {
+                    //               _rateData[index].text = unit['price'];
+                    //             }
+                    //           }
+                    //         }
+                    //
+                    //         total = 0;
+                    //         tax = 0;
+                    //         _calculateTotal();
+                    //       }
+                    //     },
+                    //     items: typeItems[index],
+                    //   ),
+                    // ),
 
-                          for (var i in stocks[index]['unitData']) {
-                            if (i['name'] == newValue) {
-                              _rateData[index].text = i['price'];
-                            }
-                          }
-
-                          SaleskHistory.updateSaleItem(data['icode'],
-                              'selectedUnit', selectedValue[index]);
-
-                          total = 0;
-                          tax = 0;
-                          _calculateTotal();
-                        },
-                        items: menuItems[index],
-                      ),
-                    ),
                     CommonWidgets.horizontalSpace(1),
                     const Text('|'),
                     CommonWidgets.horizontalSpace(1),

@@ -24,6 +24,7 @@ import 'Pages/CustomeSOA.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
+import 'Pages/error_handling_screen.dart';
 import 'Pages/homeorder.dart';
 import 'Pages/homereturn.dart';
 import 'Pages/saleinvoices.dart';
@@ -55,6 +56,7 @@ class MyApp extends StatelessWidget {
           LoginScreen.routeName: (context) => const LoginScreen(),
           HomeScreen.routeName: (context) => const HomeScreen(),
           ProductsScreen.routeName: (context) => const ProductsScreen(),
+          ErrorHandlingScreen.routeName: (context) => const ErrorHandlingScreen(),
           VanStockRequestsScreen.routeName: (context) =>
               const VanStockRequestsScreen(),
           VanStocks.routeName: (context) => const VanStocks(),
@@ -92,7 +94,8 @@ class MyApp extends StatelessWidget {
           ExpenseAdd.routeName: (context) => ExpenseAdd(),
           OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
           VanStocksoff.routeName: (context) => VanStocksoff(),
-          SelectProductsScreenoff.routeName: (context) => SelectProductsScreenoff(),
+          SelectProductsScreenoff.routeName: (context) =>
+              SelectProductsScreenoff(),
         });
   }
 }

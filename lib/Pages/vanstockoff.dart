@@ -36,6 +36,11 @@ class _VanStocksoffState extends State<VanStocksoff> {
   bool _loaded = true;
   late Future<Offload> _Offload;
   final TextEditingController _qty = TextEditingController();
+  List<int> itemIds = [];
+  List<int> quantities = [];
+  List<int> units = [];
+  List<int> goodsReturnIds = [];
+  List<int> returnTypes = [];
 
   @override
   void initState() {
@@ -97,16 +102,23 @@ class _VanStocksoffState extends State<VanStocksoff> {
                 backgroundColor:
                     const WidgetStatePropertyAll(AppConfig.colorPrimary),
               ),
-              onPressed: (_loaded == false)
-                  ? null
-                  : () {
-                      if (stocks.isNotEmpty) {
-                        setState(() {
-                          _loaded = false;
-                        });
-                        _sendProducts();
-                      }
-                    },
+              onPressed: () {
+                _sendProducts();
+                saveData();
+              },
+              // (_loaded == false)
+              //     ? () {
+              //         saveData();
+              //       }
+              //     : () {
+              //         if (stocks.isNotEmpty) {
+              //           setState(() {
+              //             _loaded = false;
+              //           });
+              //           _sendProducts();
+              //           saveData();
+              //         }
+              //       },
               child: (_loaded == false)
                   ? const CircularProgressIndicator(
                       color: AppConfig.backgroundColor,
@@ -124,6 +136,11 @@ class _VanStocksoffState extends State<VanStocksoff> {
             future: _Offload,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
+                itemIds.clear();
+                quantities.clear();
+                units.clear();
+                goodsReturnIds.clear();
+                returnTypes.clear();
                 return SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -149,6 +166,12 @@ class _VanStocksoffState extends State<VanStocksoff> {
                           itemCount: snapshot.data!.data.length,
                           itemBuilder: (context, index) {
                             final salesReturnItem = snapshot.data!.data[index];
+                            itemIds.add(salesReturnItem.product.first.id);
+                            quantities.add(salesReturnItem.quantity);
+                            units.add(salesReturnItem.units.first.id);
+                            goodsReturnIds.add(salesReturnItem.id);
+                            returnTypes
+                                .add(salesReturnItem.returntype.first.id);
                             return Container(
                               width: SizeConfig.blockSizeHorizontal * 90,
                               child: Card(
@@ -464,7 +487,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
       "item_id": [],
       "quantity": [],
       "unit": [],
-      "goods_return_id": ['1', '2'],
+      "goods_return_id": ['1'],
       "return_type": ['1']
     };
     int units = 0;
@@ -478,20 +501,52 @@ class _VanStocksoffState extends State<VanStocksoff> {
       bodyJson["item_id"].add(stocks[i]["id"]);
       bodyJson["quantity"].add(stocks[i]["quantity"]);
       bodyJson["unit"].add(units);
+      // }
+      debugPrint('resJson $bodyJson ');
+      dynamic resJson = await api.sendData('/api/vanoffloadrequest.store',
+          AppState().token, jsonEncode(bodyJson));
+      setState(() {
+        _loaded = true;
+      });
+      if (resJson['data'] != null) {
+        if (mounted) {
+          CommonWidgets.showDialogueBox(
+              context: context, title: "Alert", msg: "Added Successfully");
+          StockHistory.clearAllStockHistory().then(
+              (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
+        }
+      }
     }
-    debugPrint('resJson $bodyJson ');
-    dynamic resJson = await api.sendData(
-        '/api/vanoffloadrequest.store', AppState().token, jsonEncode(bodyJson));
-    setState(() {
-      _loaded = true;
+  }
+
+  Future<void> saveData() async {
+    final url =
+        Uri.parse('https://mobiz-api.yes45.in/api/vanoffloadrequest.store');
+    final headers = {"Content-Type": "application/json"};
+
+    final body = jsonEncode({
+      "van_id": AppState().vanId,
+      "store_id": AppState().storeId,
+      "user_id": AppState().userId,
+      "item_id": itemIds,
+      "quantity": quantities,
+      "unit": units,
+      "goods_return_id": goodsReturnIds,
+      "return_type": returnTypes
     });
-    if (resJson['data'] != null) {
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    if (response.statusCode == 200) {
       if (mounted) {
         CommonWidgets.showDialogueBox(
             context: context, title: "Alert", msg: "Added Successfully");
         StockHistory.clearAllStockHistory().then(
             (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
       }
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to save data')));
     }
   }
 }

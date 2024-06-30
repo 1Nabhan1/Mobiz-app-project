@@ -263,7 +263,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     onTap: () {
                       Navigator.pushNamed(
                         context,
-                        SOA.routeName,
+                        SOA.routeName, arguments: {
+                        'customerId': id,
+                        'name': name,
+                        'code': code,
+                        'paymentTerms': paymentTerms
+                      }
                       );
                     },
                     child: _iconButtons(

@@ -124,8 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: SizedBox(
-        height: SizeConfig.screenHeight,
+      body: SingleChildScrollView(
         child: Column(
           children: [
             Padding(

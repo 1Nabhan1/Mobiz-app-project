@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -32,8 +33,10 @@ class SaleInvoiceScrreen extends StatefulWidget {
 class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   final TextEditingController _searchData = TextEditingController();
   VanSaleProducts products = VanSaleProducts();
+  BlueThermalPrinter printer = BlueThermalPrinter.instance;
   bool _initDone = false;
   bool _noData = false;
+  final String _defaultDeviceAddress = "00:13:7B:84:E9:89";
   List<int> selectedItems = [];
   List<Map<String, dynamic>> items = [];
   bool _search = false;
@@ -48,6 +51,31 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   void initState() {
     super.initState();
     _getProducts();
+  }
+
+  BluetoothDevice? _selectedDevice;
+  bool _connected = false;
+
+  Future<void> _connect() async {
+    if (_selectedDevice != null) {
+      await printer.connect(_selectedDevice!);
+      setState(() {
+        _connected = true;
+      });
+    }
+  }
+
+  void _connectAndPrint() async {
+    if (_selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default device not found')),
+      );
+      return;
+    }
+    if (!_connected) {
+      await _connect();
+    }
+    _getInvoiceData(products.data![0].id!, false);
   }
 
   @override
@@ -66,75 +94,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         backgroundColor: AppConfig.colorPrimary,
-        actions: [
-          // (_search)
-          //     ? Container(
-          //         height: SizeConfig.blockSizeVertical * 5,
-          //         width: SizeConfig.blockSizeHorizontal * 76,
-          //         decoration: BoxDecoration(
-          //           color: AppConfig.colorPrimary,
-          //           borderRadius: const BorderRadius.all(
-          //             Radius.circular(10),
-          //           ),
-          //           border: Border.all(color: AppConfig.colorPrimary),
-          //         ),
-          //         child: TextField(
-          //           controller: _searchData,
-          //           decoration: const InputDecoration(
-          //               contentPadding: EdgeInsets.all(5),
-          //               hintText: "Search...",
-          //               hintStyle: TextStyle(color: AppConfig.backgroundColor),
-          //               border: InputBorder.none),
-          //         ),
-          //       )
-          //     : Container(),
-          // CommonWidgets.horizontalSpace(1),
-          // GestureDetector(
-          //   onTap: () {
-          //     setState(() {
-          //       _search = !_search;
-          //     });
-          //   },
-          //   child: Icon(
-          //     (!_search) ? Icons.search : Icons.close,
-          //     size: 30,
-          //     color: AppConfig.backgroundColor,
-          //   ),
-          // ),
-          // CommonWidgets.horizontalSpace(3),
-        ],
+        actions: [],
       ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      // floatingActionButton: SizedBox(
-      //   width: SizeConfig.blockSizeHorizontal * 25,
-      //   height: SizeConfig.blockSizeVertical * 5,
-      //   child: ElevatedButton(
-      //     style: ButtonStyle(
-      //       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-      //         RoundedRectangleBorder(
-      //           borderRadius: BorderRadius.circular(20.0),
-      //         ),
-      //       ),
-      //       backgroundColor:
-      //           const MaterialStatePropertyAll(AppConfig.colorPrimary),
-      //     ),
-      //     onPressed: () async {
-      //       for (var item in items) {
-      //         await StockHistory.addToStockHistory(item);
-      //       }
-      //       if (mounted) {
-      //         Navigator.of(context).pop();
-      //       }
-      //     },
-      //     child: Text(
-      //       'ADD',
-      //       style: TextStyle(
-      //           fontSize: AppConfig.textCaption3Size,
-      //           color: AppConfig.backgroundColor,
-      //           fontWeight: AppConfig.headLineWeight),
-      //     ),
-      //   ),
-      // ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0),
         child: SingleChildScrollView(
@@ -245,7 +206,9 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                       style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                           fontWeight: AppConfig.headLineWeight),
-                    ),Text(' | '), Text(
+                    ),
+                    Text(' | '),
+                    Text(
                       (data.customer!.isNotEmpty)
                           ? data.customer![0].name ?? ''
                           : '',
@@ -293,7 +256,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                       ),
                       const Spacer(),
                       InkWell(
-                        onTap: () => _getInvoiceData(data.id!, false),
+                        onTap: _connectAndPrint,
                         child: const Icon(
                           Icons.print,
                           color: Colors.blue,

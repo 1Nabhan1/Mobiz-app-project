@@ -22,8 +22,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _username = TextEditingController();
   final TextEditingController _password = TextEditingController();
-
-  SharedPref sharedPref = SharedPref();
+  final SharedPref sharedPref = SharedPref();
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: const BoxDecoration(
                             color: AppConfig.backgroundColor,
                             borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
+                            BorderRadius.all(Radius.circular(10))),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,53 +108,67 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Text('Please sign in with your details'),
                             const SizedBox(height: 20),
                             TextField(
-                                controller: _username,
-                                decoration: InputDecoration(
-                                  labelText: "Username",
-                                  labelStyle: const TextStyle(
-                                      color: AppConfig.colorPrimary),
-                                  prefixIcon: const Icon(Icons.person),
-                                  border: myinputborder(),
-                                  enabledBorder: myinputborder(),
-                                  focusedBorder: myfocusborder(),
-                                )),
+                              controller: _username,
+                              decoration: InputDecoration(
+                                labelText: "Username",
+                                labelStyle: const TextStyle(
+                                    color: AppConfig.colorPrimary),
+                                prefixIcon: const Icon(Icons.person),
+                                border: myinputborder(),
+                                enabledBorder: myinputborder(),
+                                focusedBorder: myfocusborder(),
+                              ),
+                            ),
                             const SizedBox(height: 20),
                             TextField(
-                                controller: _password,
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(Icons.lock),
-                                  labelText: "Password",
-                                  labelStyle: const TextStyle(
-                                      color: AppConfig.colorPrimary),
-                                  enabledBorder: myinputborder(),
-                                  focusedBorder: myfocusborder(),
-                                )),
+                              controller: _password,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.lock),
+                                labelText: "Password",
+                                labelStyle: const TextStyle(
+                                    color: AppConfig.colorPrimary),
+                                enabledBorder: myinputborder(),
+                                focusedBorder: myfocusborder(),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
                             CommonWidgets.verticalSpace(5),
                             Center(
                               child: CommonWidgets.button(
-                                  bgColor: AppConfig.colorPrimary,
-                                  textColor: AppConfig.backgroundColor,
-                                  function: () {
-                                    if (_username.text.isEmpty) {
-                                      CommonWidgets.showDialogueBox(
-                                          context: context,
-                                          title: 'Error',
-                                          msg: "Please enter valid useraname ");
-                                    } else if (_password.text.isEmpty) {
-                                      CommonWidgets.showDialogueBox(
-                                          context: context,
-                                          title: 'Error',
-                                          msg: "Please enter valid password");
-                                    } else {
-                                      _login();
-                                      // Navigator.pushNamed(
-                                      //     context, HomeScreen.routeName);
-                                    }
-                                  },
-                                  height: SizeConfig.blockSizeVertical * 7,
-                                  width: SizeConfig.blockSizeHorizontal * 67,
-                                  radius: 10,
-                                  title: 'Log In'),
+                                bgColor: AppConfig.colorPrimary,
+                                textColor: AppConfig.backgroundColor,
+                                function: () {
+                                  if (_username.text.isEmpty) {
+                                    CommonWidgets.showDialogueBox(
+                                        context: context,
+                                        title: 'Error',
+                                        msg: "Please enter a valid username ");
+                                  } else if (_password.text.isEmpty) {
+                                    CommonWidgets.showDialogueBox(
+                                        context: context,
+                                        title: 'Error',
+                                        msg: "Please enter a valid password");
+                                  } else {
+                                    _login();
+                                  }
+                                },
+                                height: SizeConfig.blockSizeVertical * 7,
+                                width: SizeConfig.blockSizeHorizontal * 67,
+                                radius: 10,
+                                title: 'Log In',
+                              ),
                             ),
                           ],
                         ),
@@ -171,23 +185,24 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   OutlineInputBorder myinputborder() {
-    //return type is OutlineInputBorder
+    // Return type is OutlineInputBorder
     return const OutlineInputBorder(
-        //Outline border type for TextFeild
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-        borderSide: BorderSide(
-          color: Colors.grey,
-          width: 3,
-        ));
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+      borderSide: BorderSide(
+        color: Colors.grey,
+        width: 3,
+      ),
+    );
   }
 
   OutlineInputBorder myfocusborder() {
     return const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-        borderSide: BorderSide(
-          color: AppConfig.colorPrimary,
-          width: 3,
-        ));
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+      borderSide: BorderSide(
+        color: AppConfig.colorPrimary,
+        width: 3,
+      ),
+    );
   }
 
   Future<void> _login() async {
@@ -195,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
     RestDatasource api = RestDatasource();
     Map<String, String> bodyJson = {
       "email": _username.text,
-      "password": _password.text
+      "password": _password.text,
     };
     try {
       dynamic resJson = await api.sendData(
@@ -205,7 +220,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       LoginModel loginResp = LoginModel.fromJson(resJson);
-      debugPrint('Logoin Resp $resJson ${loginResp.user!.storeId}');
       if (loginResp.status == "success") {
         if (loginResp.user != null && loginResp.authorisation != null) {
           appState.token = loginResp.authorisation!.token;
@@ -216,13 +230,13 @@ class _LoginScreenState extends State<LoginScreen> {
           appState.email = loginResp.user!.email;
           appState.loginState = 'LOGGED_IN';
 
-          //Clear the shared preference if it is already present
+          // Clear the shared preference if it is already present
           bool appStateRetrieved = await sharedPref.containsKey('app_state');
           if (appStateRetrieved == true) {
             sharedPref.removeAll();
           }
 
-          /// Save it saved preference
+          // Save to shared preferences
           sharedPref.save("app_state", appState);
           if (mounted) {
             Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);

@@ -100,33 +100,6 @@ class _PrinterTestState extends State<PrinterTest> {
       body: Column(
         children: [
           SizedBox(height: 20),
-          DropdownButton<BluetoothDevice>(
-            hint: Text('Select Bluetooth Device'),
-            value: _selectedDevice,
-            onChanged: (BluetoothDevice? value) {
-              setState(() {
-                _selectedDevice = value;
-              });
-            },
-            items: _devices.map((BluetoothDevice device) {
-              return DropdownMenuItem<BluetoothDevice>(
-                value: device,
-                child: Text(device.name ?? ""),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _connected ? _disconnect : _connect,
-            child: Text(_connected ? 'Disconnect' : 'Connect'),
-          ),
-          SizedBox(height: 20),
-          IconButton(
-            icon: Icon(Icons.print),
-            onPressed: _print,
-            iconSize: 50,
-          ),
-          SizedBox(height: 20),
           ElevatedButton(
             onPressed: _connectAndPrint,
             child: Text('Connect and Print using Default Device'),
