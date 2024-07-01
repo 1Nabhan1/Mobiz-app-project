@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shimmer/shimmer.dart';
 import 'dart:convert';
 
+import '../Components/commonwidgets.dart';
 import '../Models/Soa_model.dart';
 import '../confg/appconfig.dart';
+import '../confg/sizeconfig.dart';
 
 class SOA extends StatefulWidget {
   static const routeName = "/SOA";
@@ -374,7 +377,35 @@ class _SOAState extends State<SOA> {
             );
           }
           // By default, show a loading spinner
-          return const Center(child: CircularProgressIndicator());
+          return Shimmer.fromColors(
+            baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+            highlightColor: AppConfig.backButtonColor,
+            child: Center(
+              child: Column(
+                children: [
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 60,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+
+                  // CommonWidgets.loadingContainers(
+                  //     height: SizeConfig.blockSizeVertical * 10,
+                  //     width: SizeConfig.blockSizeHorizontal * 90),
+                  // CommonWidgets.loadingContainers(
+                  //     height: SizeConfig.blockSizeVertical * 10,
+                  //     width: SizeConfig.blockSizeHorizontal * 90),
+                  // CommonWidgets.loadingContainers(
+                  //     height: SizeConfig.blockSizeVertical * 10,
+                  //     width: SizeConfig.blockSizeHorizontal * 90),
+                  // CommonWidgets.loadingContainers(
+                  //     height: SizeConfig.blockSizeVertical * 10,
+                  //     width: SizeConfig.blockSizeHorizontal * 90),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );

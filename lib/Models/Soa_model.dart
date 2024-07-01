@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class SOAResponse {
   final List<List<dynamic>> data;
   final double opening;
@@ -18,8 +16,8 @@ class SOAResponse {
   factory SOAResponse.fromJson(Map<String, dynamic> json) {
     return SOAResponse(
       data: List<List<dynamic>>.from(json['data'].map((item) => List<dynamic>.from(item.map((e) => e)))),
-      opening: json['opening'] as double,
-      closing: json['closing'] as double,
+      opening: (json['opening'] as num).toDouble(),
+      closing: (json['closing'] as num).toDouble(),
       success: json['success'] as bool,
       messages: List<String>.from(json['messages'].map((x) => x as String)),
     );
@@ -45,9 +43,9 @@ class SOAData {
     return SOAData(
       date: json['date'] ?? '',
       reference: json['reference'] ?? '',
-      amount: json['amount'].toString() ?? '0', // Convert to string or handle differently as per your API structure
-      payment: json['payment'].toString() ?? '0', // Convert to string or handle differently as per your API structure
-      balance: json['balance'].toString() ?? '0', // Convert to string or handle differently as per your API structure
+      amount: json['amount'].toString(), // Convert to string
+      payment: json['payment'].toString(), // Convert to string
+      balance: json['balance'].toString(), // Convert to string
     );
   }
 }
