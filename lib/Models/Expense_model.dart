@@ -48,7 +48,7 @@ class ExpenseDetail {
       inTime: json['in_time'],
       expenseId: json['expense_id'],
       amount: json['amount'],
-      description: json['description'],
+      description: json['description'] ?? "",
       status: json['status'],
       rejectedReason: json['rejected_reason'],
       approvedReason: json['approved_reason'],
@@ -86,7 +86,7 @@ class Expense {
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
       id: json['id'],
-      name: json['name'],
+      name: json['name'] ?? "",
       description: json['description'],
       storeId: json['store_id'],
       createdAt: DateTime.parse(json['created_at']),

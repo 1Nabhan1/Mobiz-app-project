@@ -4,13 +4,11 @@ class CustomerVisit {
   String inTime;
   String? visitType; // Nullable field
   int reasonId;
-  String description;
+  String? description; // Nullable field
   int storeId;
-  int vanId;
-  int customerId;
   String createdAt;
   String updatedAt;
-  String? deletedAt;
+  String? deletedAt; // Nullable field
   List<Reason> reason;
   List<Customer> customer;
 
@@ -20,10 +18,8 @@ class CustomerVisit {
     required this.inTime,
     this.visitType,
     required this.reasonId,
-    required this.description,
+    this.description,
     required this.storeId,
-    required this.vanId,
-    required this.customerId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -36,12 +32,10 @@ class CustomerVisit {
       id: json['id'],
       inDate: json['in_date'],
       inTime: json['in_time'],
-      visitType: json['vistit_type'],
+      visitType: json['vistit_type'], // Corrected key here
       reasonId: json['reason_id'],
       description: json['description'],
       storeId: json['store_id'],
-      vanId: json['van_id'],
-      customerId: json['customer_id'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
       deletedAt: json['deleted_at'],
