@@ -159,6 +159,14 @@ class _VanStocksoffState extends State<VanStocksoff> {
                                 },
                               )
                             : Container(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            children: [
+                              Text('Return',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                            ],
+                          ),
+                        ),
                         ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
@@ -200,7 +208,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
                                       Row(
                                         children: [
                                           Text(
-                                            '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name}',
+                                            '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name} | Qty: ${salesReturnItem.quantity} ',
                                           ),
                                         ],
                                       )
@@ -301,11 +309,8 @@ class _VanStocksoffState extends State<VanStocksoff> {
                     radius: 8,
                     child: GestureDetector(
                       onTap: () async {
-                        setState(() {
-                          data['quantity'] = data['quantity'] + 1;
-                        });
-                        StockHistory.updateStockItem(
-                            data['itemId'], 'quantity', data['quantity']);
+                        StockHistory.clearStockHistory(data['itemId'])
+                                      .then((value) => _getStockData());
                       },
                       child: const Icon(
                         Icons.close,

@@ -627,9 +627,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         items: typeItems[index],
                       ),
                     ),
-                    CommonWidgets.horizontalSpace(1),
-                    const Text('|'),
-                    CommonWidgets.horizontalSpace(1),
+                    // CommonWidgets.horizontalSpace(1),
 
                     // Text(
                     //   'Unit',

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
 import 'package:mobizapp/Pages/CustomeSOA.dart';
@@ -15,13 +18,31 @@ import 'customerreturndetails.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
   static const routeName = "/customerdetailsscreen";
-  const CustomerDetailsScreen({super.key});
+  const CustomerDetailsScreen({
+    super.key,
+  });
 
   @override
   State<CustomerDetailsScreen> createState() => _CustomerDetailsScreenState();
 }
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+  @override
+  Timer? _timer;
+
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchData();
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchData());
+  }
+
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _data = '';
   String? name;
   String? address;
   String? email;
@@ -38,7 +59,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? totalOutstanding;
   String? paymentTerms;
   int? creditLimit;
-  int? id;
   @override
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -61,8 +81,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       email = params!['mail'];
       id = params['id'];
       code = params['code'];
-      print(code);
-      print('llllllllllllllllllllllllllllllllllll');
     }
 
     return Scaffold(
@@ -162,7 +180,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(
                 children: [
                   Text(
-                    'Customer Type:',
+                    'Customer Type: $paymentTerms',
                     style: TextStyle(
                         fontWeight: AppConfig.headLineWeight,
                         color: Colors.black.withOpacity(0.7)),
@@ -206,15 +224,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                   ),
                   CommonWidgets.horizontalSpace(2),
                   Text(
-                    'Credit Balance:',
+                    'Credit Balance: ${int.tryParse(_data) != null ? (int.tryParse(_data)! - creditLimit!).toString() : ''}',
                     style: TextStyle(
-                        fontWeight: AppConfig.headLineWeight,
-                        color: Colors.black.withOpacity(0.7)),
-                  ),
-                  CommonWidgets.horizontalSpace(2),
-                  Text(
-                    creditBalance ?? '',
-                    style: TextStyle(fontWeight: AppConfig.headLineWeight),
+                      fontWeight: AppConfig.headLineWeight,
+                      color: Colors.black.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ),
@@ -222,7 +236,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(
                 children: [
                   Text(
-                    'Total Outstanding:',
+                    'Total Outstanding: $_data',
                     style: TextStyle(
                         fontWeight: AppConfig.headLineWeight,
                         color: Colors.black.withOpacity(0.7)),
@@ -261,15 +275,12 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     child: _iconButtons(icon: Icons.person_add, title: 'Edit')),
                 GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        SOA.routeName, arguments: {
+                      Navigator.pushNamed(context, SOA.routeName, arguments: {
                         'customerId': id,
                         'name': name,
                         'code': code,
                         'paymentTerms': paymentTerms
-                      }
-                      );
+                      });
                     },
                     child: _iconButtons(
                         icon: Icons.settings_suggest, title: 'SOA')),
@@ -329,7 +340,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           arguments: {
                             'name': name,
                             'code': code,
-                            'email':email,
+                            'email': email,
                             'paymentTerms': paymentTerms,
                             'address': address,
                             'phone': phone,
@@ -377,5 +388,22 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> fetchData() async {
+    try {
+      var response = await http.get(Uri.parse(
+          'https://mobiz-api.yes45.in/api/get_sales_pending_outstanding?customer_id=$id'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        setState(() {
+          _data = jsonResponse['data'].toString();
+        });
+      } else {
+        print('Request failed with status: ${response.statusCode}.');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
   }
 }
