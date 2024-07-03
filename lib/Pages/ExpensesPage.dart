@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../Components/commonwidgets.dart';
 import '../Models/Expense_model.dart';
 import '../Models/appstate.dart';
+import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 import 'Expense_add.dart';
@@ -31,7 +32,7 @@ class _ExpensespageState extends State<Expensespage> {
 
   Future<List<ExpenseDetail>> fetchExpenseDetails(int storeId) async {
     final response = await http.get(Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_expense_detail?store_id=$storeId'));
+        '${RestDatasource().BASE_URL}/api/get_expense_detail?store_id=$storeId'));
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -90,7 +91,8 @@ class _ExpensespageState extends State<Expensespage> {
                 highlightColor: AppConfig.backButtonColor,
                 child: ListView.builder(
                   itemCount: 6,
-                  itemBuilder: (context, index) => CommonWidgets.loadingContainers(
+                  itemBuilder: (context, index) =>
+                      CommonWidgets.loadingContainers(
                     height: SizeConfig.blockSizeVertical * 10,
                     width: SizeConfig.blockSizeHorizontal * 90,
                   ),
@@ -110,82 +112,93 @@ class _ExpensespageState extends State<Expensespage> {
                 String detailText = '';
 
                 if (expenseDetail.status == 'Approved') {
-                  detailText = expenseDetail.approvedReason ?? 'No approval reason provided';
+                  detailText = expenseDetail.approvedReason ??
+                      'No approval reason provided';
                 } else if (expenseDetail.status == 'Rejected') {
-                  detailText = expenseDetail.rejectedReason ?? 'No rejection reason provided';
+                  detailText = expenseDetail.rejectedReason ??
+                      'No rejection reason provided';
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isExpandedList[index] = !isExpandedList[index];
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Flexible(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${expenseDetail.inDate} | ${expenseDetail.invoiceNo ?? ""}',
-                                      ),
-                                      Text(
-                                        '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} | ${expenseDetail.description}',
-                                      ),
-                                      if (expenseDetail.status != 'Pending')
-                                        Row(
-                                          children: [
-                                            Text("Reason: "),
-                                            Expanded(
-                                              child: Text(detailText),
-                                            ),
-                                          ],
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      isExpandedList[index] = !isExpandedList[index];
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Card(
+                      elevation: 3,
+                      child: Container(
+                        padding: EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: AppConfig.backgroundColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Flexible(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${expenseDetail.inDate} | ${expenseDetail.invoiceNo ?? ""}',
                                         ),
+                                        Text(
+                                          '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} | ${expenseDetail.description}',
+                                        ),
+                                        if (expenseDetail.status != 'Pending')
+                                          Row(
+                                            children: [
+                                              Text("Reason: "),
+                                              Expanded(
+                                                child: Text(detailText),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(expenseDetail.status),
+                                ],
+                              ),
+                              if (isExpandedList[index])
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10.0),
+                                  child: Column(
+                                    children: [
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: expenseDetail.documents
+                                            .map((document) {
+                                          return Image.network(
+                                            '${RestDatasource().BASE_URL}/uploads/expense/${document.documentName}',
+                                            height: 100,
+                                            width: 100,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Icon(
+                                                Icons.broken_image,
+                                                size: 100,
+                                                color: Colors.grey,
+                                              );
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                Text(expenseDetail.status),
-                              ],
-                            ),
-                            if (isExpandedList[index])
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10.0),
-                                child: Column(
-                                  children: [
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      children: expenseDetail.documents.map((document) {
-                                        return Image.network(
-                                          'https://mobiz-api.yes45.in/uploads/expense/${document.documentName}',
-                                          height: 100,
-                                          width: 100,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Icon(
-                                              Icons.broken_image,
-                                              size: 100,
-                                              color: Colors.grey,
-                                            );
-                                          },
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

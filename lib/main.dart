@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // home: FetchDataScreen(),
+        // home: ProductListView(),
         initialRoute: SplashScreen.routeName,
         routes: {
           // '/': (context) => Home(),

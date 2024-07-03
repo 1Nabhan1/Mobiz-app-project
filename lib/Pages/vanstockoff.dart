@@ -104,7 +104,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
               ),
               onPressed: () {
                 _sendProducts();
-                saveData();
+                // saveData();
               },
               // (_loaded == false)
               //     ? () {
@@ -163,7 +163,11 @@ class _VanStocksoffState extends State<VanStocksoff> {
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: Row(
                             children: [
-                              Text('Return',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                              Text(
+                                'Return',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
                             ],
                           ),
                         ),
@@ -310,7 +314,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
                     child: GestureDetector(
                       onTap: () async {
                         StockHistory.clearStockHistory(data['itemId'])
-                                      .then((value) => _getStockData());
+                            .then((value) => _getStockData());
                       },
                       child: const Icon(
                         Icons.close,
@@ -474,7 +478,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
 
   Future<Offload> fetchData() async {
     final response = await http.get(Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_sales_return_in_van?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
+        '${RestDatasource().BASE_URL}/api/get_sales_return_in_van?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
 
     if (response.statusCode == 200) {
       return Offload.fromJson(jsonDecode(response.body));
@@ -524,34 +528,34 @@ class _VanStocksoffState extends State<VanStocksoff> {
     }
   }
 
-  Future<void> saveData() async {
-    final url =
-        Uri.parse('https://mobiz-api.yes45.in/api/vanoffloadrequest.store');
-    final headers = {"Content-Type": "application/json"};
-
-    final body = jsonEncode({
-      "van_id": AppState().vanId,
-      "store_id": AppState().storeId,
-      "user_id": AppState().userId,
-      "item_id": itemIds,
-      "quantity": quantities,
-      "unit": units,
-      "goods_return_id": goodsReturnIds,
-      "return_type": returnTypes
-    });
-
-    final response = await http.post(url, headers: headers, body: body);
-
-    if (response.statusCode == 200) {
-      if (mounted) {
-        CommonWidgets.showDialogueBox(
-            context: context, title: "Alert", msg: "Added Successfully");
-        StockHistory.clearAllStockHistory().then(
-            (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
-      }
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to save data')));
-    }
-  }
+  // Future<void> saveData() async {
+  //   final url =
+  //       Uri.parse('https://mobiz-api.yes45.in/api/vanoffloadrequest.store');
+  //   final headers = {"Content-Type": "application/json"};
+  //
+  //   final body = jsonEncode({
+  //     "van_id": AppState().vanId,
+  //     "store_id": AppState().storeId,
+  //     "user_id": AppState().userId,
+  //     "item_id": itemIds,
+  //     "quantity": quantities,
+  //     "unit": units,
+  //     "goods_return_id": goodsReturnIds,
+  //     "return_type": returnTypes
+  //   });
+  //
+  //   final response = await http.post(url, headers: headers, body: body);
+  //
+  //   if (response.statusCode == 200) {
+  //     if (mounted) {
+  //       CommonWidgets.showDialogueBox(
+  //           context: context, title: "Alert", msg: "Added Successfully");
+  //       StockHistory.clearAllStockHistory().then(
+  //           (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
+  //     }
+  //   } else {
+  //     ScaffoldMessenger.of(context)
+  //         .showSnackBar(SnackBar(content: Text('Failed to save data')));
+  //   }
+  // }
 }

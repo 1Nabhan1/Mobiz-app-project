@@ -75,7 +75,22 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     if (!_connected) {
       await _connect();
     }
-    _getInvoiceData(products.data![0].id!, false);
+    // _getInvoiceData(products.data![0].id!, false);
+    _print();
+  }
+
+  void _print() async {
+    if (_connected) {
+      printer.printNewLine();
+      printer.printCustom(
+          "${products.data![0].storeId}\n${products.data![0].billMode}", 3, 1);
+      printer.printNewLine();
+      printer.paperCut();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Printer not connected')),
+      );
+    }
   }
 
   @override

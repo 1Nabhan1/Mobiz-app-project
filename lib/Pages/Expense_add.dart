@@ -16,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/ExpenseDrop_model.dart';
+import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 import 'customerscreen.dart';
@@ -417,7 +418,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
   }
 
   void postData() async {
-    var url = Uri.parse('https://mobiz-api.yes45.in/api/expense.store');
+    var url = Uri.parse('${RestDatasource().BASE_URL}/api/expense.store');
     var request = http.MultipartRequest('POST', url);
 
     request.fields['van_id'] = AppState().vanId.toString();

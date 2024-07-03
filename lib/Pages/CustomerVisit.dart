@@ -7,6 +7,7 @@ import 'package:mobizapp/Pages/customerdetailscreen.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/visit_reason_model.dart';
+import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 import 'customerscreen.dart';
@@ -113,7 +114,17 @@ class _CustomerVisitState extends State<CustomerVisit> {
                 ),
               );
             } else if (snapshot.hasError) {
-              return Text('${snapshot.error}');
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error occured'),
+                  ElevatedButton(
+                      onPressed: () {
+                        fetchVisitReasons();
+                      },
+                      child: Text('Retry'))
+                ],
+              );
             } else if (snapshot.hasData) {
               return SingleChildScrollView(
                 child: Column(
@@ -284,7 +295,7 @@ class _CustomerVisitState extends State<CustomerVisit> {
                           minimumSize: WidgetStateProperty.all(Size(70, 30)),
                         ),
                         onPressed: () {
-                          // print(selectedVisitReason?.reason);
+                          // print(isSelected ? 'visit' : 'non-visit');
                           postData();
                         },
                         child: SizedBox(
@@ -311,11 +322,11 @@ class _CustomerVisitState extends State<CustomerVisit> {
   }
 
   void postData() async {
-    var url = Uri.parse('https://mobiz-api.yes45.in/api/customervisit.store');
+    var url = Uri.parse('${RestDatasource().BASE_URL}/api/customervisit.store');
     var response = await http.post(url, body: {
       'van_id': AppState().vanId.toString(),
       'store_id': AppState().storeId.toString(),
-      'visit_type': selectedVisitReason?.reason.toString(),
+      'vistit_type': isSelected ? 'visit' : 'non-visit',
       'reason_id': selectedVisitReason?.id.toString(),
       // selectedVisitReason?.id.toString(),
       'description': remark.text,
@@ -337,9 +348,9 @@ class _CustomerVisitState extends State<CustomerVisit> {
   }
 
   static String visitReasonUrl =
-      'https://mobiz-api.yes45.in/api/get_visit_reason?store_id=${AppState().storeId}';
+      '${RestDatasource().BASE_URL}/api/get_visit_reason?store_id=${AppState().storeId}';
   static String nonVisitReasonUrl =
-      'https://mobiz-api.yes45.in/api/get_non_visit_reason?store_id=${AppState().storeId}';
+      '${RestDatasource().BASE_URL}/api/get_non_visit_reason?store_id=${AppState().storeId}';
 
   Future<VisitReasonResponse> fetchVisitReasons() async {
     final String url = isSelected ? visitReasonUrl : nonVisitReasonUrl;

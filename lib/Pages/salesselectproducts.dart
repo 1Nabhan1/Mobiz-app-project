@@ -41,6 +41,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   void initState() {
     super.initState();
     _getProducts();
+    // _getQuantity();
   }
 
   @override
@@ -300,7 +301,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
     RestDatasource api = RestDatasource();
     dynamic resJson = await api.getDetails(
         '/api/get_product?store_id=${AppState().storeId}', AppState().token); //
-
+    // _getQuantity();
     if (resJson['data'] != null) {
       products = ProductDataModel.fromJson(resJson);
       for (int i = 0; i < products.data!.length; i++) {

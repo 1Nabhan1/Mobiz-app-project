@@ -133,16 +133,12 @@ class _SalesScreenState extends State<SalesScreen> {
             CommonWidgets.horizontalSpace(1),
             GestureDetector(
               onTap: () {
-                // setState(() {
-                //   _search = !_search;
                 Navigator.pushReplacementNamed(
                     context, SalesSelectProductsScreen.routeName,
                     arguments: {'customerId': id, 'name': name}).then((value) {
                   _initDone = false;
                   _getTypes();
                 });
-
-                //});
               },
               child: Icon(
                 (!_search) ? Icons.search : Icons.close,
@@ -589,7 +585,7 @@ class _SalesScreenState extends State<SalesScreen> {
                             color: AppConfig.colorPrimary,
                             fontWeight: FontWeight.w500,
                             fontSize: AppConfig.textCaption3Size),
-                        onChanged:  (String? newValue) async {
+                        onChanged: (String? newValue) async {
                           if (newValue != null) {
                             setState(() {
                               selectedTypeData[index] = newValue;

@@ -100,69 +100,83 @@ class _VisitspageState extends State<Visitspage> {
           } else {
             List<CustomerVisit> visits = snapshot.data!;
             return ListView.builder(
+              shrinkWrap: true,
               itemCount: visits.length,
               itemBuilder: (context, index) {
                 CustomerVisit visit = visits[index];
                 Customer customer = visit.customer[0];
                 Reason reason = visit.reason[0];
                 return Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child:  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "${customer.code ?? 'No Code'} | ${customer.name} - ${customer.address}",
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                    Text("${visit.inDate}   ${formatTime(visit.inTime)}"),
-                                    Text("Reason: ${reason.reason}"),
-                                    Text("Remarks: ${visit.description}"),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.shade300,
-                                      spreadRadius: 3,
-                                    ),
-                                  ],
-                                  color: AppConfig.colorPrimary,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0,
-                                    vertical: 5.0,
-                                  ),
-                                  child: Text(
-                                    reason.visitType,
-                                    style: TextStyle(color: Colors.white),
+                  padding: const EdgeInsets.all(12.0),
+                  child:  Card(
+                    elevation: 3,
+                    child: Container(
+                      width: double.infinity,
+                      // height: MediaQuery.of(context).size.height*.15,
+                      decoration: BoxDecoration(
+                        color: AppConfig.backgroundColor,
+                        // border: Border.all(color: Colors.grey.shade100),
+                        borderRadius: BorderRadius.circular(8),
+                        // boxShadow: [
+                        //   BoxShadow(
+                        //     // color: Colors.grey.withOpacity(0.2),
+                        //     // blurRadius: 4.0,
+                        //     // spreadRadius: 1.0,
+                        //     // offset: Offset(0, 2),
+                        //   ),
+                        // ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "${customer.code ?? 'No Code'} | ${customer.name} - ${customer.address}",
+                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                      Text("${visit.inDate}   ${formatTime(visit.inTime)}"),
+                                      Text("Reason: ${reason.reason}"),
+                                      Text("Remarks: ${visit.description}"),
+                                    ],
                                   ),
                                 ),
-                              )
-                            ],
-                          )
-                        ],
+                                Container(
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.shade300,
+                                        spreadRadius: 3,
+                                      ),
+                                    ],
+                                    color: AppConfig.colorPrimary,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 15.0,
+                                      vertical: 5.0,
+                                    ),
+                                    child: Text(
+                                      reason.visitType,
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            )
+                          ],
+                        ),
                       ),
                     ),
                   ),
