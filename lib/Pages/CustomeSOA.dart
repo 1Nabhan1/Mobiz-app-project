@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import '../Components/commonwidgets.dart';
 import '../Models/Soa_model.dart';
+import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 
@@ -71,7 +72,7 @@ class _SOAState extends State<SOA> {
     final toDateString = DateFormat('yyyy-MM-dd').format(toDate);
 
     final response = await http.get(Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_soa_use_outstanding?customer_id=$id&from_date=$fromDateString&to_date=$toDateString'));
+        '${RestDatasource().BASE_URL}/api/get_soa_use_outstanding?customer_id=$id&from_date=$fromDateString&to_date=$toDateString'));
 
     if (response.statusCode == 200) {
       return SOAResponse.fromJson(jsonDecode(response.body));
@@ -86,7 +87,7 @@ class _SOAState extends State<SOA> {
     final fromDateString = DateFormat('yyyy-MM-dd').format(fromDate);
     final toDateString = DateFormat('yyyy-MM-dd').format(toDate);
     var url = Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_soa_use_alltransaction?customer_id=$id&from_date=$fromDateString&to_date=$toDateString');
+        '${RestDatasource().BASE_URL}/api/get_soa_use_alltransaction?customer_id=$id&from_date=$fromDateString&to_date=$toDateString');
 
     try {
       var response = await http.get(url);
@@ -94,7 +95,7 @@ class _SOAState extends State<SOA> {
         var jsonData = jsonDecode(response.body);
         var transactionList = jsonData['data'] as List<dynamic>;
         List<Transaction> tempTransactions =
-        transactionList.map((e) => Transaction.fromJson(e)).toList();
+            transactionList.map((e) => Transaction.fromJson(e)).toList();
 
         setState(() {
           transactions = tempTransactions;
@@ -111,7 +112,7 @@ class _SOAState extends State<SOA> {
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params!['name'];
       code = params!['code'];
@@ -154,7 +155,7 @@ class _SOAState extends State<SOA> {
                       child: Text(
                         "$code | $name | $payment",
                         style:
-                        const TextStyle(color: Colors.grey, fontSize: 15),
+                            const TextStyle(color: Colors.grey, fontSize: 15),
                       ),
                     ),
                     Padding(
@@ -273,7 +274,7 @@ class _SOAState extends State<SOA> {
                                 _selectedDatefrom == null
                                     ? 'Select Date'
                                     : DateFormat('dd/MM/yyyy')
-                                    .format(_selectedDatefrom!),
+                                        .format(_selectedDatefrom!),
                               ),
                             ),
                           ),
@@ -300,7 +301,7 @@ class _SOAState extends State<SOA> {
                                 _selectedDateto == null
                                     ? 'Select Date'
                                     : DateFormat('dd/MM/yyyy')
-                                    .format(_selectedDateto!),
+                                        .format(_selectedDateto!),
                               ),
                             ),
                           ),
@@ -313,240 +314,16 @@ class _SOAState extends State<SOA> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    if (isOutstandingSelected) Container(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            color: Colors.grey,
-                            child: Table(
-                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                              columnWidths: const {
-                                0: FlexColumnWidth(1.3),
-                                1: FlexColumnWidth(),
-                                2: FlexColumnWidth(),
-                                3: FlexColumnWidth(),
-                                4: FlexColumnWidth(),
-                              },
-                              children: [
-                                const TableRow(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: Text(
-                                        "Date",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: Text(
-                                        "Reference",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: Text(
-                                        "Amount",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: Text(
-                                        "Payment",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(6.0),
-                                      child: Text(
-                                        "Balance",
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          ListView.builder(
-                            physics: NeverScrollableScrollPhysics(),
-                            scrollDirection: Axis.vertical,
-                            shrinkWrap: true,
-                            itemCount: data.length + 2, // increase by 2 to account for opening and closing balance rows
-                            itemBuilder: (context, index) {
-                              if (index == 0) {
-                                // Display opening balance
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          Text(
-                                            "Opening Balance    ",
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          Text(
-                                            opening.toStringAsFixed(2),
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 40,
-                                          )
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else if (index == data.length + 1) {
-                                // Display closing balance
-                                double balance = opening;
-                                for (int i = 0; i < data.length; i++) {
-                                  double amount = data[i][2] != null ? double.parse(data[i][2].toString()) : 0.0;
-                                  double payment = data[i][3] != null ? double.parse(data[i][3].toString()) : 0.0;
-                                  balance += amount;
-                                  balance -= payment;
-                                }
-                                // return Padding(
-                                //   padding: const EdgeInsets.all(8.0),
-                                //   child: Row(
-                                //     mainAxisAlignment: MainAxisAlignment.end,
-                                //     children: [
-                                //       Row(
-                                //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                //         children: [
-                                //           Text(
-                                //             "Closing Balance    ",
-                                //             style: TextStyle(
-                                //               fontSize: 15,
-                                //             ),
-                                //           ),
-                                //           Text(
-                                //             balance.toStringAsFixed(2),
-                                //             style: TextStyle(
-                                //               fontSize: 15,
-                                //             ),
-                                //           ),
-                                //           SizedBox(
-                                //             width: 40,
-                                //           )
-                                //         ],
-                                //       ),
-                                //     ],
-                                //   ),
-                                // );
-                              } else {
-                                final row = data[index - 1];
-                                double balance = opening;
-                                for (int i = 0; i < index - 1; i++) {
-                                  double amount = data[i][2] != null ? double.parse(data[i][2].toString()) : 0.0;
-                                  double payment = data[i][3] != null ? double.parse(data[i][3].toString()) : 0.0;
-                                  balance += amount;
-                                  balance -= payment;
-                                }
-                                // Get current row's amount and payment
-                                double amount = row[2] != null ? double.parse(row[2].toString()) : 0.0;
-                                double payment = row[3] != null ? double.parse(row[3].toString()) : 0.0;
-                                // Adjust the balance
-                                balance += amount;
-                                balance -= payment;
-
-                                return Container(
-                                  width: double.infinity,
-                                  height: 35,
-                                  color: index % 2 == 0 ? Colors.grey.shade200 : Colors.white,
-                                  child: Table(
-                                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                    columnWidths: const {
-                                      0: FlexColumnWidth(1.3),
-                                      1: FlexColumnWidth(),
-                                      2: FlexColumnWidth(),
-                                      3: FlexColumnWidth(),
-                                      4: FlexColumnWidth(),
-                                    },
-                                    children: [
-                                      TableRow(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.all(6.0),
-                                            child: Text(
-                                              row[0].toString(),
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(6.0),
-                                            child: Text(
-                                              row[1].toString(),
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(6.0),
-                                            child: Text(
-                                              row[2].toString(),
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(6.0),
-                                            child: Text(
-                                              row[3].toString(),
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(6.0),
-                                            child: Text(
-                                              balance.toStringAsFixed(2),
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                          Divider(
-                            color: Colors.black38,
-                            thickness: 2,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(14.0),
-                            child: Row(mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Balance Due:$closing",style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    else Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          // height: ,
-                          color: Colors.grey,
-                          child: Column(
-                            children: [
-                              Table(
+                    if (isOutstandingSelected)
+                      Container(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              color: Colors.grey,
+                              child: Table(
                                 defaultVerticalAlignment:
-                                TableCellVerticalAlignment.middle,
+                                    TableCellVerticalAlignment.middle,
                                 columnWidths: const {
                                   0: FlexColumnWidth(1.3),
                                   1: FlexColumnWidth(),
@@ -562,9 +339,8 @@ class _SOAState extends State<SOA> {
                                         child: Text(
                                           "Date",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                       Padding(
@@ -572,9 +348,8 @@ class _SOAState extends State<SOA> {
                                         child: Text(
                                           "Reference",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                       Padding(
@@ -582,9 +357,8 @@ class _SOAState extends State<SOA> {
                                         child: Text(
                                           "Amount",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                       Padding(
@@ -592,9 +366,8 @@ class _SOAState extends State<SOA> {
                                         child: Text(
                                           "Payment",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                       Padding(
@@ -602,155 +375,421 @@ class _SOAState extends State<SOA> {
                                         child: Text(
                                           "Balance",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
-                              ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: transactions.length +
-                                    1, // +1 for opening balance
-                                itemBuilder: (context, index) {
-                                  if (index == 0) {
-                                    // Display opening balance
-                                    return Container(
-                                      color: Colors.white,
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "Opening Balance : $opening",
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  } else {
-                                    final transaction =
-                                    transactions[index - 1];
-                                    double balance = opening;
-                                    if (transaction.collection.isNotEmpty) {
-                                      double amount = double.parse(
-                                          transaction.collection[0].amount);
-                                      double payment = transaction.receipt;
-
-                                      // Adjust balance based on transaction type
-                                      if (index == 1) {
-                                        balance +=
-                                            amount; // Add amount to opening balance
-                                        balance -=
-                                            payment; // Subtract payment from balance
-                                      } else {
-                                        // If it's not the first transaction, subtract from previous balance
-                                        balance -=
-                                            payment; // Subtract payment from previous balance
-                                      }
-                                    }
-
-                                    return Container(
-                                      width: double.infinity,
-                                      // height: 35,
-                                      color: index % 2 == 0
-                                          ? Colors.grey.shade200
-                                          : Colors.white,
-                                      child: Table(
-                                        defaultVerticalAlignment:
-                                        TableCellVerticalAlignment.middle,
-                                        columnWidths: const {
-                                          0: FlexColumnWidth(1.3),
-                                          1: FlexColumnWidth(),
-                                          2: FlexColumnWidth(),
-                                          3: FlexColumnWidth(),
-                                          4: FlexColumnWidth(),
-                                        },
-                                        children: [
-                                          TableRow(
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Text(
-                                                  DateFormat('yyyy-MM-dd')
-                                                      .format(
-                                                    DateTime.parse(
-                                                        transaction.inDate),
-                                                  ),
-                                                  style:
-                                                  TextStyle(fontSize: 13),
-                                                ),
+                            ),
+                            ListView.builder(
+                              physics: NeverScrollableScrollPhysics(),
+                              scrollDirection: Axis.vertical,
+                              shrinkWrap: true,
+                              itemCount: data.length +
+                                  2, // increase by 2 to account for opening and closing balance rows
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  // Display opening balance
+                                  return Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Text(
+                                              "Opening Balance    ",
+                                              style: TextStyle(
+                                                fontSize: 15,
                                               ),
-                                              Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Text(
-                                                  transaction.invoiceNo,
-                                                  style:
-                                                  TextStyle(fontSize: 13),
-                                                ),
+                                            ),
+                                            Text(
+                                              opening.toStringAsFixed(2),
+                                              style: TextStyle(
+                                                fontSize: 15,
                                               ),
-                                              Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Text(
-                                                  transaction.collection
-                                                      .isNotEmpty
-                                                      ? transaction
-                                                      .collection[0]
-                                                      .amount
-                                                      : '',
-                                                  style:
-                                                  TextStyle(fontSize: 13),
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Text(
-                                                  transaction.receipt
-                                                      .toString(),
-                                                  style:
-                                                  TextStyle(fontSize: 13),
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: EdgeInsets.all(6.0),
-                                                child: Text(
-                                                  balance.toStringAsFixed(
-                                                      2), // Display balance
-                                                  style:
-                                                  TextStyle(fontSize: 13),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                            ),
+                                            SizedBox(
+                                              width: 40,
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                } else if (index == data.length + 1) {
+                                  // Display closing balance
+                                  double balance = opening;
+                                  for (int i = 0; i < data.length; i++) {
+                                    double amount = data[i][2] != null
+                                        ? double.parse(data[i][2].toString())
+                                        : 0.0;
+                                    double payment = data[i][3] != null
+                                        ? double.parse(data[i][3].toString())
+                                        : 0.0;
+                                    balance += amount;
+                                    balance -= payment;
                                   }
-                                },
+                                  // return Padding(
+                                  //   padding: const EdgeInsets.all(8.0),
+                                  //   child: Row(
+                                  //     mainAxisAlignment: MainAxisAlignment.end,
+                                  //     children: [
+                                  //       Row(
+                                  //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  //         children: [
+                                  //           Text(
+                                  //             "Closing Balance    ",
+                                  //             style: TextStyle(
+                                  //               fontSize: 15,
+                                  //             ),
+                                  //           ),
+                                  //           Text(
+                                  //             balance.toStringAsFixed(2),
+                                  //             style: TextStyle(
+                                  //               fontSize: 15,
+                                  //             ),
+                                  //           ),
+                                  //           SizedBox(
+                                  //             width: 40,
+                                  //           )
+                                  //         ],
+                                  //       ),
+                                  //     ],
+                                  //   ),
+                                  // );
+                                } else {
+                                  final row = data[index - 1];
+                                  double balance = opening;
+                                  for (int i = 0; i < index - 1; i++) {
+                                    double amount = data[i][2] != null
+                                        ? double.parse(data[i][2].toString())
+                                        : 0.0;
+                                    double payment = data[i][3] != null
+                                        ? double.parse(data[i][3].toString())
+                                        : 0.0;
+                                    balance += amount;
+                                    balance -= payment;
+                                  }
+                                  // Get current row's amount and payment
+                                  double amount = row[2] != null
+                                      ? double.parse(row[2].toString())
+                                      : 0.0;
+                                  double payment = row[3] != null
+                                      ? double.parse(row[3].toString())
+                                      : 0.0;
+                                  // Adjust the balance
+                                  balance += amount;
+                                  balance -= payment;
+
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 35,
+                                    color: index % 2 == 0
+                                        ? Colors.grey.shade200
+                                        : Colors.white,
+                                    child: Table(
+                                      defaultVerticalAlignment:
+                                          TableCellVerticalAlignment.middle,
+                                      columnWidths: const {
+                                        0: FlexColumnWidth(1.3),
+                                        1: FlexColumnWidth(),
+                                        2: FlexColumnWidth(),
+                                        3: FlexColumnWidth(),
+                                        4: FlexColumnWidth(),
+                                      },
+                                      children: [
+                                        TableRow(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.all(6.0),
+                                              child: Text(
+                                                row[0].toString(),
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(6.0),
+                                              child: Text(
+                                                row[1].toString(),
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(6.0),
+                                              child: Text(
+                                                row[2].toString(),
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(6.0),
+                                              child: Text(
+                                                row[3].toString(),
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(6.0),
+                                              child: Text(
+                                                balance.toStringAsFixed(2),
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            Divider(
+                              color: Colors.black38,
+                              thickness: 2,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(14.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "Balance Due:$closing",
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
                               ),
-                              Divider(
-                                color: Colors.black38,
-                                height: 2,
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            // height: ,
+                            color: Colors.grey,
+                            child: Column(
+                              children: [
+                                Table(
+                                  defaultVerticalAlignment:
+                                      TableCellVerticalAlignment.middle,
+                                  columnWidths: const {
+                                    0: FlexColumnWidth(1.3),
+                                    1: FlexColumnWidth(),
+                                    2: FlexColumnWidth(),
+                                    3: FlexColumnWidth(),
+                                    4: FlexColumnWidth(),
+                                  },
+                                  children: [
+                                    const TableRow(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(6.0),
+                                          child: Text(
+                                            "Date",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(6.0),
+                                          child: Text(
+                                            "Reference",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(6.0),
+                                          child: Text(
+                                            "Amount",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(6.0),
+                                          child: Text(
+                                            "Payment",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(6.0),
+                                          child: Text(
+                                            "Balance",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                ListView.builder(
+                                  physics: NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  itemCount: transactions.length +
+                                      1, // +1 for opening balance
+                                  itemBuilder: (context, index) {
+                                    if (index == 0) {
+                                      // Display opening balance
+                                      return Container(
+                                        color: Colors.white,
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              "Opening Balance : $opening",
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    } else {
+                                      final transaction =
+                                          transactions[index - 1];
+                                      double balance = opening;
+                                      if (transaction.collection.isNotEmpty) {
+                                        double amount = double.parse(
+                                            transaction.collection[0].amount);
+                                        double payment = transaction.receipt;
+
+                                        // Adjust balance based on transaction type
+                                        if (index == 1) {
+                                          balance +=
+                                              amount; // Add amount to opening balance
+                                          balance -=
+                                              payment; // Subtract payment from balance
+                                        } else {
+                                          // If it's not the first transaction, subtract from previous balance
+                                          balance -=
+                                              payment; // Subtract payment from previous balance
+                                        }
+                                      }
+
+                                      return Container(
+                                        width: double.infinity,
+                                        // height: 35,
+                                        color: index % 2 == 0
+                                            ? Colors.grey.shade200
+                                            : Colors.white,
+                                        child: Table(
+                                          defaultVerticalAlignment:
+                                              TableCellVerticalAlignment.middle,
+                                          columnWidths: const {
+                                            0: FlexColumnWidth(1.3),
+                                            1: FlexColumnWidth(),
+                                            2: FlexColumnWidth(),
+                                            3: FlexColumnWidth(),
+                                            4: FlexColumnWidth(),
+                                          },
+                                          children: [
+                                            TableRow(
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.all(6.0),
+                                                  child: Text(
+                                                    DateFormat('yyyy-MM-dd')
+                                                        .format(
+                                                      DateTime.parse(
+                                                          transaction.inDate),
+                                                    ),
+                                                    style:
+                                                        TextStyle(fontSize: 13),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(6.0),
+                                                  child: Text(
+                                                    transaction.invoiceNo,
+                                                    style:
+                                                        TextStyle(fontSize: 13),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(6.0),
+                                                  child: Text(
+                                                    transaction.collection
+                                                            .isNotEmpty
+                                                        ? transaction
+                                                            .collection[0]
+                                                            .amount
+                                                        : '',
+                                                    style:
+                                                        TextStyle(fontSize: 13),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(6.0),
+                                                  child: Text(
+                                                    transaction.receipt
+                                                        .toString(),
+                                                    style:
+                                                        TextStyle(fontSize: 13),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(6.0),
+                                                  child: Text(
+                                                    balance.toStringAsFixed(
+                                                        2), // Display balance
+                                                    style:
+                                                        TextStyle(fontSize: 13),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                Divider(
+                                  color: Colors.black38,
+                                  height: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * .006,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Balance Due : $closing",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(
+                                width: 10,
                               ),
                             ],
                           ),
-                        ),
-                        SizedBox(height: MediaQuery.of(context).size.height*.006,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              "Balance Due : $closing",style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(width: 10,),
-                          ],
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
               );

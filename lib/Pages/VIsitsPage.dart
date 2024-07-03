@@ -6,6 +6,7 @@ import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/visit_model.dart';
 import 'package:intl/intl.dart';
+import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 
@@ -26,7 +27,7 @@ class _VisitspageState extends State<Visitspage> {
   }
 
   Future<List<CustomerVisit>> fetchCustomerVisits(int storeId) async {
-    final response = await http.get(Uri.parse('https://mobiz-api.yes45.in/api/get_customer_visit?store_id=$storeId'));
+    final response = await http.get(Uri.parse('${RestDatasource().BASE_URL}/api/get_customer_visit?store_id=$storeId'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
