@@ -163,6 +163,9 @@ class _ExpensespageState extends State<Expensespage> {
                                               ),
                                             ],
                                           ),
+                                        Text(
+                                          'Amt: ${expenseDetail.amount}',
+                                        ),
                                       ],
                                     ),
                                   ),

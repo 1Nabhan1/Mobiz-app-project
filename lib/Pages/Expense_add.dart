@@ -456,7 +456,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
   }
 
   static String url =
-      'https://mobiz-api.yes45.in/api/get_expense_master?store_id=${AppState().storeId}';
+      '${RestDatasource().BASE_URL}/api/get_expense_master?store_id=${AppState().storeId}';
 
   static Future<VisitReasonResponse> fetchExpenses() async {
     final response = await http.get(Uri.parse(url));

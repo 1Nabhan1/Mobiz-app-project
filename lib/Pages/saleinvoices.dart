@@ -51,6 +51,34 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   void initState() {
     super.initState();
     _getProducts();
+    _initPrinter();
+  }
+
+  void _initPrinter() async {
+    bool? isConnected = await printer.isConnected;
+    if (isConnected!) {
+      setState(() {
+        _connected = true;
+      });
+    }
+    _getBluetoothDevices();
+  }
+
+  void _getBluetoothDevices() async {
+    List<BluetoothDevice> devices = await printer.getBondedDevices();
+    BluetoothDevice? defaultDevice;
+
+    for (BluetoothDevice device in devices) {
+      if (device.address == _defaultDeviceAddress) {
+        defaultDevice = device;
+        break;
+      }
+    }
+    List<BluetoothDevice> _devices = [];
+    setState(() {
+      _devices = devices;
+      _selectedDevice = defaultDevice;
+    });
   }
 
   BluetoothDevice? _selectedDevice;
@@ -75,15 +103,14 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     if (!_connected) {
       await _connect();
     }
-    // _getInvoiceData(products.data![0].id!, false);
     _print();
   }
 
   void _print() async {
     if (_connected) {
+      Invoice.InvoiceData invoice = Invoice.InvoiceData();
       printer.printNewLine();
-      printer.printCustom(
-          "${products.data![0].storeId}\n${products.data![0].billMode}", 3, 1);
+      printer.printCustom(_createPdf(invoice, false).toString(), 3, 1);
       printer.printNewLine();
       printer.paperCut();
     } else {

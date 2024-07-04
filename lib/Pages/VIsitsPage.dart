@@ -27,11 +27,13 @@ class _VisitspageState extends State<Visitspage> {
   }
 
   Future<List<CustomerVisit>> fetchCustomerVisits(int storeId) async {
-    final response = await http.get(Uri.parse('${RestDatasource().BASE_URL}/api/get_customer_visit?store_id=$storeId'));
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_customer_visit?store_id=$storeId'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      List<CustomerVisit> visits = List<CustomerVisit>.from(data['data'].map((item) => CustomerVisit.fromJson(item)));
+      List<CustomerVisit> visits = List<CustomerVisit>.from(
+          data['data'].map((item) => CustomerVisit.fromJson(item)));
       return visits;
     } else {
       throw Exception('Failed to load customer visits');
@@ -66,34 +68,36 @@ class _VisitspageState extends State<Visitspage> {
         future: futureCustomerVisits,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: Shimmer.fromColors(
-              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-              highlightColor: AppConfig.backButtonColor,
-              child: Center(
-                child: Column(
-                  children: [
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                  ],
+            return Center(
+              child: Shimmer.fromColors(
+                baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                highlightColor: AppConfig.backButtonColor,
+                child: Center(
+                  child: Column(
+                    children: [
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                    ],
+                  ),
                 ),
               ),
-            ),);
+            );
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -109,7 +113,7 @@ class _VisitspageState extends State<Visitspage> {
                 Reason reason = visit.reason[0];
                 return Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child:  Card(
+                  child: Card(
                     elevation: 3,
                     child: Container(
                       width: double.infinity,
@@ -136,17 +140,21 @@ class _VisitspageState extends State<Visitspage> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           Text(
                                             "${customer.code ?? 'No Code'} | ${customer.name} - ${customer.address}",
-                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold),
                                           ),
                                         ],
                                       ),
-                                      Text("${visit.inDate}   ${formatTime(visit.inTime)}"),
+                                      Text(
+                                          "${visit.inDate}   ${formatTime(visit.inTime)}"),
                                       Text("Reason: ${reason.reason}"),
                                       Text("Remarks: ${visit.description}"),
                                     ],
