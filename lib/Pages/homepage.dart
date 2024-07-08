@@ -12,6 +12,7 @@ import 'package:mobizapp/Pages/productspage.dart';
 import 'package:mobizapp/Pages/receiptscreen.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
+import 'package:mobizapp/Pages/van_transfer.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
@@ -290,7 +291,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _iconButtons(
                               icon: Icons.handshake, title: 'Visit')),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.of(context)
+                              .pushNamed(VanTransfer.routeName);
+                        },
                         child: _iconButtons(
                             image: 'Assets/Images/van stock.png',
                             title: 'Transfer'),

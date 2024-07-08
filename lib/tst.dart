@@ -1,250 +1,137 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 
-import 'Components/commonwidgets.dart';
-import 'confg/appconfig.dart';
-import 'confg/sizeconfig.dart';
-
-class ProductListPage extends StatefulWidget {
+class DayClosePage extends StatefulWidget {
   @override
-  _ProductListPageState createState() => _ProductListPageState();
+  _DayClosePageState createState() => _DayClosePageState();
 }
 
-class _ProductListPageState extends State<ProductListPage> {
-  late Future<List<Product>> _products;
-  List<int> selectedItems = [];
-  bool _search = false;
-  final TextEditingController _searchData = TextEditingController();
+class _DayClosePageState extends State<DayClosePage> {
+  DateTime selectedDate = DateTime.now();
+  DayCloseData? dayCloseData;
 
+  Future<void> fetchDayCloseData(DateTime selectedDate) async {
+    final url = 'https://mobiz-api.yes45.in/api/get_dayclose_outstanding_by_date?van_id=9&store_id=10&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse['success'] == true) {
+        setState(() {
+          dayCloseData = DayCloseData.fromJson(jsonResponse['data']);
+        });
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _products = fetchProducts();
+    fetchDayCloseData(selectedDate);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
-        title: const Text(
-          'Select Products',
-          style: TextStyle(color: AppConfig.backgroundColor),
-        ),
-        backgroundColor: AppConfig.colorPrimary,
-        actions: [
-          (_search)
-              ?
-          Container(
-            height: SizeConfig.blockSizeVertical * 5,
-            width: SizeConfig.blockSizeHorizontal * 76,
-            decoration: BoxDecoration(
-              color: AppConfig.colorPrimary,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(10),
-              ),
-              border: Border.all(color: AppConfig.colorPrimary),
-            ),
-            child: TextField(
-              controller: _searchData,
-              decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.all(5),
-                  hintText: "Search...",
-                  hintStyle: TextStyle(color: AppConfig.backgroundColor),
-                  border: InputBorder.none),
-            ),
-          )
-          : Container(),
-          CommonWidgets.horizontalSpace(1),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _search = !_search;
-              });
-            },
-            child: Icon(
-              (!_search) ?
-              Icons.search
-              : Icons.close,
-              size: 30,
-              color: AppConfig.backgroundColor,
-            ),
-          ),
-          CommonWidgets.horizontalSpace(3),
-        ],
+        title: Text('Day Close Data'),
       ),
-      body: FutureBuilder<List<Product>>(
-        future: _products,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Shimmer.fromColors(
-              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-              highlightColor: AppConfig.backButtonColor,
-              child: Center(
-                child: Column(
-                  children: [
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                  ],
-                ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Select Date:'),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                // DatePicker.showDatePicker(
+                //   context,
+                //   showTitleActions: true,
+                //   onConfirm: (date) {
+                //     setState(() {
+                //       selectedDate = date;
+                //       fetchDayCloseData(selectedDate);
+                //     });
+                //   },
+                //   currentTime: selectedDate,
+                // );
+              },
+              child: Text('Select Date'),
+            ),
+            SizedBox(height: 20),
+            if (dayCloseData != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Cash Deposited: ${dayCloseData!.cashDeposited}'),
+                  Text('Cash Hand Over: ${dayCloseData!.cashHandOver}'),
+                  Text('No. of Cheque Deposited: ${dayCloseData!.numberOfChequeDeposited}'),
+                  Text('Cheque Deposited Amount: ${dayCloseData!.chequeDepositedAmount}'),
+                  Text('No. of Cheque Hand Over: ${dayCloseData!.numberOfChequeHandOver}'),
+                  Text('Cheque Hand Over Amount: ${dayCloseData!.chequeHandOverAmount}'),
+                  Text('Balance Cash in Hand: ${dayCloseData!.balanceCashInHand}'),
+                  Text('No. of Cheque in Hand: ${dayCloseData!.numberOfChequeInHand}'),
+                  Text('Cheque Amount in Hand: ${dayCloseData!.chequeAmountInHand}'),
+                ],
               ),
-            );
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else {
-            final products = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: ListView.builder(
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return FutureBuilder<int>(
-                    future: fetchProductQuantity(product.id, 9, product.baseUnitId),
-                    builder: (context, quantitySnapshot) {
-                      if (quantitySnapshot.connectionState == ConnectionState.waiting) {
-                        return Card(
-                          color: Colors.white,
-                          child: ListTile(
-                            title: Text(product.name),
-                            subtitle: Text('Loading quantity...'),
-                          ),
-                        );
-                      } else if (quantitySnapshot.hasError) {
-                        return Card(
-                          color: Colors.white,
-                          child: ListTile(
-                            title: Text(product.name),
-                            subtitle: Text('Error loading quantity'),
-                          ),
-                        );
-                      } else if (!quantitySnapshot.hasData) {
-                        // If no quantity data available, return an empty container or null
-                        return Container();
-                      } else {
-                        final quantity = quantitySnapshot.data!;
-                        return GestureDetector(
-                          onTap: () {
-                            // Handle onTap action if needed
-                          },
-                          child: Card(
-                            color: Colors.white,
-                            child: ListTile(
-                              leading: SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: FadeInImage(
-                                    image: NetworkImage(
-                                        'https://mobiz-shop.yes45.in/uploads/product/${product.image}'),
-                                    placeholder: const AssetImage(
-                                        'Assets/Images/no_image.jpg'),
-                                    imageErrorBuilder:
-                                        (context, error, stackTrace) {
-                                      return Image.asset(
-                                          'Assets/Images/no_image.jpg',
-                                          fit: BoxFit.fitWidth);
-                                    },
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
-                              ),
-                              title: Text(product.name),
-                              subtitle:
-                              Text('Box: ${product.baseUnitqty} | PCS: $quantity'),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-
-            );
-          }
-        },
+          ],
+        ),
       ),
     );
-  }
-
-  Future<int> fetchProductQuantity(int productId, int vanId, int unit) async {
-    final response = await http.get(Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_van_stock_detail?product_id=$productId&van_id=$vanId&unit=$unit'));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data'];
-      return data;
-    } else {
-      throw Exception('Failed to load product quantity');
-    }
-  }
-
-  Future<List<Product>> fetchProducts() async {
-    final response = await http.get(
-        Uri.parse('https://mobiz-api.yes45.in/api/get_product?store_id=10'));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data'];
-      return (data as List).map((json) => Product.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load products');
-    }
   }
 }
 
-class Product {
+class DayCloseData {
   final int id;
-  final String code;
-  final String name;
-  final String image;
-  final double price;
-  final int baseUnitId;
-  final int baseUnitqty;
-  final int storeId;
+  final String cashDeposited;
+  final String cashHandOver;
+  final int numberOfChequeDeposited;
+  final String chequeDepositedAmount;
+  final int numberOfChequeHandOver;
+  final String chequeHandOverAmount;
+  final String balanceCashInHand;
+  final int numberOfChequeInHand;
+  final String chequeAmountInHand;
 
-  Product({
+  DayCloseData({
     required this.id,
-    required this.code,
-    required this.name,
-    required this.image,
-    required this.price,
-    required this.baseUnitId,
-    required this.baseUnitqty,
-    required this.storeId,
+    required this.cashDeposited,
+    required this.cashHandOver,
+    required this.numberOfChequeDeposited,
+    required this.chequeDepositedAmount,
+    required this.numberOfChequeHandOver,
+    required this.chequeHandOverAmount,
+    required this.balanceCashInHand,
+    required this.numberOfChequeInHand,
+    required this.chequeAmountInHand,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
+  factory DayCloseData.fromJson(Map<String, dynamic> json) {
+    return DayCloseData(
       id: json['id'],
-      code: json['code'],
-      baseUnitqty: json['base_unit_qty'],
-      name: json['name'],
-      image: json['pro_image'],
-      price: (json['price'] as num).toDouble(),
-      baseUnitId: json['base_unit_id'],
-      storeId: json['store_id'],
+      cashDeposited: json['cash_deposited'],
+      cashHandOver: json['cash_hand_over'],
+      numberOfChequeDeposited: json['no_of_cheque_deposited'],
+      chequeDepositedAmount: json['cheque_deposited_amount'],
+      numberOfChequeHandOver: json['no_of_cheque_hand_over'],
+      chequeHandOverAmount: json['cheque_hand_over_amount'],
+      balanceCashInHand: json['balance_cash_in_hand'],
+      numberOfChequeInHand: json['no_of_cheque_in_hand'],
+      chequeAmountInHand: json['cheque_amount_in_hand'],
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: DayClosePage(),
+  ));
 }

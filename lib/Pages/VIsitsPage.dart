@@ -163,10 +163,10 @@ class _VisitspageState extends State<Visitspage> {
                                 Container(
                                   decoration: BoxDecoration(
                                     boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.shade300,
-                                        spreadRadius: 3,
-                                      ),
+                                      // BoxShadow(
+                                      //   color: Colors.grey.shade300,
+                                      //   spreadRadius: 3,
+                                      // ),
                                     ],
                                     color: AppConfig.colorPrimary,
                                     borderRadius: BorderRadius.circular(4),
@@ -177,7 +177,9 @@ class _VisitspageState extends State<Visitspage> {
                                       vertical: 5.0,
                                     ),
                                     child: Text(
-                                      reason.visitType,
+                                      reason.visitType == 'visit'
+                                          ? 'Visit'
+                                          : 'Non Visit',
                                       style: TextStyle(color: Colors.white),
                                     ),
                                   ),

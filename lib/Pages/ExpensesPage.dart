@@ -150,22 +150,34 @@ class _ExpensespageState extends State<Expensespage> {
                                       children: [
                                         Text(
                                           '${expenseDetail.inDate} | ${expenseDetail.invoiceNo ?? ""}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
                                         ),
                                         Text(
-                                          '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} | ${expenseDetail.description}',
+                                            'Amount : ${expenseDetail.amount}'),
+                                        // if (expenseDetail.description == '')
+                                        Text(
+                                          '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} ${expenseDetail.description == '' ? '' : '| ${expenseDetail.description}'}',
                                         ),
                                         if (expenseDetail.status != 'Pending')
                                           Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text("Reason: "),
+                                              Text("Remarks: "),
                                               Expanded(
-                                                child: Text(detailText),
+                                                child: SingleChildScrollView(
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: Text(
+                                                    detailText,
+                                                    // maxLines: 1,
+                                                    overflow: TextOverflow.clip,
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),
-                                        Text(
-                                          'Amt: ${expenseDetail.amount}',
-                                        ),
                                       ],
                                     ),
                                   ),

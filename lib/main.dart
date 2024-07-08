@@ -32,6 +32,7 @@ import 'Pages/salesselectproductorder.dart';
 import 'Pages/salesselectproductreturn.dart';
 import 'Pages/salesselectproducts.dart';
 import 'Pages/selectProductScreenOFF.dart';
+import 'Pages/van_transfer.dart';
 import 'Pages/vanstockoff.dart';
 
 void main() {
@@ -56,7 +57,8 @@ class MyApp extends StatelessWidget {
           LoginScreen.routeName: (context) => const LoginScreen(),
           HomeScreen.routeName: (context) => const HomeScreen(),
           ProductsScreen.routeName: (context) => const ProductsScreen(),
-          ErrorHandlingScreen.routeName: (context) => const ErrorHandlingScreen(),
+          ErrorHandlingScreen.routeName: (context) =>
+              const ErrorHandlingScreen(),
           VanStockRequestsScreen.routeName: (context) =>
               const VanStockRequestsScreen(),
           VanStocks.routeName: (context) => const VanStocks(),
@@ -82,6 +84,7 @@ class MyApp extends StatelessWidget {
               const CustomerRegistration(),
           ReceiptScreen.receiptScreen: (context) => const ReceiptScreen(),
           HomeorderScreen.routeName: (context) => HomeorderScreen(),
+          VanTransfer.routeName: (context) => VanTransfer(),
           HomereturnScreen.routeName: (context) => HomereturnScreen(),
           Customerorderdetail.routeName: (context) => Customerorderdetail(),
           Customerreturndetail.routeName: (context) => Customerreturndetail(),

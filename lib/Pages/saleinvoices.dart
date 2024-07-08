@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
@@ -32,6 +33,9 @@ class SaleInvoiceScrreen extends StatefulWidget {
 
 class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   final TextEditingController _searchData = TextEditingController();
+  List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _selectedDevice;
+  bool _connected = false;
   VanSaleProducts products = VanSaleProducts();
   BlueThermalPrinter printer = BlueThermalPrinter.instance;
   bool _initDone = false;
@@ -74,15 +78,11 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
         break;
       }
     }
-    List<BluetoothDevice> _devices = [];
     setState(() {
       _devices = devices;
       _selectedDevice = defaultDevice;
     });
   }
-
-  BluetoothDevice? _selectedDevice;
-  bool _connected = false;
 
   Future<void> _connect() async {
     if (_selectedDevice != null) {
@@ -93,32 +93,19 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     }
   }
 
-  void _connectAndPrint() async {
-    if (_selectedDevice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Default device not found')),
-      );
-      return;
-    }
-    if (!_connected) {
-      await _connect();
-    }
-    _print();
-  }
-
-  void _print() async {
-    if (_connected) {
-      Invoice.InvoiceData invoice = Invoice.InvoiceData();
-      printer.printNewLine();
-      printer.printCustom(_createPdf(invoice, false).toString(), 3, 1);
-      printer.printNewLine();
-      printer.paperCut();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Printer not connected')),
-      );
-    }
-  }
+  // void _print() async {
+  //   if (_connected) {
+  //     Invoice.InvoiceData invoice = Invoice.InvoiceData();
+  //     printer.printNewLine();
+  //     printer.printCustom(_createPdf(invoice, false).toString(), 3, 1);
+  //     printer.printNewLine();
+  //     printer.paperCut();
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Printer not connected')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +285,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                       ),
                       const Spacer(),
                       InkWell(
-                        onTap: _connectAndPrint,
+                        onTap: () => _getInvoiceData(data.id!, false),
                         child: const Icon(
                           Icons.print,
                           color: Colors.blue,
@@ -431,6 +418,41 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
         _noData = true;
         _initDone = true;
       });
+    }
+  }
+
+  void _print(Invoice.InvoiceData invoice, bool isPrint) async {
+    if (_connected) {
+      // Example data
+      String imageUrl =
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
+      String imageData = await _getImageData(imageUrl);
+      printer.printImage(imageData);
+      String name = "${invoice.data!.store![0].name}";
+      String phoneNumber = "${invoice.data!.store![0].contactNumber}";
+      String address = "${invoice.data!.store![0].address}";
+
+      // Print image (replace with your image printing logic)
+      // printer.printImage(imagePath);
+
+      // Print name
+      printer.printNewLine();
+      printer.printCustom("Name: $name", 3, 1);
+
+      // Print phone number
+      printer.printNewLine();
+      printer.printCustom("Phone Number: $phoneNumber", 3, 1);
+
+      // Print gender
+      printer.printNewLine();
+      printer.printCustom("address: $address", 3, 1);
+
+      // Cut the paper
+      printer.paperCut();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Printer not connected')),
+      );
     }
   }
 
@@ -738,6 +760,12 @@ Salesman: ${invoice.data!.user![0].name}
         bytes, '${invoice.data!.invoiceNo!}.pdf', isPrint);
   }
 
+  Future<String> _getImageData(String imageUrl) async {
+    http.Response response = await http.get(Uri.parse(imageUrl));
+    Uint8List bytes = response.bodyBytes;
+    return base64Encode(bytes);
+  }
+
   Future<Uint8List> _readImageData(String? image) async {
     try {
       final response = await http
@@ -767,5 +795,27 @@ Salesman: ${invoice.data!.user![0].name}
       invoice = Invoice.InvoiceData.fromJson(response);
       _createPdf(invoice, isPrint);
     }
+    if (_selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default device not found')),
+      );
+      return;
+    }
+    if (!_connected) {
+      await _connect();
+    }
+    _print(invoice, isPrint);
   }
+  // void _connectAndPrint() async {
+  //   if (_selectedDevice == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Default device not found')),
+  //     );
+  //     return;
+  //   }
+  //   if (!_connected) {
+  //     await _connect();
+  //   }
+  //   _print();
+  // }
 }

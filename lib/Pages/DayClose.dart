@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:horizontal_week_calendar/horizontal_week_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
@@ -39,15 +41,46 @@ class _DaycloseState extends State<Dayclose> {
   String cheqhand = '';
   String balcash = '';
   String amtinhand = '';
+  // var selectedDate = DateTime.now();
+  var selectedDate = DateTime.now();
 
+  Random random = Random();
   @override
   void initState() {
     super.initState();
+    fetchData();
     futureData = fetchDayCloseOutstanding();
+  }
+
+  bool isdayclose = false;
+  Map<String, dynamic>? Dayclosedata;
+
+  void fetchData() async {
+    try {
+      final data = await fetchDayclose();
+      setState(() {
+        Dayclosedata = data['data'];
+      });
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchDayclose() async {
+    var apiUrl =
+        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}';
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load data');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    Dayclosedata == null ? isdayclose = true : isdayclose = false;
     return Scaffold(
         appBar: AppBar(
           leading: GestureDetector(
@@ -64,6 +97,22 @@ class _DaycloseState extends State<Dayclose> {
             'Day close',
             style: TextStyle(color: AppConfig.backgroundColor),
           ),
+          actions: [
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedDate = DateTime.now();
+                });
+              },
+              child: Icon(
+                Icons.refresh,
+                color: AppConfig.backgroundColor,
+              ),
+            ),
+            SizedBox(
+              width: 10,
+            )
+          ],
         ),
         body: FutureBuilder<Map<String, dynamic>>(
           future: futureData,
@@ -162,7 +211,8 @@ class _DaycloseState extends State<Dayclose> {
                       ),
                       actions: <Widget>[
                         TextButton(
-                          style: TextButton.styleFrom(fixedSize: Size(100, 10),
+                          style: TextButton.styleFrom(
+                            fixedSize: Size(100, 10),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(3)),
                             backgroundColor: AppConfig.colorPrimary,
@@ -234,8 +284,78 @@ class _DaycloseState extends State<Dayclose> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      GestureDetector(
+                        onLongPress: () async {
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2023, 12, 31),
+                            lastDate: DateTime(2028, 1, 31),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary: AppConfig
+                                        .colorPrimary, // header background color
+                                    onPrimary:
+                                        Colors.white, // header text color
+                                    onSurface: AppConfig
+                                        .colorPrimary, // body text color
+                                  ),
+                                  textButtonTheme: TextButtonThemeData(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors
+                                          .deepPurple, // button text color
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (pickedDate != null) {
+                            setState(() {
+                              selectedDate = pickedDate;
+                            });
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: HorizontalWeekCalendar(
+                            key: ValueKey(
+                                selectedDate), // Use ValueKey to trigger rebuild
+                            minDate: DateTime(2023, 12, 31),
+                            maxDate: DateTime(2028, 1, 31),
+                            initialDate: selectedDate,
+                            onDateChange: (date) {
+                              setState(() {
+                                selectedDate = date;
+                                futureData;
+                                fetchData();
+                              });
+                            },
+                            showTopNavbar: true,
+                            monthFormat: "MMMM yyyy",
+                            showNavigationButtons: true,
+                            weekStartFrom: WeekStartFrom.Monday,
+                            borderRadius: BorderRadius.circular(7),
+                            activeBackgroundColor: AppConfig.colorPrimary,
+                            activeTextColor: Colors.white,
+                            inactiveBackgroundColor:
+                                Colors.deepPurple.withOpacity(.3),
+                            inactiveTextColor: Colors.white,
+                            disabledTextColor: Colors.grey,
+                            disabledBackgroundColor:
+                                Colors.grey.withOpacity(.3),
+                            activeNavigatorColor: Colors.deepPurple,
+                            inactiveNavigatorColor: Colors.grey,
+                            monthColor: AppConfig.colorPrimary,
+                          ),
+                        ),
+                      ),
                       Padding(
-                        padding: const EdgeInsets.all(15.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 15.0, vertical: 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -352,12 +472,19 @@ class _DaycloseState extends State<Dayclose> {
                           Column(
                             children: [
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(
-                                      CashDepositedcontrol, 'cashdeposit');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(CashDepositedcontrol,
+                                            'cashdeposit');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(cashdeposit)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : Dayclosedata!['cash_deposited']
+                                          : cashdeposit)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -369,12 +496,19 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(
-                                      CashHandedOvercontrol, 'cashHanded');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(CashHandedOvercontrol,
+                                            'cashHanded');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(cashHanded)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : Dayclosedata!['cash_hand_over']
+                                          : cashHanded)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -386,12 +520,19 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(
-                                      NoofChequeDepositedcontrol, 'Ncheqdepo');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(NoofChequeDepositedcontrol,
+                                            'Ncheqdepo');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(Ncheqdepo)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : "${Dayclosedata!['no_of_cheque_deposited']}"
+                                          : Ncheqdepo)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -403,12 +544,21 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(ChequeDepositedAmountcontrol,
-                                      'cheqdepoamt');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(
+                                            ChequeDepositedAmountcontrol,
+                                            'cheqdepoamt');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(cheqdepo)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : Dayclosedata![
+                                                  'cheque_deposited_amount']
+                                          : cheqdepo)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -420,12 +570,19 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(NoofChequeHandedOvercontrol,
-                                      'cheqhandedovr');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(NoofChequeHandedOvercontrol,
+                                            'cheqhandedovr');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(cheqhandedovr)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : "${Dayclosedata!['no_of_cheque_hand_over']}"
+                                          : cheqhandedovr)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -437,12 +594,21 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _showDialog(ChequeHandedOverAmountcontrol,
-                                      'cheqhandedamt');
-                                },
+                                onTap: isdayclose == false
+                                    ? null
+                                    : () {
+                                        _showDialog(
+                                            ChequeHandedOverAmountcontrol,
+                                            'cheqhandedamt');
+                                      },
                                 child: Container(
-                                  child: Center(child: Text(cheqhandedamt)),
+                                  child: Center(
+                                      child: Text(isdayclose == false
+                                          ? Dayclosedata == null
+                                              ? ''
+                                              : Dayclosedata![
+                                                  'cheque_hand_over_amount']
+                                          : cheqhandedamt)),
                                   width: 70,
                                   height: 20,
                                   decoration: BoxDecoration(
@@ -454,7 +620,12 @@ class _DaycloseState extends State<Dayclose> {
                                 height: 10,
                               ),
                               Container(
-                                child: Center(child: Text(balcash)),
+                                child: Center(
+                                    child: Text(isdayclose == false
+                                        ? Dayclosedata == null
+                                            ? ''
+                                            : "${Dayclosedata!['balance_cash_in_hand']}"
+                                        : balcash)),
                                 width: 70,
                                 height: 20,
                                 decoration: BoxDecoration(
@@ -467,7 +638,11 @@ class _DaycloseState extends State<Dayclose> {
                               ),
                               Container(
                                 child: Center(
-                                  child: Text(cheqhand),
+                                  child: Text(isdayclose == false
+                                      ? Dayclosedata == null
+                                          ? ''
+                                          : "${Dayclosedata!['no_of_cheque_in_hand']}"
+                                      : cheqhand),
                                 ),
                                 width: 70,
                                 height: 20,
@@ -481,7 +656,11 @@ class _DaycloseState extends State<Dayclose> {
                               ),
                               Container(
                                 child: Center(
-                                  child: Text(amtinhand),
+                                  child: Text(isdayclose == false
+                                      ? Dayclosedata == null
+                                          ? ''
+                                          : "${Dayclosedata!['cheque_amount_in_hand']}"
+                                      : amtinhand),
                                 ),
                                 width: 70,
                                 height: 20,
@@ -515,15 +694,20 @@ class _DaycloseState extends State<Dayclose> {
                           ElevatedButton(
                             style: ButtonStyle(
                               backgroundColor: WidgetStateProperty.all(
-                                  AppConfig.colorPrimary),
+                                  isdayclose == false
+                                      ? Colors.grey
+                                      : AppConfig.colorPrimary),
                               shape: WidgetStateProperty.all(
                                   BeveledRectangleBorder()),
                               minimumSize:
                                   WidgetStateProperty.all(Size(70, 30)),
                             ),
-                            onPressed: () {
-                              postData();
-                            },
+                            onPressed: isdayclose == false
+                                ? null
+                                : () {
+                                    postData();
+                                    // print(DateFormat('dd/MM/yyyy').format(selectedDate));
+                                  },
                             child: SizedBox(
                               width: 120,
                               child: Center(
@@ -549,7 +733,7 @@ class _DaycloseState extends State<Dayclose> {
 
   Future<Map<String, dynamic>> fetchDayCloseOutstanding() async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding?van_id=${AppState().vanId}&store_id=${AppState().storeId}'));
+        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}'));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
