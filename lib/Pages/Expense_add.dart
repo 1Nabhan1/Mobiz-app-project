@@ -35,7 +35,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
   List<File> _attachedImages = [];
   Expense? selectedexpense;
   String? _amount;
-  DateTime? _selectedDate;
+  DateTime? _selectedDate = DateTime.now();
   TextEditingController remark = TextEditingController();
   @override
   void initState() {
@@ -121,7 +121,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                             ),
                             IconButton(
                               onPressed: () {
-                                _selectDate(context);
+                                // _selectDate(context);
                               },
                               icon: Icon(CupertinoIcons.calendar_today),
                             ),
@@ -162,9 +162,9 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                         Container(
                           height: MediaQuery.of(context).size.height * .03,
                           width: MediaQuery.of(context).size.width * .72,
-                          decoration: BoxDecoration(
+                          decoration: BoxDecoration(color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(3),
-                            border: Border.all(color: Colors.grey),
+                            // border: Border.all(color: Colors.grey),
                           ),
                           child: Padding(
                             padding:
@@ -172,7 +172,10 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<Expense>(
                                 isExpanded: true,
-                                hint: Text('Select from list'),
+                                hint: Text(
+                                  'Select from list',
+                                  style: TextStyle(fontWeight: FontWeight.w300),
+                                ),
                                 value: selectedexpense,
                                 onChanged: (Expense? newValue) {
                                   if (newValue != null) {
@@ -351,7 +354,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     final compressedImage =
         img.copyResize(image, width: 800); // Resize the image
     final compressedBytes =
-        img.encodeJpg(compressedImage, quality: 85); // Compress the image
+        img.encodeJpg(compressedImage, quality: 75); // Compress the image
 
     final tempDir = await getTemporaryDirectory();
     final compressedFile =
@@ -361,7 +364,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     // Check file size and further compress if necessary
     if (compressedFile.lengthSync() > 200 * 1024) {
       final furtherCompressedBytes =
-          img.encodeJpg(compressedImage, quality: 75);
+          img.encodeJpg(compressedImage, quality: 65);
       await compressedFile.writeAsBytes(furtherCompressedBytes);
     }
 

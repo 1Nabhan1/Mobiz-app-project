@@ -283,7 +283,7 @@ class _DaycloseState extends State<Dayclose> {
                 body: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: [SizedBox(height: 10,),
                       GestureDetector(
                         onLongPress: () async {
                           DateTime? pickedDate = await showDatePicker(
@@ -319,8 +319,9 @@ class _DaycloseState extends State<Dayclose> {
                             });
                           }
                         },
+
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0,),
                           child: HorizontalWeekCalendar(
                             key: ValueKey(
                                 selectedDate), // Use ValueKey to trigger rebuild
@@ -334,7 +335,7 @@ class _DaycloseState extends State<Dayclose> {
                                 fetchData();
                               });
                             },
-                            showTopNavbar: true,
+                            showTopNavbar: false,
                             monthFormat: "MMMM yyyy",
                             showNavigationButtons: true,
                             weekStartFrom: WeekStartFrom.Monday,

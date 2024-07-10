@@ -20,8 +20,11 @@ import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/tt.dart';
 import 'Pages/CustomeSOA.dart';
 import 'Pages/Expense_add.dart';
+import 'Pages/Schedule_page.dart';
+import 'Pages/Total_sales.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
 import 'Pages/error_handling_screen.dart';
@@ -50,11 +53,12 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // home: ProductListView(),
+        // home: MapDirectionScreen(),
         initialRoute: SplashScreen.routeName,
         routes: {
           // '/': (context) => Home(),
           LoginScreen.routeName: (context) => const LoginScreen(),
+          TotalSales.routeName: (context) => const TotalSales(),
           HomeScreen.routeName: (context) => const HomeScreen(),
           ProductsScreen.routeName: (context) => const ProductsScreen(),
           ErrorHandlingScreen.routeName: (context) =>
@@ -69,6 +73,7 @@ class MyApp extends StatelessWidget {
               const CustomersDataScreen(),
           SalesScreen.routeName: (context) => const SalesScreen(),
           VanStockScreen.routeName: (context) => const VanStockScreen(),
+          SchedulePage.routeName: (context) => const SchedulePage(),
           CustomerDetailsScreen.routeName: (context) =>
               const CustomerDetailsScreen(),
           SalesSelectProductsScreen.routeName: (context) =>

@@ -262,46 +262,46 @@ class _AttendanceState extends State<Attendance> {
                     SizedBox(
                       height: 10,
                     ),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Hello, ${AppState().name ?? ''}",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 20),
-                            ),
-                            SizedBox(
-                              height: 80,
-                            ),
-                            Row(
-                              children: [
-                                Text("Van",
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
-                                Text(
-                                  " ${snapshot.data!.data.van}",
-                                  style: TextStyle(
-                                      color: Colors.grey,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Container(
-                          width: 180,
-                          height: 180,
-                          child: Image.network(
-                              'https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg'),
-                        ),
-                      ],
+                    Center(
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        child: Image.network(
+                            'https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg'),
+                      ),
                     ),
-
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hello, ${AppState().name ?? ''}",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text("Van",
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            " ${snapshot.data!.data.van}",
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(left: 30.0, top: 12),
                       child: Row(
@@ -633,16 +633,20 @@ class _AttendanceState extends State<Attendance> {
                                   decoration: BoxDecoration(
                                     color: _isCheckedIn
                                         ? Colors.grey.shade400
-                                        : AppConfig.backgroundColor,
+                                        : Colors.grey.shade200,
                                     borderRadius: BorderRadius.circular(2),
-                                    border: Border.all(),
+                                    border: _isCheckedIn ? null : Border.all(),
                                   ),
                                   child: Center(
-                                      child: Text(_isCheckedIn
-                                          ? checkInDetails == null
-                                              ? ' '
-                                              : '${checkInDetails!['check_in_odometer']}'
-                                          : _containerText)),
+                                      child: Text(
+                                    _isCheckedIn
+                                        ? checkInDetails == null
+                                            ? ' '
+                                            : '${checkInDetails!['check_in_odometer']}'
+                                        : _containerText,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )),
                                 ),
                               ],
                             ),
@@ -676,11 +680,14 @@ class _AttendanceState extends State<Attendance> {
                                     color: _isCheckedIn
                                         ? AppConfig.backgroundColor
                                         : Colors.grey.shade400,
-                                    border: Border.all(
-                                      style: BorderStyle.solid,
-                                    ),
+                                    border: _isCheckedIn ? Border.all() : null,
                                   ),
-                                  child: Center(child: Text(_containerText1)),
+                                  child: Center(
+                                      child: Text(
+                                    _containerText1,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )),
                                 ),
                               ],
                             ),
@@ -766,7 +773,7 @@ class _AttendanceState extends State<Attendance> {
 
 Future<ApiResponse> fetchCheckInOutData(int vanId, int storeId) async {
   final response = await http.get(Uri.parse(
-      'https://mobiz-api.yes45.in/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId'));
+      '${RestDatasource().BASE_URL}/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId'));
 
   if (response.statusCode == 200) {
     return ApiResponse.fromJson(json.decode(response.body));
@@ -776,7 +783,7 @@ Future<ApiResponse> fetchCheckInOutData(int vanId, int storeId) async {
 }
 
 String apiUrl =
-    'https://mobiz-api.yes45.in/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}';
+    '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}';
 
 Future<Map<String, dynamic>> fetchCheckInDetails() async {
   final response = await http.get(Uri.parse(apiUrl));

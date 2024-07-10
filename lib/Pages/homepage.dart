@@ -20,9 +20,11 @@ import 'package:mobizapp/Utilities/sharepref.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/printtst.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
+import 'Schedule_page.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
 import 'offLoadRequest.dart';
@@ -38,12 +40,20 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _restrict = false;
+  String _appVersion = 'Loading...';
+
   @override
   void initState() {
     _getUserDetails();
     super.initState();
+    _fetchAppVersion();
   }
-
+  Future<void> _fetchAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = packageInfo.version;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 const Divider(),
-                const Text('v0.0.11'),
+                  Text('v$_appVersion'),
               ],
             ),
           ),
@@ -237,8 +247,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: _iconButtons(
                                 icon: Icons.inventory, title: 'Return')),
-                        _iconButtons(
-                            icon: Icons.calendar_today, title: 'Schedule'),
+                        GestureDetector(onTap: () {
+                          Navigator.of(context)
+                              .pushNamed(SchedulePage.routeName);
+                        },
+                          child: _iconButtons(
+                              icon: Icons.calendar_today, title: 'Schedule'),
+                        ),
                       ]),
                   CommonWidgets.verticalSpace(2),
                   Row(

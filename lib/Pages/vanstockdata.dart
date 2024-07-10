@@ -25,19 +25,21 @@ class _VanStockScreenState extends State<VanStockScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchData = TextEditingController();
   VanStockData products = VanStockData();
+  VanStockData products1 = VanStockData();
   late TabController _tabController;
+  VanStockData _filteredProducts = VanStockData();
+  VanStockData _filteredProducts1 = VanStockData();
   Qty.VanStockQuandity qunatityData = Qty.VanStockQuandity();
   bool _initDone = false;
   bool _noData = false;
   List<int> selectedItems = [];
   List<Map<String, dynamic>> items = [];
   bool _search = false;
-  late Future<Offload> _Offload;
   @override
   void initState() {
     super.initState();
-    _Offload = fetchData();
     _getProducts();
+    _getreturn();
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -45,6 +47,24 @@ class _VanStockScreenState extends State<VanStockScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _filterProducts(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProducts = products;
+        _filteredProducts1 = products1;
+      } else {
+        _filteredProducts.result!.data = products.result!.data!.where((item) {
+          return item.name!.toLowerCase().contains(query.toLowerCase()) ||
+              item.code!.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+        _filteredProducts1.result!.data = products1.result!.data!.where((item) {
+          return item.name!.toLowerCase().contains(query.toLowerCase()) ||
+              item.code!.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
   }
 
   @override
@@ -71,6 +91,7 @@ class _VanStockScreenState extends State<VanStockScreen>
                     ),
                     child: TextField(
                       controller: _searchData,
+                      onChanged: _filterProducts,
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.all(5),
                           hintText: "Search...",
@@ -127,215 +148,203 @@ class _VanStockScreenState extends State<VanStockScreen>
         //     ),
         //   ),
         // ),
-        body: FutureBuilder<Offload>(
-          future: _Offload,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                child: Column(
-                  children: [
-                    TabBar(
-                      labelStyle: TextStyle(
-                          color: AppConfig.backgroundColor,
-                          fontWeight: FontWeight.bold),
-                      padding: EdgeInsets.all(8),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      splashBorderRadius: BorderRadius.circular(10),
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: AppConfig.colorPrimary,
-                      ),
-                      controller: _tabController,
-                      tabs: [
-                        Tab(text: 'Stock'),
-                        Tab(text: 'Return'),
-                      ],
-                    ),
-                    Expanded(
-                        child: TabBarView(
-                      controller: _tabController,
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          child: Column(
+            children: [
+              TabBar(
+                labelStyle: TextStyle(
+                    color: AppConfig.backgroundColor,
+                    fontWeight: FontWeight.bold),
+                padding: EdgeInsets.all(8),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                splashBorderRadius: BorderRadius.circular(10),
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: AppConfig.colorPrimary,
+                ),
+                controller: _tabController,
+                tabs: [
+                  Tab(text: 'Stock'),
+                  Tab(text: 'Return'),
+                ],
+              ),
+              Expanded(
+                  child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Container(
+                    child: Column(
                       children: [
-                        Container(
-                          child: Column(
-                            children: [
-                              CommonWidgets.verticalSpace(1),
-                              (_initDone && !_noData)
-                                  ? SizedBox(
-                                      height: SizeConfig.blockSizeVertical * 78,
-                                      child: ListView.separated(
-                                        separatorBuilder:
-                                            (BuildContext context, int index) =>
-                                                CommonWidgets.verticalSpace(1),
-                                        itemCount:
-                                            products.result!.data!.length,
-                                        shrinkWrap: true,
-                                        itemBuilder: (context, index) =>
-                                            _productsCard(
-                                                products.result!.data![index],
-                                                index),
-                                      ),
-                                    )
-                                  : (_noData && _initDone)
-                                      ? Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                              CommonWidgets.verticalSpace(3),
-                                              const Center(
-                                                child: Text('No Data'),
-                                              ),
-                                            ])
-                                      : Shimmer.fromColors(
-                                          baseColor: AppConfig
-                                              .buttonDeactiveColor
-                                              .withOpacity(0.1),
-                                          highlightColor:
-                                              AppConfig.backButtonColor,
-                                          child: Center(
-                                            child: Column(
-                                              children: [
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                                CommonWidgets.loadingContainers(
-                                                    height: SizeConfig
-                                                            .blockSizeVertical *
-                                                        10,
-                                                    width: SizeConfig
-                                                            .blockSizeHorizontal *
-                                                        90),
-                                              ],
-                                            ),
-                                          ),
+                        CommonWidgets.verticalSpace(1),
+                        (_initDone && !_noData)
+                            ? SizedBox(
+                                height: SizeConfig.blockSizeVertical * 78,
+                                child: ListView.separated(
+                                  separatorBuilder:
+                                      (BuildContext context, int index) =>
+                                          CommonWidgets.verticalSpace(1),
+                                  itemCount: products.result!.data!.length,
+                                  shrinkWrap: true,
+                                  itemBuilder: (context, index) =>
+                                      _productsCard(
+                                          products.result!.data![index], index),
+                                ),
+                              )
+                            : (_noData && _initDone)
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                        CommonWidgets.verticalSpace(3),
+                                        const Center(
+                                          child: Text('No Data'),
                                         ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          child: Column(
-                            children: [
-                              ListView.builder(
-                                scrollDirection: Axis.vertical,
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemCount: snapshot.data!.data.length,
-                                itemBuilder: (context, index) {
-                                  final salesReturnItem =
-                                      snapshot.data!.data[index];
-                                  return Container(
-                                    width: SizeConfig.blockSizeHorizontal * 90,
-                                    child: Card(
-                                      color: AppConfig.backgroundColor,
-                                      elevation: 3,
-                                      // margin: EdgeInsets.symmetric(
-                                      //     vertical: 8.0, horizontal: 7.0),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(15.0),
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(height: 8.0),
-                                            Text(
-                                              '${salesReturnItem.product.first.code} | ${salesReturnItem.product.first.name}',
-                                              style: TextStyle(
-                                                // color: Colors.black,
-                                                fontSize: 16.0,
-                                              ),
-                                            ),
-                                            SizedBox(height: 8.0),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name} | Qty: ${salesReturnItem.quantity} ',
-                                                ),
-                                              ],
-                                            )
-                                          ],
-                                        ),
+                                      ])
+                                : Shimmer.fromColors(
+                                    baseColor: AppConfig.buttonDeactiveColor
+                                        .withOpacity(0.1),
+                                    highlightColor: AppConfig.backButtonColor,
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                        ],
                                       ),
                                     ),
-                                  );
-                                },
-                              )
-                            ],
-                          ),
-                        )
+                                  ),
                       ],
-                    ))
-                  ],
-                ),
-              );
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error occured'));
-            }
-            return Shimmer.fromColors(
-              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-              highlightColor: AppConfig.backButtonColor,
-              child: Center(
-                child: Column(
-                  children: [
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                  ],
-                ),
-              ),
-            );
-          },
+                    ),
+                  ),
+                  Container(
+                    child: Column(
+                      children: [
+                        CommonWidgets.verticalSpace(1),
+                        (_initDone && !_noData)
+                            ? SizedBox(
+                                height: SizeConfig.blockSizeVertical * 78,
+                                child: ListView.separated(
+                                  separatorBuilder:
+                                      (BuildContext context, int index) =>
+                                          CommonWidgets.verticalSpace(1),
+                                  itemCount: products1.result!.data!.length,
+                                  shrinkWrap: true,
+                                  itemBuilder: (context, index) =>
+                                      _productsCard(
+                                          products1.result!.data![index],
+                                          index),
+                                ),
+                              )
+                            : (_noData && _initDone)
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                        CommonWidgets.verticalSpace(3),
+                                        const Center(
+                                          child: Text('No Data'),
+                                        ),
+                                      ])
+                                : Shimmer.fromColors(
+                                    baseColor: AppConfig.buttonDeactiveColor
+                                        .withOpacity(0.1),
+                                    highlightColor: AppConfig.backButtonColor,
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                          CommonWidgets.loadingContainers(
+                                              height:
+                                                  SizeConfig.blockSizeVertical *
+                                                      10,
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  90),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                      ],
+                    ),
+                  ),
+                ],
+              ))
+            ],
+          ),
         ));
   }
 
@@ -429,6 +438,24 @@ class _VanStockScreenState extends State<VanStockScreen>
     }
   }
 
+  Future<void> _getreturn() async {
+    RestDatasource api = RestDatasource();
+    dynamic resJson = await api.getDetails(
+        '/api/get_van_stock_return?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        AppState().token); //${AppState().storeId}
+
+    if (resJson['result']['data'] != null &&
+        resJson['result']['data'].isNotEmpty) {
+      products1 = VanStockData.fromJson(resJson);
+      _getQuantityreturn();
+    } else {
+      setState(() {
+        _initDone = true;
+        _noData = true;
+      });
+    }
+  }
+
   Future<void> _getQuantity() async {
     RestDatasource api = RestDatasource();
     for (var i in products.result!.data!) {
@@ -455,15 +482,30 @@ class _VanStockScreenState extends State<VanStockScreen>
     });
   }
 
-  Future<Offload> fetchData() async {
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_sales_return_in_van?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
-
-    if (response.statusCode == 200) {
-      return Offload.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to load sales return data');
+  Future<void> _getQuantityreturn() async {
+    RestDatasource api = RestDatasource();
+    for (var i in products1.result!.data!) {
+      for (var j in i.productDetail!) {
+        dynamic resJson = await api.getDetails(
+            '/api/get_van_stock_return_detail?product_id=${j.productId}&van_id=${AppState().vanId}&unit=${j.unit}',
+            AppState().token); //${AppState().storeId}
+        print('Quan $resJson');
+        if (resJson['status'] == 'success') {
+          qunatityData = Qty.VanStockQuandity.fromJson(resJson);
+          j.stock = (qunatityData.result!.data is List)
+              ? 0
+              : qunatityData.result!.data ?? 0;
+        } else {
+          if (mounted) {
+            CommonWidgets.showDialogueBox(
+                context: context, title: 'Error', msg: 'Something went wrong');
+          }
+        }
+      }
     }
+    setState(() {
+      _initDone = true;
+    });
   }
 
   void addItem(String name, String code, int id, int quantity) async {

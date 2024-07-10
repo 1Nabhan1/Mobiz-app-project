@@ -140,7 +140,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                           fontWeight: AppConfig.headLineWeight),
-                    ),Text(' | '),
+                    ),
+                    Text(' | '),
                     Text(
                       (data.customer!.isNotEmpty)
                           ? data.customer![0].name ?? ''
@@ -165,7 +166,27 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 ),
               ],
             ),
-            children: [],
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Invoice'),
+                        Text(
+                          'Amount: ${data.amount}',
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            ],
           ),
         ),
       ),

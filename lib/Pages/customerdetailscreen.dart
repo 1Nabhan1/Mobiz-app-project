@@ -14,6 +14,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/tst.dart';
 
+import 'Total_sales.dart';
 import 'customerreturndetails.dart';
 
 class CustomerDetailsScreen extends StatefulWidget {
@@ -127,14 +128,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: SizeConfig.blockSizeHorizontal * 40,
-                          child: Text(
-                            (name ?? "").toUpperCase(),
-                            style: TextStyle(
-                                fontSize: AppConfig.headLineSize,
-                                fontWeight: AppConfig.headLineWeight),
-                          ),
+                        Text(
+                          (name ?? "").toUpperCase(),
+                          style: TextStyle(
+                              fontSize: AppConfig.headLineSize,
+                              fontWeight: AppConfig.headLineWeight),
                         ),
                         CommonWidgets.verticalSpace(1),
                         Row(
@@ -348,7 +346,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                           });
                     },
                     child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
-                _iconButtons(icon: Icons.pie_chart, title: 'Total Sales')
+                GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, TotalSales.routeName,
+                          arguments: {
+                            'id': id,
+                          });
+                    },
+                    child: _iconButtons(
+                        icon: Icons.pie_chart, title: 'Total Sales'))
               ]),
             ],
           ),

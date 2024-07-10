@@ -674,7 +674,43 @@ class _SalesScreenState extends State<SalesScreen> {
                     //     items: typeItems[index],
                     //   ),
                     // ),
+                    Text('| '),
+                    SizedBox(
+                      height: SizeConfig.blockSizeVertical * 2.5,
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        child: DropdownButton(
+                          icon: const SizedBox(),
+                          isDense: true,
+                          alignment: Alignment.center,
+                          underline: Container(),
+                          value: selectedValue[index],
+                          style: TextStyle(
+                              color: AppConfig.colorPrimary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: AppConfig.textCaption3Size),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedValue[index] = newValue.toString();
+                            });
 
+                            for (var i in stocks[index]['unitData']) {
+                              if (i['name'] == newValue) {
+                                _rateData[index].text = i['price'];
+                              }
+                            }
+
+                            SaleskHistory.updateSaleItem(data['icode'],
+                                'selectedUnit', selectedValue[index]);
+
+                            total = 0;
+                            tax = 0;
+                            _calculateTotal();
+                          },
+                          items: menuItems[index],
+                        ),
+                      ),
+                    ),
                     CommonWidgets.horizontalSpace(1),
                     const Text('|'),
                     CommonWidgets.horizontalSpace(1),

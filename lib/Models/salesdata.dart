@@ -7,8 +7,7 @@ class SaleskHistory {
   static Future<void> saveSalesHistory(
       List<Map<String, dynamic>> history) async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonString =
-        jsonEncode(history); // Serialize the list of maps to JSON
+    final jsonString = jsonEncode(history);
     prefs.setString('salesHistory', jsonString);
   }
 
@@ -57,15 +56,13 @@ class SaleskHistory {
     final prefs = await SharedPreferences.getInstance();
     final history = await getSalesHistory();
 
-    // Find the item by id
-    for (int i = 0; i < history.length; i++) {
+     for (int i = 0; i < history.length; i++) {
       if (history[i]['icode'] == itemId) {
         history[i][key] = value;
         break;
       }
     }
 
-    // Save the updated history
-    await saveSalesHistory(history);
+     await saveSalesHistory(history);
   }
 }

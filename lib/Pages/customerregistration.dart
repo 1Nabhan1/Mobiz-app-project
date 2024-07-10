@@ -730,7 +730,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
       'contact_number': _contactNumberController.text,
       'whatsapp_number': _whatsappNumberController.text,
       'email': _emailController.text,
-      'location': _locationController.text,
+      'location':
+          _locationController.text == '' ? _location : _locationController.text,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,
