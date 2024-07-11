@@ -14,6 +14,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/tst.dart';
 
+import '../sales_screen.dart';
 import 'Total_sales.dart';
 import 'customerreturndetails.dart';
 
