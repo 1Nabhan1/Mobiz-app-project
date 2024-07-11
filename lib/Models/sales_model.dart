@@ -1,4 +1,3 @@
-
 class ProductDataModel {
   final Data data;
   final bool success;
@@ -81,6 +80,7 @@ class Product {
   final int storeId;
   final int status;
   final List<Unit> units;
+  String? selectedUnitName;
 
   Product({
     required this.id,
@@ -92,6 +92,7 @@ class Product {
     required this.storeId,
     required this.status,
     required this.units,
+    this.selectedUnitName,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -182,6 +183,7 @@ class Link {
     );
   }
 }
+
 class ProductType {
   final int id;
   final String name;

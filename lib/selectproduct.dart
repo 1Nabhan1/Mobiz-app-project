@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'Components/commonwidgets.dart';
 import 'Models/sales_model.dart';
+import 'Utilities/rest_ds.dart';
 import 'confg/appconfig.dart';
 import 'confg/sizeconfig.dart';
 
@@ -34,11 +36,25 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItems = prefs.getStringList('cartItems') ?? [];
-    cartItems.add(jsonEncode(product.toJson()));
-    await prefs.setStringList('cartItems', cartItems);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${product.name} added')),
-    );
+
+    // Check if the product is already in cartItems based on product ID or any unique identifier
+    bool alreadyExists = cartItems.any((item) {
+      Map<String, dynamic> itemMap = jsonDecode(item);
+      return itemMap['id'] ==
+          product.id; // Adjust 'id' to your product identifier
+    });
+
+    if (!alreadyExists) {
+      cartItems.add(jsonEncode(product.toJson()));
+      await prefs.setStringList('cartItems', cartItems);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} added')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} is already added')),
+      );
+    }
   }
 
   @override
@@ -300,7 +316,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   Future<ProductDataModel> fetchProducts(int page) async {
     final response = await http.get(Uri.parse(
-        'https://mobiz-api.yes45.in/api/get_product_with_van_stock?store_id=10&van_id=9&page=$page'));
+        '${RestDatasource().BASE_URL}/api/get_product_with_van_stock?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$page'));
 
     if (response.statusCode == 200) {
       return ProductDataModel.fromJson(json.decode(response.body));

@@ -1,93 +1,89 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
-import 'Models/sales_model.dart';
-
-class ProductTypeDropdown extends StatefulWidget {
-  @override
-  _ProductTypeDropdownState createState() => _ProductTypeDropdownState();
+void main() {
+  runApp(MyApp());
 }
 
-class _ProductTypeDropdownState extends State<ProductTypeDropdown> {
-  List<ProductType> productTypes = [];
-  ProductType? selectedProductType;
-
+class MyApp extends StatelessWidget {
   @override
-  void initState() {
-    super.initState();
-    fetchProductTypes();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: MyHomePage(),
+    );
   }
+}
 
-  Future<void> fetchProductTypes() async {
-    final response = await http
-        .get(Uri.parse('https://mobiz-api.yes45.in/api/get_product_type'));
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List<ProductType> loadedProductTypes = [];
+class _MyHomePageState extends State<MyHomePage> {
+  String _displayText = '';
 
-      for (var item in data['data']) {
-        loadedProductTypes.add(ProductType.fromJson(item));
-      }
+  void _openDialog() async {
+    final TextEditingController _controller = TextEditingController();
 
-      setState(() {
-        productTypes = loadedProductTypes;
-        if (productTypes.isNotEmpty) {
-          selectedProductType = productTypes.first;
-        }
-      });
-    } else {
-      throw Exception('Failed to load product types');
-    }
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter Text'),
+          content: TextField(
+            controller: _controller,
+            decoration: InputDecoration(hintText: 'Enter text here'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                setState(() {
+                  _displayText = _controller.text;
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
-      appBar: AppBar(title: Text('Product Type Dropdown')),
-      body: Column(
-        children: [
-          Center(
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 50,
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<ProductType>(
-                      isExpanded: true,
-                      style: TextStyle(fontSize: 10, color: Colors.black),
-                      hint: Text('Select Product Type'),
-                      value: selectedProductType,
-                      onChanged: (ProductType? newValue) {
-                        setState(() {
-                          selectedProductType = newValue;
-                        });
-                      },
-                      items: productTypes.map((ProductType productType) {
-                        return DropdownMenuItem<ProductType>(
-                          value: productType,
-                          child: Text(productType.name),
-                        );
-                      }).toList(),
-                      icon: SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-                Text('Product Type Dropdown')
-              ],
+        appBar: AppBar(
+          title: Text('Dialog with TextField Example'),
+        ),
+        body: Center(
+          child: GestureDetector(
+            onTap: () {
+              _openDialog();
+            },
+            child: ListView.builder(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              physics: BouncingScrollPhysics(),
+              itemCount: 10,
+              itemBuilder: (context, index) {
+                return Container(
+                    width: 200,
+                    height: 200,
+                    color: Colors.blue,
+                    alignment: Alignment.center,
+                    child: Text(
+                      _displayText.isEmpty ? 'Click me' : _displayText,
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ));
+              },
             ),
           ),
-          ElevatedButton(
-              onPressed: () {
-                print(selectedProductType?.id.toString());
-              },
-              child: Text('jj'))
-        ],
-      ),
-    );
+        ));
   }
 }
-
-void main() => runApp(MaterialApp(home: ProductTypeDropdown()));

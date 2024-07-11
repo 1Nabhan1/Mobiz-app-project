@@ -1,14 +1,21 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mobizapp/Models/appstate.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:convert';
 import 'package:pdf/widgets.dart' as pw;
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
-
 import '../Components/commonwidgets.dart';
 import '../Models/Soa_model.dart';
+import '../Models/Store_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
@@ -87,65 +94,253 @@ class _SOAState extends State<SOA> {
 
   Future<void> _generateAndPrintPdf(
       List data, double opening, double closing) async {
-    final pdf = pw.Document();
-    double balance = opening;
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
+    if (response.statusCode == 200) {
+      // Parse JSON response into StoreDetail object
+      StoreDetail storeDetail =
+          StoreDetail.fromJson(json.decode(response.body));
 
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'Statement of Accounts',
-                style:
-                    pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Text(
-                "$code | $name | $payment",
-                style: pw.TextStyle(
-                  fontSize: 15,
+      final pdf = pw.Document();
+      double balance = opening;
+      final String api =
+          '${RestDatasource().BASE_URL}/uploads/store/${storeDetail.logos}';
+      final logoResponse = await http.get(Uri.parse(api));
+      if (logoResponse.statusCode != 200) {
+        // print(api);
+        // print('kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
+        throw Exception('Failed to load logo image');
+      }
+      final Uint8List logoBytes = logoResponse.bodyBytes;
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Center(
+                        child: pw.Image(
+                          pw.MemoryImage(logoBytes),
+                          height: 100,
+                          width: 100,
+                          fit: pw.BoxFit.cover,
+                        ),
+                      ),
+                      // pw.Wrap(
+                      //   spacing: 10,
+                      //   runSpacing: 10,
+                      //   children: (storeDetail.logos ?? []).map((logoUrl) {
+                      //     // String imageUrl = '${RestDatasource().BASE_URL}/uploads/store/$logoUrl';
+                      //     try {
+                      //       return pw.Container(
+                      //         child: pw.Image(
+                      //           pw.MemoryImage(logoBytes),
+                      //           height: 100,
+                      //           width: 100,
+                      //           fit: pw.BoxFit.cover,
+                      //         ),
+                      //       );
+                      //     } catch (e) {
+                      //       // Handle any errors while loading the image
+                      //       print('Failed to load image: $e');
+                      //       // Return a placeholder or empty container if image loading fails
+                      //       return pw.Container(); // Placeholder or empty container
+                      //     }
+                      //   }).toList(),
+                      // ),
+
+                      pw.Text(
+                        storeDetail.name,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      if (storeDetail.address != null)
+                        pw.Text(storeDetail.address!),
+                      if (storeDetail.trn != null)
+                        pw.Text('TRN: ${storeDetail.trn}'),
+                    ],
+                  ),
                 ),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Text(
-                'Opening Balance: ${opening.toStringAsFixed(2)}',
-                style: pw.TextStyle(fontSize: 15),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Table.fromTextArray(
-                headers: ['Date', 'Reference', 'Amount', 'Payment', 'Balance'],
-                data: List<List<String>>.generate(data.length, (index) {
-                  final row = data[index];
-                  double amount =
-                      row[2] != null ? double.parse(row[2].toString()) : 0.0;
-                  double payment =
-                      row[3] != null ? double.parse(row[3].toString()) : 0.0;
-                  balance += amount;
-                  balance -= payment;
+                pw.SizedBox(height: 20),
+                pw.Center(
+                  child: pw.Text(
+                    'Statement of Accounts',
+                    style: pw.TextStyle(
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Divider(),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      "Customer : ${storeDetail.code} | ${storeDetail.name} | ${storeDetail.email}",
+                      style: pw.TextStyle(
+                        fontSize: 15,
+                      ),
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        if (storeDetail.createdAt != null)
+                          pw.Text(
+                            'From: ${storeDetail.createdAt}',
+                            style: pw.TextStyle(fontSize: 15),
+                          ),
+                        if (storeDetail.updatedAt != null)
+                          pw.Text(
+                            'To: ${storeDetail.updatedAt}',
+                            style: pw.TextStyle(fontSize: 15),
+                          ),
+                        if (storeDetail.currency != null)
+                          pw.Text(
+                            'Currency: ${storeDetail.currency}',
+                            style: pw.TextStyle(fontSize: 15),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+                pw.Table(
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Date',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Reference',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Amount',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Payment',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Balance',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey200,
+                      ),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(''),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text('Opening Balance'),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4),
+                          child: pw.Text(balance.toStringAsFixed(2)),
+                        ),
+                      ],
+                    ),
+                    ...data.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      var row = entry.value;
 
-                  return [
-                    row[0].toString(),
-                    row[1].toString(),
-                    row[2].toString(),
-                    row[3].toString(),
-                    balance.toStringAsFixed(2),
-                  ];
-                }),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                'Closing Balance: ${closing.toStringAsFixed(2)}',
-                style: pw.TextStyle(fontSize: 15),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                      double amount = row[2] != null
+                          ? double.parse(row[2].toString())
+                          : 0.0;
+                      double payment = row[3] != null
+                          ? double.parse(row[3].toString())
+                          : 0.0;
+                      balance += amount;
+                      balance -= payment;
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+                      return pw.TableRow(
+                        decoration: pw.BoxDecoration(
+                          color: index % 2 == 0
+                              ? PdfColors.white
+                              : PdfColors.grey200,
+                        ),
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(row[0].toString()),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(row[1].toString()),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(row[2].toString()),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(row[3].toString()),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(balance.toStringAsFixed(2)),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ],
+                ),
+                pw.SizedBox(height: 10),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      'Closing Balance: ${closing.toStringAsFixed(2)}',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.SizedBox(width: 31),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    } else {
+      throw Exception('Failed to load store details');
+    }
   }
 
   bool isOutstandingSelected = true;
