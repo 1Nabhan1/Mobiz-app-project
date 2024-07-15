@@ -104,7 +104,7 @@ class _SOAState extends State<SOA> {
       final pdf = pw.Document();
       double balance = opening;
       final String api =
-          '${RestDatasource().BASE_URL}/uploads/store/${storeDetail.logos}';
+          '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
       final logoResponse = await http.get(Uri.parse(api));
       if (logoResponse.statusCode != 200) {
         // print(api);
@@ -112,6 +112,14 @@ class _SOAState extends State<SOA> {
         throw Exception('Failed to load logo image');
       }
       final Uint8List logoBytes = logoResponse.bodyBytes;
+
+      String addressText = storeDetail.address != null
+          ? "Address: ${storeDetail.address}, "
+          : "";
+      String countryText =
+          storeDetail.country != null ? "${storeDetail.country}" : "";
+
+      String finalText = "";
 
       pdf.addPage(
         pw.Page(
@@ -130,29 +138,6 @@ class _SOAState extends State<SOA> {
                           fit: pw.BoxFit.cover,
                         ),
                       ),
-                      // pw.Wrap(
-                      //   spacing: 10,
-                      //   runSpacing: 10,
-                      //   children: (storeDetail.logos ?? []).map((logoUrl) {
-                      //     // String imageUrl = '${RestDatasource().BASE_URL}/uploads/store/$logoUrl';
-                      //     try {
-                      //       return pw.Container(
-                      //         child: pw.Image(
-                      //           pw.MemoryImage(logoBytes),
-                      //           height: 100,
-                      //           width: 100,
-                      //           fit: pw.BoxFit.cover,
-                      //         ),
-                      //       );
-                      //     } catch (e) {
-                      //       // Handle any errors while loading the image
-                      //       print('Failed to load image: $e');
-                      //       // Return a placeholder or empty container if image loading fails
-                      //       return pw.Container(); // Placeholder or empty container
-                      //     }
-                      //   }).toList(),
-                      // ),
-
                       pw.Text(
                         storeDetail.name,
                         style: pw.TextStyle(
@@ -182,25 +167,40 @@ class _SOAState extends State<SOA> {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      "Customer : ${storeDetail.code} | ${storeDetail.name} | ${storeDetail.email}",
-                      style: pw.TextStyle(
-                        fontSize: 15,
-                      ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          "Customer : ${storeDetail.code} | ${storeDetail.name}",
+                          style: pw.TextStyle(
+                            fontSize: 15,
+                          ),
+                        ),
+                        // Conditional display of address and country
+                        if (addressText.isNotEmpty || countryText.isNotEmpty)
+                          pw.Text(
+                            "${addressText.isNotEmpty ? addressText : ''} ${countryText.isNotEmpty ? countryText : ''}",
+                            style: pw.TextStyle(
+                              fontSize: 15,
+                            ),
+                          ),
+                      ],
                     ),
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        if (storeDetail.createdAt != null)
-                          pw.Text(
-                            'From: ${storeDetail.createdAt}',
-                            style: pw.TextStyle(fontSize: 15),
+                        pw.Text(
+                          'From Date: ${_selectedDatefrom != null ? DateFormat('dd MMMM yyyy').format(_selectedDatefrom!) : 'Select Date'}',
+                          style: pw.TextStyle(
+                            fontSize: 15,
                           ),
-                        if (storeDetail.updatedAt != null)
-                          pw.Text(
-                            'To: ${storeDetail.updatedAt}',
-                            style: pw.TextStyle(fontSize: 15),
+                        ),
+                        pw.Text(
+                          'To Date: ${_selectedDateto != null ? DateFormat('dd MMMM yyyy').format(_selectedDateto!) : 'Select Date'}',
+                          style: pw.TextStyle(
+                            fontSize: 15,
                           ),
+                        ),
                         if (storeDetail.currency != null)
                           pw.Text(
                             'Currency: ${storeDetail.currency}',
@@ -328,7 +328,7 @@ class _SOAState extends State<SOA> {
                       'Closing Balance: ${closing.toStringAsFixed(2)}',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
-                    pw.SizedBox(width: 31),
+                    pw.SizedBox(width: 35),
                   ],
                 ),
               ],

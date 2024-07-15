@@ -155,6 +155,10 @@ class _ExpensespageState extends State<Expensespage> {
                                         ),
                                         Text(
                                             'Amount : ${expenseDetail.amount}'),
+                                        Text(
+                                            'Vat Amount : ${expenseDetail.vatAmount}'),
+                                        Text(
+                                            'Total Amount : ${expenseDetail.totalAmount}'),
                                         // if (expenseDetail.description == '')
                                         Text(
                                           '${expenseDetail.expense.isNotEmpty ? expenseDetail.expense[0].name : ""} ${expenseDetail.description == '' ? '' : '| ${expenseDetail.description}'}',

@@ -96,6 +96,8 @@ class _AttendanceState extends State<Attendance> {
 
   void _showDialog1() {
     TextEditingController _textFieldController = TextEditingController();
+    final double minOdometer =
+        double.parse(checkInDetails!['check_in_odometer'] ?? '0');
 
     showDialog(
       context: context,
@@ -115,10 +117,21 @@ class _AttendanceState extends State<Attendance> {
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  _containerText1 = _textFieldController.text;
-                });
-                Navigator.of(context).pop();
+                double enteredValue =
+                    double.tryParse(_textFieldController.text) ?? 0.0;
+                if (enteredValue < minOdometer) {
+                  // Show error message if entered value is less than minOdometer
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(
+                            'Value must be greater than or equal to $minOdometer')),
+                  );
+                } else {
+                  setState(() {
+                    _containerText1 = _textFieldController.text;
+                  });
+                  Navigator.of(context).pop();
+                }
               },
               child: Text('OK'),
             ),

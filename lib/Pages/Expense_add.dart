@@ -35,6 +35,8 @@ class _ExpenseAddState extends State<ExpenseAdd> {
   List<File> _attachedImages = [];
   Expense? selectedexpense;
   String? _amount;
+  String? _vatAmount;
+  String? _totalAmount;
   DateTime? _selectedDate = DateTime.now();
   TextEditingController remark = TextEditingController();
   @override
@@ -42,6 +44,12 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     super.initState();
     futureExpenseReason = fetchExpenses();
   }
+
+  // void _showAmountDialog(BuildContext context) {
+  //   // Implement your dialog to set Amount and Vat Amount
+  //   // Example: showDialog(...);
+  //   // Inside the dialog, update _amount and _vatAmount
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -91,16 +99,16 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(15.0),
+                    padding: const EdgeInsets.all(10.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Date'),
                         Row(
                           children: [
-                            SizedBox(
-                              width: 30,
-                            ),
+                            // SizedBox(
+                            //   width: 30,
+                            // ),
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(3),
@@ -127,10 +135,22 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                             ),
                           ],
                         ),
-                        Row(
+                        // SizedBox(
+                        //   width: 10,
+                        // ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Amount'),
-                            SizedBox(width: 20),
+                            Text("Amount"),
+                            SizedBox(height: 10),
+                            Text("Vat Amount"),
+                            SizedBox(height: 10),
+                            Text("Total Amount"),
+                            SizedBox(height: 10),
+                          ],
+                        ),
+                        Column(
+                          children: [
                             GestureDetector(
                               onTap: () {
                                 _showAmountDialog(context);
@@ -143,13 +163,47 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                                   border: Border.all(color: Colors.grey),
                                 ),
                                 child: Center(
-                                    child: Text(
-                                  _amount ?? 'Amt',
-                                )),
+                                  child: Text(_amount ?? ''),
+                                ),
                               ),
-                            )
+                            ),
+                            SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () {
+                                _showAmountDialog(context);
+                              },
+                              child: Container(
+                                width: 70,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(3),
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: Center(
+                                  child: Text(_vatAmount ?? ''),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: null,
+                              child: Container(
+                                width: 70,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(3),
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _totalAmount ?? '',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 10),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -162,7 +216,8 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                         Container(
                           height: MediaQuery.of(context).size.height * .03,
                           width: MediaQuery.of(context).size.width * .72,
-                          decoration: BoxDecoration(color: Colors.grey.shade200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(3),
                             // border: Border.all(color: Colors.grey),
                           ),
@@ -351,8 +406,7 @@ class _ExpenseAddState extends State<ExpenseAdd> {
 
   Future<File> _compressImage(File file) async {
     final image = img.decodeImage(file.readAsBytesSync())!;
-    final compressedImage =
-        img.copyResize(image, width: 800); // Resize the image
+    final compressedImage = img.copyResize(image, width: 800);
     final compressedBytes =
         img.encodeJpg(compressedImage, quality: 75); // Compress the image
 
@@ -387,16 +441,32 @@ class _ExpenseAddState extends State<ExpenseAdd> {
 
   Future<void> _showAmountDialog(BuildContext context) async {
     TextEditingController amountController = TextEditingController();
+    TextEditingController vatAmountController = TextEditingController();
+
+    // Initialize controllers with previous values if available
+    amountController.text = _amount ?? '';
+    vatAmountController.text = _vatAmount ?? '';
 
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Enter Amount'),
-          content: TextField(
-            controller: amountController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(hintText: "Amount"),
+          title: Text('Enter Amount and Vat Amount'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(hintText: "Amount"),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: vatAmountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(hintText: "Vat Amount"),
+              ),
+            ],
           ),
           actions: <Widget>[
             TextButton(
@@ -410,6 +480,8 @@ class _ExpenseAddState extends State<ExpenseAdd> {
               onPressed: () {
                 setState(() {
                   _amount = amountController.text;
+                  _vatAmount = vatAmountController.text;
+                  _calculateTotalAmount();
                 });
                 Navigator.of(context).pop();
               },
@@ -418,6 +490,26 @@ class _ExpenseAddState extends State<ExpenseAdd> {
         );
       },
     );
+  }
+
+  void _calculateTotalAmount() {
+    if (_amount != null && _vatAmount != null) {
+      double amount = double.tryParse(_amount!) ?? 0.0;
+      double vatAmount = double.tryParse(_vatAmount!) ?? 0.0;
+      double totalAmount = amount + vatAmount;
+
+      // Check if both amount and vatAmount are zero
+      if (amount == 0.0 && vatAmount == 0.0) {
+        setState(() {
+          _totalAmount = ''; // Display blank instead of '0.00'
+        });
+      } else {
+        setState(() {
+          _totalAmount =
+              totalAmount.toStringAsFixed(2); // Format to 2 decimal places
+        });
+      }
+    }
   }
 
   void postData() async {
@@ -431,6 +523,8 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     request.fields['amount'] = _amount ?? '0';
     request.fields['in_date'] = DateFormat('dd-MM-yyyy').format(_selectedDate!);
     request.fields['user_id'] = AppState().userId.toString();
+    request.fields['vat_amount'] = _vatAmount!;
+    request.fields['total_amount'] = _totalAmount!;
 
     // Add files to the request
     for (var file in _attachedImages) {

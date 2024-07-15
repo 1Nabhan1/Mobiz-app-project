@@ -12,8 +12,8 @@ class ProductDataModel {
   factory ProductDataModel.fromJson(Map<String, dynamic> json) {
     return ProductDataModel(
       data: Data.fromJson(json['data']),
-      success: json['success'],
-      messages: List<dynamic>.from(json['messages']),
+      success: json['success'] ?? false,
+      messages: List<dynamic>.from(json['messages'] ?? []),
     );
   }
 }
@@ -26,7 +26,7 @@ class Data {
   final int lastPage;
   final String lastPageUrl;
   final List<Link> links;
-  final String nextPageUrl;
+  final String? nextPageUrl;
   final String path;
   final int perPage;
   final String? prevPageUrl;
@@ -41,7 +41,7 @@ class Data {
     required this.lastPage,
     required this.lastPageUrl,
     required this.links,
-    required this.nextPageUrl,
+    this.nextPageUrl,
     required this.path,
     required this.perPage,
     this.prevPageUrl,
@@ -51,21 +51,21 @@ class Data {
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
-      currentPage: json['current_page'],
+      currentPage: json['current_page'] ?? 0,
       products: List<Product>.from(
         json['data'].map((product) => Product.fromJson(product)),
       ),
-      firstPageUrl: json['first_page_url'],
-      from: json['from'],
-      lastPage: json['last_page'],
-      lastPageUrl: json['last_page_url'],
+      firstPageUrl: json['first_page_url'] ?? '',
+      from: json['from'] ?? 0,
+      lastPage: json['last_page'] ?? 0,
+      lastPageUrl: json['last_page_url'] ?? '',
       links: List<Link>.from(json['links'].map((link) => Link.fromJson(link))),
       nextPageUrl: json['next_page_url'],
-      path: json['path'],
-      perPage: json['per_page'],
+      path: json['path'] ?? '',
+      perPage: json['per_page'] ?? 0,
       prevPageUrl: json['prev_page_url'],
-      to: json['to'],
-      total: json['total'],
+      to: json['to'] ?? 0,
+      total: json['total'] ?? 0,
     );
   }
 }
@@ -81,6 +81,7 @@ class Product {
   final int status;
   final List<Unit> units;
   String? selectedUnitName;
+  int? selectedUnitId;
 
   Product({
     required this.id,
@@ -93,23 +94,25 @@ class Product {
     required this.status,
     required this.units,
     this.selectedUnitName,
+    this.selectedUnitId,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
-      code: json['code'],
-      name: json['name'],
-      proImage: json['pro_image'],
-      taxPercentage: json['tax_percentage'],
+      id: json['id'] ?? 0,
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      proImage: json['pro_image'] ?? '',
+      taxPercentage: json['tax_percentage'] ?? 0,
       price: double.parse(json['price'].toString()),
-      storeId: json['store_id'],
-      status: json['status'],
+      storeId: json['store_id'] ?? 0,
+      status: json['status'] ?? 0,
       units: List<Unit>.from(
         json['units'].map((unit) => Unit.fromJson(unit)),
       ),
     );
   }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -144,14 +147,15 @@ class Unit {
 
   factory Unit.fromJson(Map<String, dynamic> json) {
     return Unit(
-      unit: json['unit'],
-      id: json['id'],
-      name: json['name'],
-      price: double.parse(json['price']),
-      minPrice: double.parse(json['min_price']),
-      stock: json['stock'],
+      unit: json['unit'] ?? 0,
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      price: double.parse(json['price'].toString()),
+      minPrice: double.parse(json['min_price'].toString()),
+      stock: json['stock'] ?? 0,
     );
   }
+
   Map<String, dynamic> toJson() {
     return {
       'unit': unit,
@@ -170,7 +174,7 @@ class Link {
   final bool active;
 
   Link({
-    required this.url,
+    this.url,
     required this.label,
     required this.active,
   });
@@ -178,8 +182,8 @@ class Link {
   factory Link.fromJson(Map<String, dynamic> json) {
     return Link(
       url: json['url'],
-      label: json['label'],
-      active: json['active'],
+      label: json['label'] ?? '',
+      active: json['active'] ?? false,
     );
   }
 }
@@ -201,11 +205,11 @@ class ProductType {
 
   factory ProductType.fromJson(Map<String, dynamic> json) {
     return ProductType(
-      id: json['id'],
-      name: json['name'],
-      status: json['status'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      status: json['status'] ?? 0,
+      createdAt: DateTime.parse(json['created_at'] ?? '1970-01-01T00:00:00Z'),
+      updatedAt: DateTime.parse(json['updated_at'] ?? '1970-01-01T00:00:00Z'),
     );
   }
 }

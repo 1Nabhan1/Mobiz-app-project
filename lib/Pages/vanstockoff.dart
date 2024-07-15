@@ -7,10 +7,12 @@ import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Pages/selectProductScreenOFF.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/appstate.dart';
 import '../Models/offload_Model.dart';
+import '../Models/sales_model.dart';
 import '../Models/stockdata.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
@@ -41,19 +43,71 @@ class _VanStocksoffState extends State<VanStocksoff> {
   List<int> units = [];
   List<int> goodsReturnIds = [];
   List<int> returnTypes = [];
+  List<Product> cartItems = [];
+  List<ProductType?> selectedProductTypes = [];
+  List<ProductType> productTypes = [];
+  Map<int, String> amounts = {};
+  Map<int, String> qtys = {};
+  String amount = '';
+  String quantity = '';
+  final TextEditingController amountctrl = TextEditingController();
+
+  final TextEditingController qtysctrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _getStockData();
+    fetchCartItems();
     _Offload = fetchData();
   }
 
-  // @override
-  // void dispose() {
-  //   StockHistory.clearAllStockHistory();
-  //   super.dispose();
-  // }
+  Future<void> fetchCartItems() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? cartItemsJson = prefs.getStringList('cartItemsoffload');
+
+    if (cartItemsJson != null) {
+      List<Product> products = cartItemsJson
+          .map((json) => Product.fromJson(jsonDecode(json)))
+          .toList();
+
+      setState(() {
+        cartItems = products;
+        selectedProductTypes = List.generate(
+          cartItems.length,
+          (index) => null,
+        );
+      });
+    }
+  }
+
+  Future<void> removeFromCart(int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? cartItemsJson = prefs.getStringList('cartItemsoffload');
+
+    if (cartItemsJson != null) {
+      List<Product> products = cartItemsJson
+          .map((json) => Product.fromJson(jsonDecode(json)))
+          .toList();
+
+      products.removeAt(index); // Remove the item at the specific index
+
+      List<String> updatedCartItemsJson =
+          products.map((product) => jsonEncode(product.toJson())).toList();
+
+      await prefs.setStringList('cartItemsoffload', updatedCartItemsJson);
+
+      fetchCartItems(); // Refresh UI after deletion
+    }
+  }
+
+  Future<void> clearCart() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cartItemsoffload');
+    setState(() {
+      cartItems.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +157,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
                     const WidgetStatePropertyAll(AppConfig.colorPrimary),
               ),
               onPressed: () {
-                _sendProducts();
+                saveData();
                 // saveData();
               },
               // (_loaded == false)
@@ -142,36 +196,403 @@ class _VanStocksoffState extends State<VanStocksoff> {
                 goodsReturnIds.clear();
                 returnTypes.clear();
                 return SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      children: [
-                        _initDone
-                            ? ListView.separated(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemCount: stocks.length,
-                                shrinkWrap: true,
-                                itemBuilder: (context, index) {
-                                  return _stockCard(stocks[index], index);
-                                },
-                                separatorBuilder: (context, index) {
-                                  return CommonWidgets.verticalSpace(1);
-                                },
-                              )
-                            : Container(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Return',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18),
-                              ),
-                            ],
-                          ),
+                  child: Column(
+                    children: [
+                      cartItems.isEmpty
+                          ? Center(
+                              child: Text('No items.'),
+                            )
+                          : ListView.builder(
+                              physics: BouncingScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: cartItems.length,
+                              itemBuilder: (context, index) {
+                                List<String> unitNames = cartItems[index]
+                                    .units
+                                    .where((unit) => unit.name != null)
+                                    .map((unit) => unit.name!)
+                                    .toList();
+
+                                if (unitNames.isEmpty) {
+                                  return SizedBox.shrink();
+                                }
+
+                                // Ensure each item has its own selected unit name state
+                                String? selectedUnitName =
+                                    cartItems[index].selectedUnitName ??
+                                        unitNames.first;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0, vertical: 2),
+                                  child: Card(
+                                    elevation: 1,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90,
+                                      decoration: BoxDecoration(
+                                        color: AppConfig.backgroundColor,
+                                        border: Border.all(
+                                          color: AppConfig.buttonDeactiveColor
+                                              .withOpacity(0.5),
+                                        ),
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(10)),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                // SizedBox(
+                                                //   width: 50,
+                                                //   height: 60,
+                                                //   child: ClipRRect(
+                                                //     borderRadius:
+                                                //         BorderRadius.circular(10),
+                                                //     child: FadeInImage(
+                                                //       image: NetworkImage(
+                                                //         '${RestDatasource().BASE_URL}/uploads/product/${cartItems[index].proImage}',
+                                                //       ),
+                                                //       placeholder:
+                                                //           const AssetImage(
+                                                //         'Assets/Images/no_image.jpg',
+                                                //       ),
+                                                //       imageErrorBuilder: (context,
+                                                //           error, stackTrace) {
+                                                //         return Image.asset(
+                                                //           'Assets/Images/no_image.jpg',
+                                                //           fit: BoxFit.fitWidth,
+                                                //         );
+                                                //       },
+                                                //       fit: BoxFit.fitWidth,
+                                                //     ),
+                                                //   ),
+                                                // ),
+                                                // CommonWidgets.horizontalSpace(1),
+                                                Column(
+                                                  children: [
+                                                    CommonWidgets.verticalSpace(
+                                                        1),
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        CommonWidgets
+                                                            .horizontalSpace(1),
+                                                        SizedBox(
+                                                          width: SizeConfig
+                                                                  .blockSizeHorizontal *
+                                                              70,
+                                                          child: Text(
+                                                            '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
+                                                            style: TextStyle(
+                                                              fontSize: AppConfig
+                                                                  .textCaption3Size,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                CircleAvatar(
+                                                  backgroundColor: Colors.grey
+                                                      .withOpacity(0.2),
+                                                  radius: 10,
+                                                  child: GestureDetector(
+                                                    onTap: () async {
+                                                      removeFromCart(index);
+                                                    },
+                                                    child: const Icon(
+                                                      Icons.close,
+                                                      size: 15,
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                // SizedBox(
+                                                //   width: 45,
+                                                //   height: 20,
+                                                //   child:
+                                                //       DropdownButtonHideUnderline(
+                                                //     child: DropdownButton<
+                                                //         ProductType>(
+                                                //       alignment: Alignment.center,
+                                                //       isExpanded: true,
+                                                //       style: TextStyle(
+                                                //         fontSize: 12,
+                                                //         color: AppConfig
+                                                //             .colorPrimary,
+                                                //         fontWeight:
+                                                //             FontWeight.bold,
+                                                //       ),
+                                                //       hint: Center(
+                                                //           child: Text('Select')),
+                                                //       value: selectedProductTypes[
+                                                //                   index] !=
+                                                //               null
+                                                //           ? selectedProductTypes[
+                                                //               index]
+                                                //           : productTypes
+                                                //                   .isNotEmpty
+                                                //               ? productTypes.first
+                                                //               : null,
+                                                //       onChanged: (ProductType?
+                                                //           newValue) {
+                                                //         setState(() {
+                                                //           selectedProductTypes[
+                                                //               index] = newValue;
+                                                //         });
+                                                //       },
+                                                //       items: productTypes.map(
+                                                //           (ProductType
+                                                //               productType) {
+                                                //         return DropdownMenuItem<
+                                                //             ProductType>(
+                                                //           value: productType,
+                                                //           child: Center(
+                                                //               child: Text(productType
+                                                //                   .name)), // Center align the item text
+                                                //         );
+                                                //       }).toList(),
+                                                //       icon: SizedBox.shrink(),
+                                                //     ),
+                                                //   ),
+                                                // ),
+                                                // Text('| '),
+                                                SizedBox(
+                                                  width: 5,
+                                                ),
+                                                Flexible(
+                                                  child:
+                                                      DropdownButtonHideUnderline(
+                                                    child:
+                                                        DropdownButton<String>(
+                                                      alignment:
+                                                          Alignment.center,
+                                                      isExpanded: false,
+                                                      value: selectedUnitName,
+                                                      items: unitNames.map<
+                                                              DropdownMenuItem<
+                                                                  String>>(
+                                                          (String value) {
+                                                        return DropdownMenuItem<
+                                                            String>(
+                                                          value: value,
+                                                          child: Center(
+                                                            child: Text(
+                                                              value,
+                                                              style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: AppConfig
+                                                                    .colorPrimary,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                      onChanged:
+                                                          (String? newValue) {
+                                                        setState(() {
+                                                          cartItems[index]
+                                                                  .selectedUnitName =
+                                                              newValue;
+                                                        });
+                                                      },
+                                                      icon: SizedBox.shrink(),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Text(' | '),
+                                                GestureDetector(
+                                                    onTap: () {
+                                                      showDialog(
+                                                          context: context,
+                                                          builder: (context) {
+                                                            if (qtys[index] ==
+                                                                    null ||
+                                                                qtys[index]!
+                                                                    .isEmpty) {
+                                                              qtys[index] = '1';
+                                                            }
+
+                                                            TextEditingController
+                                                                qtyController =
+                                                                TextEditingController(
+                                                              text: qtys[index],
+                                                            );
+                                                            return AlertDialog(
+                                                              title: const Text(
+                                                                  'Quantity'),
+                                                              content:
+                                                                  TextField(
+                                                                controller:
+                                                                    qtyController,
+                                                                //     TextEditingController(
+                                                                //   text: qtys[
+                                                                //           index] ??
+                                                                //       '',
+                                                                // ),
+                                                                onChanged:
+                                                                    (value) {
+                                                                  setState(() {
+                                                                    qtys[index] =
+                                                                        value;
+                                                                  });
+                                                                },
+                                                                keyboardType:
+                                                                    TextInputType
+                                                                        .number,
+                                                                // controller: _discountData,
+                                                              ),
+                                                              actions: <Widget>[
+                                                                MaterialButton(
+                                                                  color: AppConfig
+                                                                      .colorPrimary,
+                                                                  textColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  child:
+                                                                      const Text(
+                                                                          'OK'),
+                                                                  onPressed:
+                                                                      () {
+                                                                    quantity =
+                                                                        qtysctrl
+                                                                            .text;
+                                                                    Navigator.pop(
+                                                                        context);
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            );
+                                                          });
+                                                    },
+                                                    child: Row(
+                                                      children: [
+                                                        Text('Qty: '),
+                                                        Text(
+                                                          '${qtys[index] ?? '1'}',
+                                                          style: TextStyle(
+                                                              color: AppConfig
+                                                                  .colorPrimary,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                      ],
+                                                    )),
+                                                // Text(' | '),
+                                                // GestureDetector(
+                                                //     onTap: () {
+                                                //       showDialog(
+                                                //           context: context,
+                                                //           builder: (context) {
+                                                //             return AlertDialog(
+                                                //               title: const Text(
+                                                //                   'Amount'),
+                                                //               content:
+                                                //                   TextField(
+                                                //                 controller:
+                                                //                     TextEditingController(
+                                                //                   text:
+                                                //                       '${amounts[index] ?? cartItems[index].price}',
+                                                //                 ),
+                                                //                 onChanged:
+                                                //                     (value) {
+                                                //                   setState(() {
+                                                //                     amounts[index] =
+                                                //                         value;
+                                                //                   });
+                                                //                 },
+                                                //                 keyboardType:
+                                                //                     TextInputType
+                                                //                         .number,
+                                                //                 // controller: _discountData,
+                                                //               ),
+                                                //               actions: <Widget>[
+                                                //                 MaterialButton(
+                                                //                   color: AppConfig
+                                                //                       .colorPrimary,
+                                                //                   textColor:
+                                                //                       Colors
+                                                //                           .white,
+                                                //                   child:
+                                                //                       const Text(
+                                                //                           'OK'),
+                                                //                   onPressed:
+                                                //                       () {
+                                                //                     amount =
+                                                //                         amountctrl
+                                                //                             .text;
+                                                //                     Navigator.pop(
+                                                //                         context);
+                                                //                   },
+                                                //                 ),
+                                                //               ],
+                                                //             );
+                                                //           });
+                                                //     },
+                                                //     child: Row(
+                                                //       children: [
+                                                //         Text('Rate: '),
+                                                //         Text(
+                                                //           '${amounts[index] ?? cartItems[index].price}',
+                                                //           style: TextStyle(
+                                                //               color: AppConfig
+                                                //                   .colorPrimary,
+                                                //               fontWeight:
+                                                //                   FontWeight
+                                                //                       .bold),
+                                                //         ),
+                                                //       ],
+                                                //     )),
+                                                // Text(' | '),
+                                                // Text(
+                                                //   'Amt: ${amounts[index] ?? cartItems[index].price}',
+                                                //   style: TextStyle(
+                                                //       color: Colors.grey),
+                                                // )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Return',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                          ],
                         ),
-                        ListView.builder(
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child: ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
                           physics: NeverScrollableScrollPhysics(),
@@ -222,9 +643,9 @@ class _VanStocksoffState extends State<VanStocksoff> {
                               ),
                             );
                           },
-                        )
-                      ],
-                    ),
+                        ),
+                      )
+                    ],
                   ),
                 );
               } else if (snapshot.hasError) {
@@ -487,75 +908,88 @@ class _VanStocksoffState extends State<VanStocksoff> {
     }
   }
 
-  Future<void> _sendProducts() async {
-    RestDatasource api = RestDatasource();
-    dynamic bodyJson = {
-      "van_id": AppState().vanId,
-      "store_id": AppState().storeId,
-      "user_id": AppState().userId,
-      "item_id": [],
-      "quantity": [],
-      "unit": [],
-      "goods_return_id": ['1'],
-      "return_type": ['1']
-    };
-    int units = 0;
-    for (int i = 0; i < stocks.length; i++) {
-      for (var j in stocks[i]['unitData']) {
-        if (j['name'] == selectedValue[i]) {
-          units = j['id'];
-        }
-      }
-      //stocks
-      bodyJson["item_id"].add(stocks[i]["id"]);
-      bodyJson["quantity"].add(stocks[i]["quantity"]);
-      bodyJson["unit"].add(units);
-      // }
-      debugPrint('resJson $bodyJson ');
-      dynamic resJson = await api.sendData('/api/vanoffloadrequest.store',
-          AppState().token, jsonEncode(bodyJson));
-      setState(() {
-        _loaded = true;
-      });
-      if (resJson['data'] != null) {
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-              context: context, title: "Alert", msg: "Added Successfully");
-          StockHistory.clearAllStockHistory().then(
-              (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
-        }
-      }
-    }
-  }
-
-  // Future<void> saveData() async {
-  //   final url =
-  //       Uri.parse('https://mobiz-api.yes45.in/api/vanoffloadrequest.store');
-  //   final headers = {"Content-Type": "application/json"};
-  //
-  //   final body = jsonEncode({
+  // Future<void> _sendProducts() async {
+  //   RestDatasource api = RestDatasource();
+  //   dynamic bodyJson = {
   //     "van_id": AppState().vanId,
   //     "store_id": AppState().storeId,
   //     "user_id": AppState().userId,
-  //     "item_id": itemIds,
-  //     "quantity": quantities,
-  //     "unit": units,
-  //     "goods_return_id": goodsReturnIds,
-  //     "return_type": returnTypes
-  //   });
-  //
-  //   final response = await http.post(url, headers: headers, body: body);
-  //
-  //   if (response.statusCode == 200) {
-  //     if (mounted) {
-  //       CommonWidgets.showDialogueBox(
-  //           context: context, title: "Alert", msg: "Added Successfully");
-  //       StockHistory.clearAllStockHistory().then(
-  //           (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
+  //     "item_id": cartItems[0].id,
+  //     "quantity": ['100'],
+  //     "unit": cartItems[0].units,
+  //     "goods_return_id": ['1'],
+  //     "return_type": ['1']
+  //   };
+  //   int units = 0;
+  //   for (int i = 0; i < stocks.length; i++) {
+  //     for (var j in stocks[i]['unitData']) {
+  //       if (j['name'] == selectedValue[i]) {
+  //         units = j['id'];
+  //       }
   //     }
-  //   } else {
-  //     ScaffoldMessenger.of(context)
-  //         .showSnackBar(SnackBar(content: Text('Failed to save data')));
+  //     //stocks
+  //     bodyJson["item_id"].add(stocks[i]["id"]);
+  //     bodyJson["quantity"].add(stocks[i]["quantity"]);
+  //     bodyJson["unit"].add(units);
+  //     // }
+  //     debugPrint('resJson $bodyJson ');
+  //     dynamic resJson = await api.sendData('/api/vanoffloadrequest.store',
+  //         AppState().token, jsonEncode(bodyJson));
+  //     setState(() {
+  //       _loaded = true;
+  //     });
+  //     if (resJson['data'] != null) {
+  //       if (mounted) {
+  //         CommonWidgets.showDialogueBox(
+  //             context: context, title: "Alert", msg: "Added Successfully");
+  //         StockHistory.clearAllStockHistory().then(
+  //             (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
+  //       }
+  //     }
   //   }
   // }
+
+  Future<void> saveData() async {
+    List<int> Quantities = [];
+    List<Object> productTypesList = [];
+
+    for (int index = 0; index < cartItems.length; index++) {
+      String? qty = qtys[index];
+      int quantity = qty != null ? int.parse(qty) : 1;
+      Quantities.add(quantity);
+      ProductType? selectedProductType = selectedProductTypes[index];
+      Object productType =
+          selectedProductType != null ? selectedProductType.id : 1;
+      productTypesList.add(productType);
+    }
+    final url =
+        Uri.parse('${RestDatasource().BASE_URL}/api/vanoffloadrequest.store');
+    final headers = {"Content-Type": "application/json"};
+
+    final body = jsonEncode({
+      "van_id": AppState().vanId,
+      "store_id": AppState().storeId,
+      "user_id": AppState().userId,
+      "item_id": cartItems.map((item) => item.id).toList(),
+      "quantity": Quantities,
+      "unit": cartItems.map((item) => item.units[0].unit).toList(),
+      "goods_return_id": ['1'],
+      "return_type": ['1']
+    });
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    if (response.statusCode == 200) {
+      if (mounted) {
+        CommonWidgets.showDialogueBox(
+            context: context, title: "Alert", msg: "Added Successfully");
+        StockHistory.clearAllStockHistory().then(
+            (value) => Navigator.of(context).pushNamed(HomeScreen.routeName));
+        clearCart();
+      }
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to save data')));
+    }
+  }
 }

@@ -17,9 +17,11 @@ class RestDatasource {
   final AppState _appState = AppState();
 
   late String BASE_URL;
+  late String Image_URL;
 
   RestDatasource() {
-    BASE_URL = "https://mobiz-api.yes45.in";
+    BASE_URL = "http://68.183.92.8:3699";
+    Image_URL = "http://68.183.92.8:3697";
     //BASE_URL = "https://unistageapi.cianlogic.com";
   }
 

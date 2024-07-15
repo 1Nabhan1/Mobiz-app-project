@@ -14,7 +14,7 @@ class Offload {
 
 class SalesReturnData {
   final int id;
-  final List<Product> product;
+  final List<Productreturn> product;
   final List<ReturnType> returntype;
   final List<Unit> units;
   final int quantity;
@@ -32,7 +32,7 @@ class SalesReturnData {
   factory SalesReturnData.fromJson(Map<String, dynamic> json) {
     return SalesReturnData(
       id: json['id'],
-      product: List<Product>.from(json['product'].map((item) => Product.fromJson(item))),
+      product: List<Productreturn>.from(json['product'].map((item) => Productreturn.fromJson(item))),
       returntype: List<ReturnType>.from(json['returntype'].map((item) => ReturnType.fromJson(item))),
       units: List<Unit>.from(json['units'].map((item) => Unit.fromJson(item))),
       quantity: json['quantity'],
@@ -41,21 +41,21 @@ class SalesReturnData {
   }
 }
 
-class Product {
+class Productreturn {
   final int id;
   final String code;
   final String name;
   final String proImage;
 
-  Product({
+  Productreturn({
     required this.id,
     required this.code,
     required this.name,
     required this.proImage,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
+  factory Productreturn.fromJson(Map<String, dynamic> json) {
+    return Productreturn(
       id: json['id'],
       code: json['code'],
       name: json['name'],

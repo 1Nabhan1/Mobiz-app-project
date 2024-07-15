@@ -67,10 +67,10 @@ class MyApp extends StatelessWidget {
               const ErrorHandlingScreen(),
           VanStockRequestsScreen.routeName: (context) =>
               const VanStockRequestsScreen(),
-          VanStocks.routeName: (context) => const VanStocks(),
+          VanStocks.routeName: (context) =>   VanStocks(),
           SplashScreen.routeName: (context) => const SplashScreen(),
           SelectProductsScreen.routeName: (context) =>
-              const SelectProductsScreen(),
+                SelectProductsScreen(),
           CustomersDataScreen.routeName: (context) =>
               const CustomersDataScreen(),
           SalesScreen.routeName: (context) =>   SalesScreen(),
@@ -82,9 +82,9 @@ class MyApp extends StatelessWidget {
                 SalesSelectProductsScreen(),
           SaleInvoiceScrreen.routeName: (context) => const SaleInvoiceScrreen(),
           SalesSelectProductsorderScreen.routeName: (context) =>
-              const SalesSelectProductsorderScreen(),
+                SalesSelectProductsorderScreen(),
           Salesselectproductreturn.routeName: (context) =>
-              const Salesselectproductreturn(),
+                Salesselectproductreturn(),
           PaymentCollectionScreen.routeName: (context) =>
               const PaymentCollectionScreen(),
           CustomerRegistration.routeName: (context) =>

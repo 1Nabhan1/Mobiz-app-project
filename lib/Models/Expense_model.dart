@@ -6,6 +6,8 @@ class ExpenseDetail {
   String inTime;
   int expenseId;
   String amount;
+  String vatAmount;
+  String totalAmount;
   String description;
   String status;
   String? rejectedReason;
@@ -26,6 +28,8 @@ class ExpenseDetail {
     required this.inTime,
     required this.expenseId,
     required this.amount,
+    required this.totalAmount,
+    required this.vatAmount,
     required this.description,
     required this.status,
     this.rejectedReason,
@@ -48,6 +52,8 @@ class ExpenseDetail {
       inTime: json['in_time'],
       expenseId: json['expense_id'],
       amount: json['amount'],
+      vatAmount: json['vat_amount'],
+      totalAmount: json['total_amount'],
       description: json['description'] ?? "",
       status: json['status'],
       rejectedReason: json['rejected_reason'],
@@ -57,9 +63,13 @@ class ExpenseDetail {
       userId: json['user_id'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
-      expense: (json['expense'] as List).map((e) => Expense.fromJson(e)).toList(),
-      documents: (json['documents'] as List).map((e) => Document.fromJson(e)).toList(),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
+          : null,
+      expense:
+          (json['expense'] as List).map((e) => Expense.fromJson(e)).toList(),
+      documents:
+          (json['documents'] as List).map((e) => Document.fromJson(e)).toList(),
     );
   }
 }
@@ -91,7 +101,9 @@ class Expense {
       storeId: json['store_id'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
+          : null,
     );
   }
 }
@@ -123,7 +135,9 @@ class Document {
       storeId: json['store_id'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
+          : null,
     );
   }
 }
