@@ -419,11 +419,16 @@ class _ExpenseAddState extends State<ExpenseAdd> {
         File('${tempDir.path}/compressed_${file.path.split('/').last}');
     await compressedFile.writeAsBytes(compressedBytes);
 
+    print(
+        'Compressed image size: ${compressedFile.lengthSync()} bytes'); // Debug statement
+
     // Check file size and further compress if necessary
     if (compressedFile.lengthSync() > 200 * 1024) {
       final furtherCompressedBytes =
           img.encodeJpg(compressedImage, quality: 65);
       await compressedFile.writeAsBytes(furtherCompressedBytes);
+      print(
+          'Further compressed image size: ${compressedFile.lengthSync()} bytes'); // Debug statement
     }
 
     return compressedFile;

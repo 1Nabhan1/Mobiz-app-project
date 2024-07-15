@@ -26,6 +26,8 @@ class _SalesSelectProductsorderScreenState
     extends State<SalesSelectProductsorderScreen> {
   final ScrollController _scrollController = ScrollController();
   List<Product> _products = [];
+  List<Product> _filteredProducts = [];
+
   int _currentPage = 1;
   bool _isLoading = false;
   bool _hasMore = true;
@@ -74,6 +76,9 @@ class _SalesSelectProductsorderScreenState
         _fetchProducts();
       }
     });
+    _searchData.addListener(() {
+      _searchProducts(_searchData.text);
+    });
   }
 
   Future<void> _fetchProducts() async {
@@ -85,6 +90,7 @@ class _SalesSelectProductsorderScreenState
       final productData = await fetchProducts(_currentPage);
       setState(() {
         _products.addAll(productData.data.products);
+        _filteredProducts = List.from(_products);
         _currentPage++;
         _hasMore = _currentPage <= productData.data.lastPage;
       });
@@ -97,9 +103,25 @@ class _SalesSelectProductsorderScreenState
     }
   }
 
+  void _searchProducts(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProducts = List.from(_products);
+      } else {
+        _filteredProducts = _products
+            .where((product) =>
+                product.name!.toLowerCase().contains(query.toLowerCase()) ||
+                product.code!.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchData.dispose();
+
     super.dispose();
   }
 
@@ -133,7 +155,8 @@ class _SalesSelectProductsorderScreenState
                     ),
                     border: Border.all(color: AppConfig.colorPrimary),
                   ),
-                  child: TextField(
+                  child: TextField(autofocus: true,
+                    style: TextStyle(color: Colors.white),
                     controller: _searchData,
                     decoration: const InputDecoration(
                         contentPadding: EdgeInsets.all(5),
@@ -159,7 +182,7 @@ class _SalesSelectProductsorderScreenState
           CommonWidgets.horizontalSpace(3),
         ],
       ),
-      body: _products.isEmpty
+      body: _isLoading && _products.isEmpty
           ? Shimmer.fromColors(
               baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
               highlightColor: AppConfig.backButtonColor,
@@ -185,136 +208,146 @@ class _SalesSelectProductsorderScreenState
                 ),
               ),
             )
-          : ListView.builder(
-              controller: _scrollController,
-              itemCount: _products.length + (_hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == _products.length) {
-                  return Shimmer.fromColors(
-                    baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                    highlightColor: AppConfig.backButtonColor,
-                    child: Center(
-                      child: Column(
-                        children: [
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                final product = _products[index];
-                return GestureDetector(
-                  onTap: () {
-                    addToCart(_products[index]);
-                    Navigator.pushReplacementNamed(
-                        context, Customerorderdetail.routeName, arguments: {
-                      'customerId': id,
-                      'name': name,
-                      'code': code,
-                      'paymentTerms': payment
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 15.0, vertical: 2),
-                    child: Card(
-                      elevation: 3,
-                      child: Container(
-                        width: SizeConfig.blockSizeHorizontal * 90,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color:
-                                  // selectedItems.contains(index)
-                                  //     ? AppConfig.colorPrimary
-                                  //     :
-                                  Colors.transparent),
-                          color: AppConfig.backgroundColor,
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(10),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Row(
+          : _filteredProducts.isEmpty
+              ? Center(
+                  child: Text(
+                      'No products found'), // Show message when no data after loading
+                )
+              : ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _filteredProducts.length) {
+                      return Shimmer.fromColors(
+                        baseColor:
+                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                        highlightColor: AppConfig.backButtonColor,
+                        child: Center(
+                          child: Column(
                             children: [
-                              SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                  child: FadeInImage(
-                                    image: NetworkImage(
-                                        '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                    placeholder: const AssetImage(
-                                        'Assets/Images/no_image.jpg'),
-                                    imageErrorBuilder:
-                                        (context, error, stackTrace) {
-                                      return Image.asset(
-                                          'Assets/Images/no_image.jpg',
-                                          fit: BoxFit.fitWidth);
-                                    },
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
-                              ),
-                              CommonWidgets.horizontalSpace(3),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Tooltip(
-                                    message: product.name!.toUpperCase(),
-                                    child: SizedBox(
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 70,
-                                      child: Text(
-                                        '${product.code} | ${product.name!.toUpperCase()}',
-                                        style: TextStyle(
-                                            fontSize:
-                                                AppConfig.textCaption2Size),
-                                      ),
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      // for (int i = data.productDetail!.length - 1;
-                                      //     i >= 0;
-                                      //     i--)
-                                      Text(
-                                        product.units != null &&
-                                                product.units.length > 0
-                                            ? '${product.units[0].name}:${product.units[0].stock}'
-                                            : '',
-                                        style: TextStyle(
-                                          fontSize: AppConfig.textCaption3Size,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Text(
-                                        product.units != null &&
-                                                product.units.length > 1
-                                            ? '${product.units[1].name}:${product.units[1].stock}'
-                                            : '',
-                                        style: TextStyle(
-                                          fontSize: AppConfig.textCaption3Size,
-                                        ),
-                                      )
-                                    ],
-                                  )
-                                ],
-                              ),
+                              CommonWidgets.loadingContainers(
+                                  height: SizeConfig.blockSizeVertical * 10,
+                                  width: SizeConfig.blockSizeHorizontal * 90),
                             ],
                           ),
                         ),
+                      );
+                    }
+                    final product = _filteredProducts[index];
+                    return GestureDetector(
+                      onTap: () {
+                        addToCart(product);
+                        Navigator.pushReplacementNamed(
+                            context, Customerorderdetail.routeName, arguments: {
+                          'customerId': id,
+                          'name': name,
+                          'code': code,
+                          'paymentTerms': payment
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 15.0, vertical: 2),
+                        child: Card(
+                          elevation: 3,
+                          child: Container(
+                            width: SizeConfig.blockSizeHorizontal * 90,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color:
+                                      // selectedItems.contains(index)
+                                      //     ? AppConfig.colorPrimary
+                                      //     :
+                                      Colors.transparent),
+                              color: AppConfig.backgroundColor,
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      child: FadeInImage(
+                                        image: NetworkImage(
+                                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                        placeholder: const AssetImage(
+                                            'Assets/Images/no_image.jpg'),
+                                        imageErrorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Image.asset(
+                                              'Assets/Images/no_image.jpg',
+                                              fit: BoxFit.fitWidth);
+                                        },
+                                        fit: BoxFit.fitWidth,
+                                      ),
+                                    ),
+                                  ),
+                                  CommonWidgets.horizontalSpace(3),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Tooltip(
+                                        message: product.name!.toUpperCase(),
+                                        child: SizedBox(
+                                          width:
+                                              SizeConfig.blockSizeHorizontal *
+                                                  70,
+                                          child: Text(
+                                            '${product.code} | ${product.name!.toUpperCase()}',
+                                            style: TextStyle(
+                                                fontSize:
+                                                    AppConfig.textCaption2Size),
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          // for (int i = data.productDetail!.length - 1;
+                                          //     i >= 0;
+                                          //     i--)
+                                          Text(
+                                            product.units != null &&
+                                                    product.units.length > 0
+                                                ? '${product.units[0].name}:${product.units[0].stock}'
+                                                : '',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Text(
+                                            product.units != null &&
+                                                    product.units.length > 1
+                                                ? '${product.units[1].name}:${product.units[1].stock}'
+                                                : '',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
     );
   }
 
