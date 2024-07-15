@@ -50,10 +50,11 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${product.name} added')),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} is already added')),
-      );
+    } else { cartItems.add(jsonEncode(product.toJson()));
+    await prefs.setStringList('cartItemsvanstock', cartItems);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${product.name} added')),
+    );
     }
   }
 

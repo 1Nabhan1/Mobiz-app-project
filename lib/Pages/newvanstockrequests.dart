@@ -129,7 +129,7 @@ class _VanStocksState extends State<VanStocks> {
     }
   }
 
-  Future<void> removeFromCart(int productId) async {
+  Future<void> removeFromCart(int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItemsJson = prefs.getStringList('cartItemsvanstock');
 
@@ -138,7 +138,7 @@ class _VanStocksState extends State<VanStocks> {
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
 
-      products.removeWhere((product) => product.id == productId);
+      products.removeAt(index); // Remove the item at the specific index
 
       List<String> updatedCartItemsJson =
           products.map((product) => jsonEncode(product.toJson())).toList();
@@ -168,13 +168,33 @@ class _VanStocksState extends State<VanStocks> {
 
     void postDataToApi() async {
       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vanrequest.store');
+      List<int> quantities = [];
+      List<int> selectedUnitIds = [];
+
+      for (int index = 0; index < cartItems.length; index++) {
+        String? qty = qtys[index];
+        int quantity = qty != null ? int.parse(qty) : 1;
+        quantities.add(quantity);
+        String? selectedUnitName = cartItems[index].selectedUnitName;
+        int selectedUnitId;
+        if (selectedUnitName != null) {
+          selectedUnitId = cartItems[index]
+              .units
+              .firstWhere((unit) => unit.name == selectedUnitName)
+              .unit!;
+        } else {
+          selectedUnitId = cartItems[index].units.first.unit!;
+        }
+
+        selectedUnitIds.add(selectedUnitId);
+      }
       var data = {
         'van_id': AppState().vanId,
         'store_id': AppState().storeId,
         'user_id': AppState().userId,
-        'item_id': cartItems[0].id,
-        'quantity': ['100'],
-        'unit': cartItems[0].units,
+        'item_id': cartItems.map((item) => item.id).toList(),
+        'quantity': quantities,
+        'unit': selectedUnitIds,
         // 'mrp': cartItems[0].price,
         // 'customer_id': id,
         // 'if_vat': _ifVat == 1 ? 1 : 0,
@@ -486,7 +506,7 @@ class _VanStocksState extends State<VanStocks> {
                                       radius: 10,
                                       child: GestureDetector(
                                         onTap: () async {
-                                          removeFromCart(cartItems[index].id);
+                                          removeFromCart(index);
                                         },
                                         child: const Icon(
                                           Icons.close,
@@ -499,52 +519,52 @@ class _VanStocksState extends State<VanStocks> {
                                 ),
                                 Row(
                                   children: [
-                                    SizedBox(
-                                      width: 45,
-                                      height: 20,
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton<ProductType>(
-                                          alignment: Alignment.center,
-                                          isExpanded: true,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppConfig.colorPrimary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          hint: Center(child: Text('Select')),
-                                          value: selectedProductTypes[index] !=
-                                                  null
-                                              ? selectedProductTypes[index]
-                                              : productTypes.isNotEmpty
-                                                  ? productTypes.first
-                                                  : null,
-                                          onChanged: (ProductType? newValue) {
-                                            setState(() {
-                                              selectedProductTypes[index] =
-                                                  newValue;
-                                            });
-                                          },
-                                          items: productTypes
-                                              .map((ProductType productType) {
-                                            return DropdownMenuItem<
-                                                ProductType>(
-                                              value: productType,
-                                              child: Center(
-                                                  child: Text(productType
-                                                      .name)), // Center align the item text
-                                            );
-                                          }).toList(),
-                                          icon: SizedBox.shrink(),
-                                        ),
-                                      ),
-                                    ),
-                                    Text('| '),
-                                    SizedBox(
-                                      width: 55,
-                                      height: 20,
+                                    // SizedBox(
+                                    //   width: 45,
+                                    //   height: 20,
+                                    //   child: DropdownButtonHideUnderline(
+                                    //     child: DropdownButton<ProductType>(
+                                    //       alignment: Alignment.center,
+                                    //       isExpanded: true,
+                                    //       style: TextStyle(
+                                    //         fontSize: 12,
+                                    //         color: AppConfig.colorPrimary,
+                                    //         fontWeight: FontWeight.bold,
+                                    //       ),
+                                    //       hint: Center(child: Text('Select')),
+                                    //       value: selectedProductTypes[index] !=
+                                    //               null
+                                    //           ? selectedProductTypes[index]
+                                    //           : productTypes.isNotEmpty
+                                    //               ? productTypes.first
+                                    //               : null,
+                                    //       onChanged: (ProductType? newValue) {
+                                    //         setState(() {
+                                    //           selectedProductTypes[index] =
+                                    //               newValue;
+                                    //         });
+                                    //       },
+                                    //       items: productTypes
+                                    //           .map((ProductType productType) {
+                                    //         return DropdownMenuItem<
+                                    //             ProductType>(
+                                    //           value: productType,
+                                    //           child: Center(
+                                    //               child: Text(productType
+                                    //                   .name)), // Center align the item text
+                                    //         );
+                                    //       }).toList(),
+                                    //       icon: SizedBox.shrink(),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    // Text('| '),
+                                    Flexible(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
-                                          isExpanded: true,
+                                          isDense: true,
+                                          isExpanded: false,
+                                          alignment: Alignment.center,
                                           value: selectedUnitName,
                                           items: unitNames
                                               .map<DropdownMenuItem<String>>(
@@ -574,7 +594,7 @@ class _VanStocksState extends State<VanStocks> {
                                         ),
                                       ),
                                     ),
-                                    Text('| '),
+                                    Text(' | '),
                                     GestureDetector(
                                         onTap: () {
                                           showDialog(
@@ -623,61 +643,61 @@ class _VanStocksState extends State<VanStocks> {
                                             ),
                                           ],
                                         )),
-                                    Text(' | '),
-                                    GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return AlertDialog(
-                                                  title: const Text('Amount'),
-                                                  content: TextField(
-                                                    controller:
-                                                        TextEditingController(
-                                                      text:
-                                                          '${amounts[index] ?? cartItems[index].price}',
-                                                    ),
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        amounts[index] = value;
-                                                      });
-                                                    },
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    // controller: _discountData,
-                                                  ),
-                                                  actions: <Widget>[
-                                                    MaterialButton(
-                                                      color: AppConfig
-                                                          .colorPrimary,
-                                                      textColor: Colors.white,
-                                                      child: const Text('OK'),
-                                                      onPressed: () {
-                                                        amount =
-                                                            amountctrl.text;
-                                                        Navigator.pop(context);
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              });
-                                        },
-                                        child: Row(
-                                          children: [
-                                            Text('Rate: '),
-                                            Text(
-                                              '${amounts[index] ?? cartItems[index].price}',
-                                              style: TextStyle(
-                                                  color: AppConfig.colorPrimary,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        )),
-                                    Text(' | '),
-                                    Text(
-                                      'Amt: ${amounts[index] ?? cartItems[index].price}',
-                                      style: TextStyle(color: Colors.grey),
-                                    )
+                                    // Text(' | '),
+                                    // GestureDetector(
+                                    //     onTap: () {
+                                    //       showDialog(
+                                    //           context: context,
+                                    //           builder: (context) {
+                                    //             return AlertDialog(
+                                    //               title: const Text('Amount'),
+                                    //               content: TextField(
+                                    //                 controller:
+                                    //                     TextEditingController(
+                                    //                   text:
+                                    //                       '${amounts[index] ?? cartItems[index].price}',
+                                    //                 ),
+                                    //                 onChanged: (value) {
+                                    //                   setState(() {
+                                    //                     amounts[index] = value;
+                                    //                   });
+                                    //                 },
+                                    //                 keyboardType:
+                                    //                     TextInputType.number,
+                                    //                 // controller: _discountData,
+                                    //               ),
+                                    //               actions: <Widget>[
+                                    //                 MaterialButton(
+                                    //                   color: AppConfig
+                                    //                       .colorPrimary,
+                                    //                   textColor: Colors.white,
+                                    //                   child: const Text('OK'),
+                                    //                   onPressed: () {
+                                    //                     amount =
+                                    //                         amountctrl.text;
+                                    //                     Navigator.pop(context);
+                                    //                   },
+                                    //                 ),
+                                    //               ],
+                                    //             );
+                                    //           });
+                                    //     },
+                                    //     child: Row(
+                                    //       children: [
+                                    //         Text('Rate: '),
+                                    //         Text(
+                                    //           '${amounts[index] ?? cartItems[index].price}',
+                                    //           style: TextStyle(
+                                    //               color: AppConfig.colorPrimary,
+                                    //               fontWeight: FontWeight.bold),
+                                    //         ),
+                                    //       ],
+                                    //     )),
+                                    // Text(' | '),
+                                    // Text(
+                                    //   'Amt: ${amounts[index] ?? cartItems[index].price}',
+                                    //   style: TextStyle(color: Colors.grey),
+                                    // )
                                   ],
                                 ),
                               ],

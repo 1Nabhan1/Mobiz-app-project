@@ -301,7 +301,7 @@ class _VanStockScreenState extends State<VanStockScreen>
                                                           15.0),
                                                   child: FadeInImage(
                                                     image: NetworkImage(
-                                                        '${RestDatasource().BASE_URL}/uploads/product/${product.proImage}'),
+                                                        '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
                                                     placeholder: const AssetImage(
                                                         'Assets/Images/no_image.jpg'),
                                                     imageErrorBuilder: (context,
@@ -484,7 +484,7 @@ class _VanStockScreenState extends State<VanStockScreen>
                                                           15.0),
                                                   child: FadeInImage(
                                                     image: NetworkImage(
-                                                        '${RestDatasource().Image_URL}/uploads/product/${product.proImage}'),
+                                                        '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
                                                     placeholder: const AssetImage(
                                                         'Assets/Images/no_image.jpg'),
                                                     imageErrorBuilder: (context,

@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:flutter/cupertino.dart';
@@ -19,7 +20,6 @@ import '../Models/ExpenseDrop_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
-import 'customerscreen.dart';
 
 class ExpenseAdd extends StatefulWidget {
   static const routeName = "/ExpenseAdd";
@@ -32,6 +32,11 @@ class ExpenseAdd extends StatefulWidget {
 
 class _ExpenseAddState extends State<ExpenseAdd> {
   late Future<VisitReasonResponse> futureExpenseReason;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _vatAmountController = TextEditingController();
+  final TextEditingController _totalAmountController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
   List<File> _attachedImages = [];
   Expense? selectedexpense;
   String? _amount;
@@ -43,13 +48,21 @@ class _ExpenseAddState extends State<ExpenseAdd> {
   void initState() {
     super.initState();
     futureExpenseReason = fetchExpenses();
+    _amountController.addListener(_calculateTotalAmount);
+    _vatAmountController.addListener(_calculateTotalAmount);
+    _dateController.text =
+        DateFormat('dd MMMM yyyy EEEE').format(_selectedDate!);
   }
 
-  // void _showAmountDialog(BuildContext context) {
-  //   // Implement your dialog to set Amount and Vat Amount
-  //   // Example: showDialog(...);
-  //   // Inside the dialog, update _amount and _vatAmount
-  // }
+  @override
+  void dispose() {
+    _amountController.removeListener(_calculateTotalAmount);
+    _vatAmountController.removeListener(_calculateTotalAmount);
+    _amountController.dispose();
+    _vatAmountController.dispose();
+    _totalAmountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,255 +108,246 @@ class _ExpenseAddState extends State<ExpenseAdd> {
             );
           } else if (snapshot.hasData) {
             return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Date'),
-                        Row(
-                          children: [
-                            // SizedBox(
-                            //   width: 30,
-                            // ),
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(3),
-                                border: Border.all(color: Colors.grey),
-                              ),
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5.0),
-                                  child: Text(
-                                    _selectedDate == null
-                                        ? 'Select Date'
-                                        : DateFormat('dd/MM/yyyy')
-                                            .format(_selectedDate!),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                // _selectDate(context);
-                              },
-                              icon: Icon(CupertinoIcons.calendar_today),
-                            ),
-                          ],
-                        ),
-                        // SizedBox(
-                        //   width: 10,
-                        // ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Amount"),
-                            SizedBox(height: 10),
-                            Text("Vat Amount"),
-                            SizedBox(height: 10),
-                            Text("Total Amount"),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                _showAmountDialog(context);
-                              },
-                              child: Container(
-                                width: 70,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(3),
-                                  border: Border.all(color: Colors.grey),
-                                ),
-                                child: Center(
-                                  child: Text(_amount ?? ''),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            GestureDetector(
-                              onTap: () {
-                                _showAmountDialog(context);
-                              },
-                              child: Container(
-                                width: 70,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(3),
-                                  border: Border.all(color: Colors.grey),
-                                ),
-                                child: Center(
-                                  child: Text(_vatAmount ?? ''),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            GestureDetector(
-                              onTap: null,
-                              child: Container(
-                                width: 70,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(3),
-                                  border: Border.all(color: Colors.grey),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _totalAmount ?? '',
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Type"),
-                        Container(
-                          height: MediaQuery.of(context).size.height * .03,
-                          width: MediaQuery.of(context).size.width * .72,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(3),
-                            // border: Border.all(color: Colors.grey),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 15,
                           ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<Expense>(
-                                isExpanded: true,
-                                hint: Text(
-                                  'Select from list',
-                                  style: TextStyle(fontWeight: FontWeight.w300),
+                          Container(
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: AppConfig.colorPrimary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _selectedDate == null
+                                    ? 'Select Date'
+                                    : DateFormat('dd MMMM yyyy, EEEE').format(
+                                        _selectedDate!), // Assuming _dateController has the date text
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  // fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                value: selectedexpense,
-                                onChanged: (Expense? newValue) {
-                                  if (newValue != null) {
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          TextFormField(
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            controller: _amountController,
+                            decoration: const InputDecoration(
+                              helperText: '',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: AppConfig.colorPrimary),
+                              ),
+                              labelText: 'Amount',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter an amount';
+                              }
+                              return null;
+                            },
+                          ),
+                          TextFormField(
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            controller: _vatAmountController,
+                            decoration: const InputDecoration(
+                              helperText: '',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: AppConfig.colorPrimary),
+                              ),
+                              labelText: 'Vat Amount',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter vat amount';
+                              }
+                              return null;
+                            },
+                          ),
+                          TextFormField(
+                            readOnly: true,
+                            keyboardType: TextInputType.number,
+                            controller: _totalAmountController,
+                            decoration: const InputDecoration(
+                              helperText: '',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: AppConfig.colorPrimary),
+                              ),
+                              labelText: 'Total Amount',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Total amount cannot be empty';
+                              }
+                              return null;
+                            },
+                          ),
+                          Container(
+                            height: MediaQuery.of(context).size.height * .06,
+                            width: MediaQuery.of(context).size.width * .92,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(5),
+                              // Optionally add border: Border.all(color: Colors.grey), if needed
+                            ),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButtonFormField<Expense>(
+                                  decoration: InputDecoration(
+                                    border: InputBorder
+                                        .none, // Remove underline here
+                                    contentPadding: EdgeInsets
+                                        .zero, // Remove default padding
+                                  ),
+                                  isExpanded: true,
+                                  hint: Text(
+                                    'Select from list',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w300),
+                                  ),
+                                  value: selectedexpense,
+                                  onChanged: (Expense? newValue) {
                                     setState(() {
                                       selectedexpense = newValue;
                                     });
-                                  }
-                                },
-                                items:
-                                    snapshot.data!.data.map((Expense expense) {
-                                  return DropdownMenuItem<Expense>(
-                                    value: expense,
-                                    child: Center(
-                                      child: Text(expense.name),
-                                    ),
-                                  );
-                                }).toList(),
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Please select an expense';
+                                    }
+                                    return null;
+                                  },
+                                  items: snapshot.data!.data
+                                      .map((Expense expense) {
+                                    return DropdownMenuItem<Expense>(
+                                      value: expense,
+                                      child: Center(
+                                        child: Text(expense.name),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Remarks"),
-                        SizedBox(
-                          child: TextFormField(
-                            controller: remark,
-                            maxLines: 3,
-                            decoration: InputDecoration(
-                                enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.grey)),
-                                hintText: 'Enter here',
-                                hintStyle:
-                                    TextStyle(fontWeight: FontWeight.w300),
-                                border: OutlineInputBorder(
-                                    borderSide:
-                                        BorderSide(color: Colors.grey))),
+                          SizedBox(
+                            height: 15,
                           ),
-                          // height: MediaQuery.of(context).size.height * .2,
-                          width: MediaQuery.of(context).size.width * .72,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Center(
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            WidgetStateProperty.all(AppConfig.colorPrimary),
-                        shape:
-                            WidgetStateProperty.all(BeveledRectangleBorder()),
-                        minimumSize: WidgetStateProperty.all(Size(70, 30)),
+                          SizedBox(
+                            child: TextFormField(
+                              controller: remark,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                  enabledBorder: OutlineInputBorder(
+                                      borderSide:
+                                          BorderSide(color: Colors.grey)),
+                                  hintText: 'Enter Remarks here',
+                                  hintStyle:
+                                      TextStyle(fontWeight: FontWeight.w300),
+                                  border: OutlineInputBorder(
+                                      borderSide:
+                                          BorderSide(color: Colors.grey))),
+                            ),
+                            // height: MediaQuery.of(context).size.height * .2,
+                            width: MediaQuery.of(context).size.width * .92,
+                          ),
+                        ],
                       ),
-                      onPressed: _attachDocuments,
-                      child: SizedBox(
-                        width: 120,
-                        child: Center(
-                          child: Text(
-                            "Attach Documents",
-                            style: TextStyle(color: Colors.white),
+                    ),
+                    Center(
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              WidgetStateProperty.all(AppConfig.colorPrimary),
+                          shape:
+                              WidgetStateProperty.all(BeveledRectangleBorder()),
+                          minimumSize: WidgetStateProperty.all(Size(70, 30)),
+                        ),
+                        onPressed: _attachDocuments,
+                        child: SizedBox(
+                          width: 120,
+                          child: Center(
+                            child: Text(
+                              "Attach Documents",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  _attachedImages.isEmpty
-                      ? Container()
-                      : Wrap(
-                          children: _attachedImages.map((File file) {
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Image.file(
-                                file,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          }).toList(),
+                    SizedBox(height: 20),
+                    _attachedImages.isEmpty
+                        ? Container()
+                        : Wrap(
+                            children: _attachedImages.map((File file) {
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Image.file(
+                                  file,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                    SizedBox(height: 40),
+                    Center(
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              WidgetStateProperty.all(AppConfig.colorPrimary),
+                          shape:
+                              WidgetStateProperty.all(BeveledRectangleBorder()),
+                          minimumSize: WidgetStateProperty.all(Size(70, 30)),
                         ),
-                  SizedBox(height: 40),
-                  Center(
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            WidgetStateProperty.all(AppConfig.colorPrimary),
-                        shape:
-                            WidgetStateProperty.all(BeveledRectangleBorder()),
-                        minimumSize: WidgetStateProperty.all(Size(70, 30)),
-                      ),
-                      onPressed: () {
-                        postData();
-                      },
-                      child: SizedBox(
-                        width: 120,
-                        child: Center(
-                          child: Text(
-                            "Send for Approval",
-                            style: TextStyle(color: Colors.white),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            postData();
+                          }
+                        },
+                        child: SizedBox(
+                          width: 120,
+                          child: Center(
+                            child: Text(
+                              "Send for Approval",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           } else {
@@ -425,91 +429,26 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     return compressedFile;
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
-    }
-  }
-
-  Future<void> _showAmountDialog(BuildContext context) async {
-    TextEditingController amountController = TextEditingController();
-    TextEditingController vatAmountController = TextEditingController();
-
-    // Initialize controllers with previous values if available
-    amountController.text = _amount ?? '';
-    vatAmountController.text = _vatAmount ?? '';
-
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter Amount and Vat Amount'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(hintText: "Amount"),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: vatAmountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(hintText: "Vat Amount"),
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: AppConfig.colorPrimary,
-              ),
-              child: Text(
-                'OK',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                setState(() {
-                  _amount = amountController.text;
-                  _vatAmount = vatAmountController.text;
-                  _calculateTotalAmount();
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _calculateTotalAmount() {
-    if (_amount != null && _vatAmount != null) {
-      double amount = double.tryParse(_amount!) ?? 0.0;
-      double vatAmount = double.tryParse(_vatAmount!) ?? 0.0;
-      double totalAmount = amount + vatAmount;
+    setState(() {
+      String amountText = _amountController.text;
+      String vatAmountText = _vatAmountController.text;
 
-      // Check if both amount and vatAmount are zero
-      if (amount == 0.0 && vatAmount == 0.0) {
-        setState(() {
-          _totalAmount = ''; // Display blank instead of '0.00'
-        });
-      } else {
-        setState(() {
-          _totalAmount =
+      if (amountText.isNotEmpty && vatAmountText.isNotEmpty) {
+        double? amount = double.tryParse(amountText);
+        double? vatAmount = double.tryParse(vatAmountText);
+
+        if (amount != null && vatAmount != null) {
+          double totalAmount = amount + vatAmount;
+          _totalAmountController.text =
               totalAmount.toStringAsFixed(2); // Format to 2 decimal places
-        });
+        } else {
+          _totalAmountController.clear();
+        }
+      } else {
+        _totalAmountController.clear();
       }
-    }
+    });
   }
 
   void postData() async {
@@ -520,11 +459,11 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     request.fields['store_id'] = AppState().storeId.toString();
     request.fields['expense_id'] = selectedexpense!.id.toString();
     request.fields['description'] = remark.text;
-    request.fields['amount'] = _amount ?? '0';
+    request.fields['amount'] = _amountController.text;
     request.fields['in_date'] = DateFormat('dd-MM-yyyy').format(_selectedDate!);
     request.fields['user_id'] = AppState().userId.toString();
-    request.fields['vat_amount'] = _vatAmount!;
-    request.fields['total_amount'] = _totalAmount!;
+    request.fields['vat_amount'] = _vatAmountController.text;
+    request.fields['total_amount'] = _totalAmountController.text;
 
     // Add files to the request
     for (var file in _attachedImages) {

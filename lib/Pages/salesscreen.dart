@@ -474,7 +474,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                         borderRadius: BorderRadius.circular(10),
                                         child: FadeInImage(
                                           image: NetworkImage(
-                                            '${RestDatasource().BASE_URL}/uploads/product/${cartItems[index].proImage}',
+                                            '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
                                           ),
                                           placeholder: const AssetImage(
                                             'Assets/Images/no_image.jpg',
@@ -557,6 +557,14 @@ class _SalesScreenState extends State<SalesScreen> {
                                             setState(() {
                                               selectedProductTypes[index] =
                                                   newValue;
+                                              if (newValue!.name == 'Normal') {
+                                                amounts[index] =
+                                                    cartItems[index]
+                                                        .price
+                                                        .toString();
+                                              } else {
+                                                amounts[index] = '0';
+                                              }
                                             });
                                           },
                                           items: productTypes

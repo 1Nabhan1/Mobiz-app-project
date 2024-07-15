@@ -190,8 +190,21 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
           Uri.parse('${RestDatasource().BASE_URL}/api/vansales_order.store');
       List<int> quantities = [];
       List<Object> productTypesList = [];
+      List<int> selectedUnitIds = [];
 
       for (int index = 0; index < cartItems.length; index++) {
+        String? selectedUnitName = cartItems[index].selectedUnitName;
+        int selectedUnitId;
+        if (selectedUnitName != null) {
+          selectedUnitId = cartItems[index]
+              .units
+              .firstWhere((unit) => unit.name == selectedUnitName)
+              .unit!;
+        } else {
+          selectedUnitId = cartItems[index].units.first.unit!;
+        }
+
+        selectedUnitIds.add(selectedUnitId);
         String? qty = qtys[index];
         int quantity = qty != null ? int.parse(qty) : 1;
         quantities.add(quantity);
@@ -206,7 +219,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
         'user_id': AppState().userId,
         'item_id': cartItems.map((item) => item.id).toList(),
         'quantity': quantities,
-        'unit': cartItems.map((item) => item.units[0].unit).toList(),
+        'unit': selectedUnitIds,
         'mrp': cartItems.map((item) => item.price).toList(),
         'customer_id': id,
         'if_vat': _ifVat == 1 ? 1 : 0,
@@ -516,7 +529,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                         borderRadius: BorderRadius.circular(10),
                                         child: FadeInImage(
                                           image: NetworkImage(
-                                            '${RestDatasource().BASE_URL}/uploads/product/${cartItems[index].proImage}',
+                                            '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
                                           ),
                                           placeholder: const AssetImage(
                                             'Assets/Images/no_image.jpg',

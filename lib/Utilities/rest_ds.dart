@@ -18,10 +18,12 @@ class RestDatasource {
 
   late String BASE_URL;
   late String Image_URL;
+  late String Product_URL;
 
   RestDatasource() {
     BASE_URL = "http://68.183.92.8:3699";
     Image_URL = "http://68.183.92.8:3697";
+    Product_URL = "http://68.183.92.8:3696";
     //BASE_URL = "https://unistageapi.cianlogic.com";
   }
 
