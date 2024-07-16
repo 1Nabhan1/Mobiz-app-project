@@ -48,28 +48,31 @@ class Data {
   String? updatedAt;
   String? deletedAt;
   String? erpCustomerCode;
+  String? visit;
 
-  Data(
-      {this.id,
-      this.name,
-      this.code,
-      this.address,
-      this.contactNumber,
-      this.whatsappNumber,
-      this.email,
-      this.trn,
-      this.location,
-      this.paymentTerms,
-      this.creditLimit,
-      this.creditDays,
-      this.routeId,
-      this.provinceId,
-      this.storeId,
-      this.status,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.erpCustomerCode});
+  Data({
+    this.id,
+    this.name,
+    this.code,
+    this.address,
+    this.contactNumber,
+    this.whatsappNumber,
+    this.email,
+    this.trn,
+    this.location,
+    this.paymentTerms,
+    this.creditLimit,
+    this.creditDays,
+    this.routeId,
+    this.provinceId,
+    this.storeId,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.erpCustomerCode,
+    this.visit,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -92,6 +95,7 @@ class Data {
     updatedAt = json['updated_at'];
     deletedAt = json['deleted_at'];
     erpCustomerCode = json['erp_customer_code'];
+    visit = json['visit'];
   }
 
   Map<String, dynamic> toJson() {

@@ -53,6 +53,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
     fetchCartItems();
     fetchProductTypes();
     _selectedDate = DateTime.now();
+    initializeValues();
   }
 
   DateTime? _selectedDate;
@@ -110,7 +111,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
           0;
       int stock = cartItems[index].units[0].stock ?? 0;
       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      double totaltax = ((rate) / 100) * quantity;
+      num taxPercentage = cartItems[index].taxPercentage ??
+          0; // Use the tax percentage from the product
+      double totaltax = ((rate * taxPercentage) / 100) * quantity;
       tax += totaltax;
     }
     return tax;
@@ -173,6 +176,22 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
     await prefs.remove('cartItemsorder');
     setState(() {
       cartItems.clear();
+    });
+  }
+
+  Future<void> saveToSharedPreferences(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  Future<void> initializeValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      for (int i = 0; i < cartItems.length; i++) {
+        qtys[i] = prefs.getString('qtyorder$i') ?? '1';
+        amounts[i] =
+            prefs.getString('amountorder$i') ?? cartItems[i].price.toString();
+      }
     });
   }
 
@@ -612,6 +631,14 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                             setState(() {
                                               selectedProductTypes[index] =
                                                   newValue;
+                                              if (newValue!.name == 'Normal') {
+                                                amounts[index] =
+                                                    cartItems[index]
+                                                        .price
+                                                        .toString();
+                                              } else {
+                                                amounts[index] = '0';
+                                              }
                                             });
                                           },
                                           items: productTypes
@@ -655,8 +682,15 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                           }).toList(),
                                           onChanged: (String? newValue) {
                                             setState(() {
-                                              cartItems[index]
-                                                  .selectedUnitName = newValue;
+                                              cartItems[index].selectedUnitName = newValue;
+
+                                              // Find the selected unit and update the rate
+                                              for (var unit in cartItems[index].units) {
+                                                if (unit.name == newValue) {
+                                                  amounts[index] = unit.price.toString();
+                                                  break;
+                                                }
+                                              }
                                             });
                                           },
                                           icon: SizedBox.shrink(),
@@ -686,6 +720,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         qtys[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'qtyorder$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:
@@ -736,6 +773,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         amounts[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'amountorder$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:

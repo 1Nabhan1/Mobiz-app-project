@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:horizontal_week_calendar/horizontal_week_calendar.dart';
+import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,13 +29,14 @@ class _SchedulePageState extends State<SchedulePage> {
   CustomerData customer = CustomerData();
   bool _initDone = false;
   bool _nodata = false;
-  @override
+
   @override
   void initState() {
     super.initState();
     getCustomerDetails();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -57,6 +59,7 @@ class _SchedulePageState extends State<SchedulePage> {
             onTap: () {
               setState(() {
                 selectedDate = DateTime.now();
+                getCustomerDetails();
               });
             },
             child: Icon(
@@ -105,6 +108,7 @@ class _SchedulePageState extends State<SchedulePage> {
                 if (pickedDate != null) {
                   setState(() {
                     selectedDate = pickedDate;
+                    getCustomerDetails();
                   });
                 }
               },
@@ -121,6 +125,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   onDateChange: (date) {
                     setState(() {
                       selectedDate = date;
+                      getCustomerDetails();
                     });
                   },
                   showTopNavbar: false,
@@ -349,7 +354,7 @@ class _SchedulePageState extends State<SchedulePage> {
                                 TextStyle(fontSize: AppConfig.textCaption3Size),
                           ),
                           Spacer(),
-                          Text('Pending')
+                          Text(data.visit ?? '')
                         ],
                       ),
                     ),
@@ -367,7 +372,7 @@ class _SchedulePageState extends State<SchedulePage> {
     RestDatasource api = RestDatasource();
 
     dynamic resJson = await api.getDetails(
-        '/api/get_customer?store_id=${AppState().storeId}&route_id=${AppState().routeId}',
+        '/api/get_scheduled_customer_by_user_with_date?date=${DateFormat('yyyy/MM/dd').format(selectedDate)}&store_id=${AppState().storeId}&user_id=${AppState().userId}',
         AppState().token);
     print('Cust $resJson');
     if (resJson['data'] != null && resJson['data'].length > 0) {
@@ -375,6 +380,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
       setState(() {
         _initDone = true;
+        _nodata = false;
       });
     } else {
       setState(() {

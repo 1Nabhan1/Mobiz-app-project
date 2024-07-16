@@ -195,8 +195,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
   Future _getRecentData() async {
     RestDatasource api = RestDatasource();
-    Map<String, dynamic> response =
-        await api.getDetails('/api/get_collection_report', AppState().token);
+    Map<String, dynamic> response = await api.getDetails(
+        '/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        AppState().token);
 
     receiptsData = ReceiptsData.fromJson(response);
     if (response['data'] != null) {

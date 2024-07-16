@@ -48,6 +48,23 @@ class _SalesScreenState extends State<SalesScreen> {
     super.initState();
     fetchCartItems();
     fetchProductTypes();
+    initializeValues();
+  }
+
+  Future<void> saveToSharedPreferences(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  Future<void> initializeValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      for (int i = 0; i < cartItems.length; i++) {
+        qtys[i] = prefs.getString('qty$i') ?? '1';
+        amounts[i] =
+            prefs.getString('amount$i') ?? cartItems[i].price.toString();
+      }
+    });
   }
 
   Future<void> fetchCartItems() async {
@@ -85,13 +102,16 @@ class _SalesScreenState extends State<SalesScreen> {
   // double tax = 0;
   double calculateTax() {
     double tax = 0;
+
     for (int index = 0; index < cartItems.length; index++) {
       double rate = double.tryParse(
               amounts[index] ?? cartItems[index].price.toString()) ??
           0;
       int stock = cartItems[index].units[0].stock ?? 0;
       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      double totaltax = ((rate) / 100) * quantity;
+      num taxPercentage = cartItems[index].taxPercentage ??
+          0; // Use the tax percentage from the product
+      double totaltax = ((rate * taxPercentage) / 100) * quantity;
       tax += totaltax;
     }
     return tax;
@@ -610,6 +630,16 @@ class _SalesScreenState extends State<SalesScreen> {
                                             setState(() {
                                               cartItems[index]
                                                   .selectedUnitName = newValue;
+
+                                              // Find the selected unit and update the rate
+                                              for (var unit
+                                                  in cartItems[index].units) {
+                                                if (unit.name == newValue) {
+                                                  amounts[index] =
+                                                      unit.price.toString();
+                                                  break;
+                                                }
+                                              }
                                             });
                                           },
                                           icon: SizedBox.shrink(),
@@ -642,6 +672,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         qtys[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'qty$index', value);
                                                       });
                                                     },
                                                     keyboardType:
@@ -692,6 +724,9 @@ class _SalesScreenState extends State<SalesScreen> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         amounts[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'amount$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:

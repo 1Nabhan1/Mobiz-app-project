@@ -152,7 +152,8 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                     ),
                     border: Border.all(color: AppConfig.colorPrimary),
                   ),
-                  child: TextField(autofocus: true,
+                  child: TextField(
+                    autofocus: true,
                     style: TextStyle(color: Colors.white),
                     controller: _searchData,
                     decoration: const InputDecoration(

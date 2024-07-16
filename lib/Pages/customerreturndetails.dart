@@ -49,6 +49,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     super.initState();
     fetchCartItems();
     fetchProductTypes();
+    initializeValues();
   }
 
   Future<void> fetchCartItems() async {
@@ -92,7 +93,9 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
           0;
       int stock = cartItems[index].units[0].stock ?? 0;
       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      double totaltax = ((rate) / 100) * quantity;
+      num taxPercentage = cartItems[index].taxPercentage ??
+          0; // Use the tax percentage from the product
+      double totaltax = ((rate * taxPercentage) / 100) * quantity;
       tax += totaltax;
     }
     return tax;
@@ -155,6 +158,22 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     await prefs.remove('cartItemsreturn');
     setState(() {
       cartItems.clear();
+    });
+  }
+
+  Future<void> saveToSharedPreferences(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  Future<void> initializeValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      for (int i = 0; i < cartItems.length; i++) {
+        qtys[i] = prefs.getString('qtyreturn$i') ?? '1';
+        amounts[i] =
+            prefs.getString('amountreturn$i') ?? cartItems[i].price.toString();
+      }
     });
   }
 
@@ -603,6 +622,16 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                             setState(() {
                                               cartItems[index]
                                                   .selectedUnitName = newValue;
+
+                                              // Find the selected unit and update the rate
+                                              for (var unit
+                                                  in cartItems[index].units) {
+                                                if (unit.name == newValue) {
+                                                  amounts[index] =
+                                                      unit.price.toString();
+                                                  break;
+                                                }
+                                              }
                                             });
                                           },
                                           icon: SizedBox.shrink(),
@@ -635,6 +664,9 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         qtys[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'qtyreturn$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:
@@ -685,6 +717,9 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         amounts[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'amountreturn$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:

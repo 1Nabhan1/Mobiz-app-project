@@ -1,47 +1,145 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Pages/salesscreen.dart';
+import 'package:mobizapp/sales_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../Models/appstate.dart';
-import '../Models/ProductDataModelClass.dart';
+import '../Components/commonwidgets.dart';
+import '../Models/sales_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
-import '../Components/commonwidgets.dart';
-import '../Models/quantitymodel.dart' as Qty;
 
 class ProductsScreen extends StatefulWidget {
   static const routeName = "/ProductScreen";
-  const ProductsScreen({super.key});
 
   @override
-  State<ProductsScreen> createState() => _ProductsScreenState();
+  _ProductsScreenState createState() => _ProductsScreenState();
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  final TextEditingController _searchData = TextEditingController();
-  ProductDataModel products = ProductDataModel();
-  Qty.QuantityModel qunatityData = Qty.QuantityModel();
-  List<Qty.QuantityModel> quantity = [];
-  bool _initDone = false;
-  bool _nodata = false;
+  final ScrollController _scrollController = ScrollController();
+  List<Product> _products = [];
+  List<Product> _filteredProducts = [];
+  int _currentPage = 1;
+  bool _isLoading = false;
+  bool _hasMore = true;
   bool _search = false;
+  final TextEditingController _searchData = TextEditingController();
+  int? id;
+  String? name;
+  String? code;
+  String? payment;
+
+  void addToCart(Product product) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? cartItems = prefs.getStringList('cartItems') ?? [];
+
+    bool alreadyExists = cartItems.any((item) {
+      Map<String, dynamic> itemMap = jsonDecode(item);
+      return itemMap['id'] == product.id;
+    });
+
+    if (!alreadyExists) {
+      cartItems.add(jsonEncode(product.toJson()));
+      await prefs.setStringList('cartItems', cartItems);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} added')),
+      );
+    } else {
+      cartItems.add(jsonEncode(product.toJson()));
+      await prefs.setStringList('cartItems', cartItems);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} added')),
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _getProducts();
+    _fetchProducts();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+              _scrollController.position.maxScrollExtent &&
+          _hasMore &&
+          !_isLoading) {
+        _fetchProducts();
+      }
+    });
+
+    _searchData.addListener(() {
+      _searchProducts(_searchData.text);
+    });
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final productData = await fetchProducts(_currentPage);
+      setState(() {
+        _products.addAll(productData.data.products);
+        _filteredProducts = List.from(_products);
+        _currentPage++;
+        _hasMore = _currentPage <= productData.data.lastPage;
+      });
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _searchProducts(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProducts = List.from(_products);
+      } else {
+        _filteredProducts = _products
+            .where((product) =>
+                product.name!.toLowerCase().contains(query.toLowerCase()) ||
+                product.code!.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchData.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      id = params!['customerId'];
+      name = params['name'];
+      code = params['code'];
+      payment = params['paymentTerms'];
+    }
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppConfig.colorPrimary,
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
         title: const Text(
           'Products',
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
+        backgroundColor: AppConfig.colorPrimary,
         actions: [
           (_search)
               ? Container(
@@ -55,6 +153,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     border: Border.all(color: AppConfig.colorPrimary),
                   ),
                   child: TextField(
+                    autofocus: true,
+                    style: TextStyle(color: Colors.white),
                     controller: _searchData,
                     decoration: const InputDecoration(
                         contentPadding: EdgeInsets.all(5),
@@ -69,6 +169,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
             onTap: () {
               setState(() {
                 _search = !_search;
+                if (!_search) {
+                  _searchData.clear();
+                }
               });
             },
             child: Icon(
@@ -80,204 +183,160 @@ class _ProductsScreenState extends State<ProductsScreen> {
           CommonWidgets.horizontalSpace(3),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              CommonWidgets.verticalSpace(1),
-              (_initDone && !_nodata)
-                  ? SizedBox(
-                      height: SizeConfig.blockSizeVertical * 78,
-                      child: ListView.separated(
-                        separatorBuilder: (BuildContext context, int index) =>
-                            CommonWidgets.verticalSpace(1),
-                        itemCount: products.data!.length,
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) =>
-                            _productsCard(products.data![index], index),
-                      ),
-                    )
-                  : (_nodata && _initDone)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                              CommonWidgets.verticalSpace(3),
-                              const Center(
-                                child: Text('No Data'),
-                              ),
-                            ])
-                      : Shimmer.fromColors(
-                          baseColor:
-                              AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                          highlightColor: AppConfig.backButtonColor,
-                          child: Center(
-                            child: Column(
+      body: _isLoading && _products.isEmpty
+          ? Shimmer.fromColors(
+              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+              highlightColor: AppConfig.backButtonColor,
+              child: Center(
+                child: Column(
+                  children: [
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                  ],
+                ),
+              ),
+            )
+          : _filteredProducts.isEmpty
+              ? Center(
+                  child: Text('No products found'),
+                )
+              : ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _filteredProducts.length) {
+                      return Shimmer.fromColors(
+                        baseColor:
+                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                        highlightColor: AppConfig.backButtonColor,
+                        child: Center(
+                          child: Column(
+                            children: [
+                              CommonWidgets.loadingContainers(
+                                  height: SizeConfig.blockSizeVertical * 10,
+                                  width: SizeConfig.blockSizeHorizontal * 90),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    final product = _filteredProducts[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15.0, vertical: 2),
+                      child: Card(
+                        elevation: 3,
+                        child: Container(
+                          width: SizeConfig.blockSizeHorizontal * 90,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.transparent),
+                            color: AppConfig.backgroundColor,
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: Row(
                               children: [
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    child: FadeInImage(
+                                      image: NetworkImage(
+                                          '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                      placeholder: const AssetImage(
+                                          'Assets/Images/no_image.jpg'),
+                                      imageErrorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Image.asset(
+                                            'Assets/Images/no_image.jpg',
+                                            fit: BoxFit.fitWidth);
+                                      },
+                                      fit: BoxFit.fitWidth,
+                                    ),
+                                  ),
+                                ),
+                                CommonWidgets.horizontalSpace(3),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Tooltip(
+                                      message: product.name!.toUpperCase(),
+                                      child: SizedBox(
+                                        width:
+                                            SizeConfig.blockSizeHorizontal * 70,
+                                        child: Text(
+                                          '${product.code} | ${product.name!.toUpperCase()}',
+                                          style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption2Size),
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          product.units != null &&
+                                                  product.units.length > 0
+                                              ? '${product.units[0].name}:${product.units[0].stock}'
+                                              : '',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        Text(
+                                          product.units != null &&
+                                                  product.units.length > 1
+                                              ? '${product.units[1].name}:${product.units[1].stock}'
+                                              : '',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                          ),
+                                        )
+                                      ],
+                                    )
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                         ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _productsCard(Data data, int index) {
-    return Card(
-      elevation: 3,
-      child: Container(
-        width: SizeConfig.blockSizeHorizontal * 90,
-        decoration: const BoxDecoration(
-          color: AppConfig.backgroundColor,
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 50,
-                height: 50,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15.0),
-                  child: FadeInImage(
-                    image: NetworkImage(
-                        'https://mobiz-shop.yes45.in/uploads/product/${data.proImage}'),
-                    placeholder: const AssetImage('Assets/Images/no_image.jpg'),
-                    imageErrorBuilder: (context, error, stackTrace) {
-                      return Image.asset('Assets/Images/no_image.jpg',
-                          fit: BoxFit.fitWidth);
-                    },
-                    fit: BoxFit.fitWidth,
-                  ),
-                ),
-              ),
-              CommonWidgets.horizontalSpace(3),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Tooltip(
-                    message: data.name!.toUpperCase(),
-                    child: SizedBox(
-                      width: SizeConfig.blockSizeHorizontal * 70,
-                      child: Text(
-                        '${data.code} | ${data.name!}',
-                        style: TextStyle(fontSize: AppConfig.textCaption2Size),
                       ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      for (int i = 0;
-                          i < quantity[index].result!.data!.length;
-                          i++)
-                        Text(
-                          (i == 0)
-                              ? '${quantity[index].result!.data![i].units![0].name!}: ${formatDivisionResult(products.data![index].baseUnitQty!, quantity[index].result!.data![i].qty!, quantity[index].result!.data![i].units![0].name!)}'
-                              : (i == 1)
-                                  ? '| ${quantity[index].result!.data![i].units![0].name!}: ${formatDivisionResult(products.data![index].secondUnitQty!, quantity[index].result!.data![i].qty!, quantity[index].result!.data![i].units![0].name!)} '
-                                  : (i == 2)
-                                      ? '| ${quantity[index].result!.data![i].units![0].name!}: ${formatDivisionResult(products.data![index].thirdUnitQty!, quantity[index].result!.data![i].qty!, quantity[index].result!.data![i].units![0].name!)}'
-                                      : '| ${quantity[index].result!.data![i].units![0].name!}: ${formatDivisionResult(products.data![index].fourthUnitQty!, quantity[index].result!.data![i].qty!, quantity[index].result!.data![i].units![0].name!)}',
-                          style: TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
-                              fontWeight: AppConfig.headLineWeight),
-                        ),
-                    ],
-                  )
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+                    );
+                  },
+                ),
     );
   }
 
-  Future<void> _getProducts() async {
-    RestDatasource api = RestDatasource();
-    dynamic resJson = await api.getDetails(
-        '/api/get_product?store_id=${AppState().storeId}', AppState().token);
+  Future<ProductDataModel> fetchProducts(int page) async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_product_with_warehouse_stock?store_id=${AppState().storeId}'));
 
-    if (resJson['data'] != null) {
-      products = ProductDataModel.fromJson(resJson);
-
-      for (int i = 0; i < products.data!.length; i++) {
-        _getQuantity(i, products.data![i].id!);
-      }
+    if (response.statusCode == 200) {
+      return ProductDataModel.fromJson(json.decode(response.body));
     } else {
-      setState(() {
-        _initDone = true;
-        _nodata = true;
-      });
-    }
-  }
-
-  Future<void> _getQuantity(int i, int id) async {
-    RestDatasource api = RestDatasource();
-    dynamic resJson = await api.getDetails(
-        '/api/get_van_stock_detail?product_id=$id&van_id=${AppState().vanId}',
-        AppState().token); //${AppState().storeId}
-
-    if (resJson['status'] == "success") {
-      qunatityData = Qty.QuantityModel.fromJson(resJson);
-      quantity.add(qunatityData);
-      if (i == products.data!.length - 1) {
-        Future.delayed(
-          const Duration(seconds: 3),
-          () {
-            setState(
-              () {
-                _initDone = true;
-              },
-            );
-          },
-        );
-      }
-    }
-  }
-
-  String formatDivisionResult(int numerator, int denominator, String name) {
-    if (denominator == 0) {
-      throw ArgumentError("Denominator cannot be zero.");
-    }
-
-    double result = numerator / denominator;
-
-    result = double.parse(result.toStringAsFixed(1));
-
-    int integerPart = result.floor();
-    double fractionalPart = result - integerPart;
-
-    int fractionalPartInPieces = (fractionalPart * 10).round();
-
-    if (fractionalPartInPieces != 0) {
-      return (integerPart != 0)
-          ? "$integerPart $name $fractionalPartInPieces Piece"
-          : "$fractionalPartInPieces Piece";
-    } else {
-      return "$integerPart";
+      throw Exception('Failed to load products');
     }
   }
 }
