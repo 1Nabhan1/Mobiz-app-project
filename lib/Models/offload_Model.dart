@@ -1,5 +1,3 @@
-// sales_return_model.dart
-
 class Offload {
   final List<SalesReturnData> data;
 
@@ -7,7 +5,10 @@ class Offload {
 
   factory Offload.fromJson(Map<String, dynamic> json) {
     return Offload(
-      data: List<SalesReturnData>.from(json['data'].map((item) => SalesReturnData.fromJson(item))),
+      data: (json['data'] as List<dynamic>?)
+              ?.map((item) => SalesReturnData.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 }
@@ -31,12 +32,21 @@ class SalesReturnData {
 
   factory SalesReturnData.fromJson(Map<String, dynamic> json) {
     return SalesReturnData(
-      id: json['id'],
-      product: List<Productreturn>.from(json['product'].map((item) => Productreturn.fromJson(item))),
-      returntype: List<ReturnType>.from(json['returntype'].map((item) => ReturnType.fromJson(item))),
-      units: List<Unit>.from(json['units'].map((item) => Unit.fromJson(item))),
-      quantity: json['quantity'],
-      amount: json['amount'].toDouble(),
+      id: json['id'] ?? 0,
+      product: (json['product'] as List<dynamic>?)
+              ?.map((item) => Productreturn.fromJson(item))
+              .toList() ??
+          [],
+      returntype: (json['returntype'] as List<dynamic>?)
+              ?.map((item) => ReturnType.fromJson(item))
+              .toList() ??
+          [],
+      units: (json['units'] as List<dynamic>?)
+              ?.map((item) => Unit.fromJson(item))
+              .toList() ??
+          [],
+      quantity: json['quantity'] ?? 0,
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -56,10 +66,10 @@ class Productreturn {
 
   factory Productreturn.fromJson(Map<String, dynamic> json) {
     return Productreturn(
-      id: json['id'],
-      code: json['code'],
-      name: json['name'],
-      proImage: json['pro_image'],
+      id: json['id'] ?? 0,
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      proImage: json['pro_image'] ?? '',
     );
   }
 }
@@ -75,8 +85,8 @@ class ReturnType {
 
   factory ReturnType.fromJson(Map<String, dynamic> json) {
     return ReturnType(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
     );
   }
 }
@@ -92,8 +102,8 @@ class Unit {
 
   factory Unit.fromJson(Map<String, dynamic> json) {
     return Unit(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
     );
   }
 }

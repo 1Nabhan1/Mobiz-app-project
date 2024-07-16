@@ -21,7 +21,7 @@ import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/shraetst2.dart';
 import 'package:mobizapp/sales_screen.dart';
- import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/selectproduct.dart';
 import 'Pages/CustomeSOA.dart';
 import 'Pages/Expense_add.dart';
@@ -62,29 +62,28 @@ class MyApp extends StatelessWidget {
           LoginScreen.routeName: (context) => const LoginScreen(),
           TotalSales.routeName: (context) => const TotalSales(),
           HomeScreen.routeName: (context) => const HomeScreen(),
-          ProductsScreen.routeName: (context) =>   ProductsScreen(),
+          ProductsScreen.routeName: (context) => ProductsScreen(),
           ErrorHandlingScreen.routeName: (context) =>
               const ErrorHandlingScreen(),
           VanStockRequestsScreen.routeName: (context) =>
               const VanStockRequestsScreen(),
-          VanStocks.routeName: (context) =>   VanStocks(),
+          VanStocks.routeName: (context) => VanStocks(),
           SplashScreen.routeName: (context) => const SplashScreen(),
-          SelectProductsScreen.routeName: (context) =>
-                SelectProductsScreen(),
+          SelectProductsScreen.routeName: (context) => SelectProductsScreen(),
           CustomersDataScreen.routeName: (context) =>
               const CustomersDataScreen(),
-          SalesScreen.routeName: (context) =>   SalesScreen(),
+          SalesScreen.routeName: (context) => SalesScreen(),
           VanStockScreen.routeName: (context) => const VanStockScreen(),
           SchedulePage.routeName: (context) => const SchedulePage(),
           CustomerDetailsScreen.routeName: (context) =>
               const CustomerDetailsScreen(),
           SalesSelectProductsScreen.routeName: (context) =>
-                SalesSelectProductsScreen(),
+              SalesSelectProductsScreen(),
           SaleInvoiceScrreen.routeName: (context) => const SaleInvoiceScrreen(),
           SalesSelectProductsorderScreen.routeName: (context) =>
-                SalesSelectProductsorderScreen(),
+              SalesSelectProductsorderScreen(),
           Salesselectproductreturn.routeName: (context) =>
-                Salesselectproductreturn(),
+              Salesselectproductreturn(),
           PaymentCollectionScreen.routeName: (context) =>
               const PaymentCollectionScreen(),
           CustomerRegistration.routeName: (context) =>

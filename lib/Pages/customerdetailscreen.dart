@@ -14,6 +14,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/tst.dart';
 
+import '../Utilities/rest_ds.dart';
 import '../sales_screen.dart';
 import 'Total_sales.dart';
 import 'customerreturndetails.dart';
@@ -400,7 +401,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Future<void> fetchData() async {
     try {
       var response = await http.get(Uri.parse(
-          'https://mobiz-api.yes45.in/api/get_sales_pending_outstanding?customer_id=$id'));
+          '${RestDatasource().BASE_URL}/api/get_sales_pending_outstanding?customer_id=$id'));
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
         setState(() {

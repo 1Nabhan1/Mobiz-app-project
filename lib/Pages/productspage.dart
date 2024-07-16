@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Pages/Image_show.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -257,18 +258,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   height: 50,
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(15.0),
-                                    child: FadeInImage(
-                                      image: NetworkImage(
-                                          '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                      placeholder: const AssetImage(
-                                          'Assets/Images/no_image.jpg'),
-                                      imageErrorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                            'Assets/Images/no_image.jpg',
-                                            fit: BoxFit.fitWidth);
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ImageShow(
+                                                  img:
+                                                      '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                            ));
                                       },
-                                      fit: BoxFit.fitWidth,
+                                      child: FadeInImage(
+                                        image: NetworkImage(
+                                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                        placeholder: const AssetImage(
+                                            'Assets/Images/no_image.jpg'),
+                                        imageErrorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Image.asset(
+                                              'Assets/Images/no_image.jpg',
+                                              fit: BoxFit.fitWidth);
+                                        },
+                                        fit: BoxFit.fitWidth,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -331,7 +343,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<ProductDataModel> fetchProducts(int page) async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_warehouse_stock?store_id=${AppState().storeId}'));
+        '${RestDatasource().BASE_URL}/api/get_product_with_warehouse_stock?store_id=${AppState().storeId}&page=$page'));
 
     if (response.statusCode == 200) {
       return ProductDataModel.fromJson(json.decode(response.body));

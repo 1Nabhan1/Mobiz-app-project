@@ -48,6 +48,52 @@ class _VanStocksState extends State<VanStocks> {
     super.initState();
     fetchCartItems();
     fetchProductTypes();
+    initializeValues();
+  }
+
+  Future<void> saveToSharedPreferences(String key, dynamic value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (value is String) {
+      await prefs.setString(key, value);
+    } else if (value is int) {
+      await prefs.setInt(key, value);
+    } else if (value is double) {
+      await prefs.setDouble(key, value);
+    } else if (value is bool) {
+      await prefs.setBool(key, value);
+    } else if (value is List<String>) {
+      await prefs.setStringList(key, value);
+    }
+  }
+
+  Future<void> clearSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
+  Future<void> initializeValues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Wait until productTypes and cartItems are populated
+    setState(() {
+      for (int i = 0; i < cartItems.length; i++) {
+        qtys[i] = prefs.getString('qtyreq$i') ?? '1';
+        amounts[i] =
+            prefs.getString('amountreq$i') ?? cartItems[i].price.toString();
+
+        if (cartItems[i].units.isNotEmpty) {
+          cartItems[i].selectedUnitName =
+              prefs.getString('unitNamereq$i') ?? cartItems[i].units.first.name;
+        }
+
+        // for (int i = 0; i < cartItems.length; i++) {
+        //   selectedProductTypes[i] = productTypes.firstWhere(
+        //         (type) => type.name == prefs.getString('productType$i'),
+        //     orElse: () => productTypes.first,
+        //   );
+        // }
+      }
+    });
   }
 
   Future<void> fetchCartItems() async {
@@ -274,6 +320,12 @@ class _VanStocksState extends State<VanStocks> {
         ),
       ),
       appBar: AppBar(
+        leading: GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              clearSharedPreferences();
+            },
+            child: Icon(Icons.arrow_back_rounded)),
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
         title: const Text(
           'Van Stocks Requests',
@@ -459,7 +511,7 @@ class _VanStocksState extends State<VanStocks> {
                                         borderRadius: BorderRadius.circular(10),
                                         child: FadeInImage(
                                           image: NetworkImage(
-                                            '${RestDatasource().BASE_URL}/uploads/product/${cartItems[index].proImage}',
+                                            '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
                                           ),
                                           placeholder: const AssetImage(
                                             'Assets/Images/no_image.jpg',
@@ -588,6 +640,44 @@ class _VanStocksState extends State<VanStocks> {
                                             setState(() {
                                               cartItems[index]
                                                   .selectedUnitName = newValue;
+
+                                              // Find the selected unit and update the rate
+                                              // for (var unit
+                                              //     in cartItems[index].units) {
+                                              //   if (unit.name == newValue) {
+                                              //     // Perform validation based on stock
+                                              //     if (unit.stock >=
+                                              //         int.parse(
+                                              //             qtys[index] ?? '1')) {
+                                              //       // Stock is sufficient
+                                              //       amounts[index] =
+                                              //           unit.price.toString();
+                                              //     } else {
+                                              //       // Stock is insufficient, handle this scenario (e.g., show error message)
+                                              //       // For now, setting rate to default or handle as per your app logic
+                                              //       amounts[index] =
+                                              //           cartItems[index]
+                                              //               .price
+                                              //               .toString();
+                                              //       // You can show a snackbar or dialog here indicating insufficient stock
+                                              //       ScaffoldMessenger.of(
+                                              //               context)
+                                              //           .showSnackBar(SnackBar(
+                                              //         content: Text(
+                                              //             'Insufficient stock for ${unit.name}'),
+                                              //         duration:
+                                              //             Duration(seconds: 2),
+                                              //       ));
+                                              //     }
+                                              //     // saveToSharedPreferences(
+                                              //     //     'amountreq$index',
+                                              //     //     amounts[index]);
+                                              //     break;
+                                              //   }
+                                              // }
+                                              saveToSharedPreferences(
+                                                  'unitNamereq$index',
+                                                  newValue);
                                             });
                                           },
                                           icon: SizedBox.shrink(),
@@ -610,6 +700,9 @@ class _VanStocksState extends State<VanStocks> {
                                                     onChanged: (value) {
                                                       setState(() {
                                                         qtys[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'qtyreq$index',
+                                                            value);
                                                       });
                                                     },
                                                     keyboardType:
@@ -623,6 +716,57 @@ class _VanStocksState extends State<VanStocks> {
                                                       textColor: Colors.white,
                                                       child: const Text('OK'),
                                                       onPressed: () {
+                                                        // var selectedUnit =
+                                                        //     cartItems[index]
+                                                        //         .units
+                                                        //         .firstWhere(
+                                                        //           (unit) =>
+                                                        //               unit.name ==
+                                                        //               selectedUnitName,
+                                                        //           // orElse: () => null,
+                                                        //         );
+                                                        //
+                                                        // if (selectedUnit !=
+                                                        //     null) {
+                                                        //   int enteredQuantity =
+                                                        //       int.tryParse(qtys[
+                                                        //                   index] ??
+                                                        //               '1') ??
+                                                        //           0;
+                                                        //   if (enteredQuantity >
+                                                        //       selectedUnit
+                                                        //           .stock) {
+                                                        //     // Quantity entered exceeds available stock
+                                                        //     ScaffoldMessenger
+                                                        //             .of(context)
+                                                        //         .showSnackBar(
+                                                        //             SnackBar(
+                                                        //       content: Text(
+                                                        //         'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
+                                                        //       ),
+                                                        //       duration:
+                                                        //           Duration(
+                                                        //               seconds:
+                                                        //                   2),
+                                                        //     ));
+                                                        //     // Reset quantity to available stock or handle as per your app logic
+                                                        //     setState(() {
+                                                        //       qtys[index] =
+                                                        //           selectedUnit
+                                                        //               .stock
+                                                        //               .toString();
+                                                        //       saveToSharedPreferences(
+                                                        //           'qtyreq$index',
+                                                        //           qtys[index]);
+                                                        //     });
+                                                        //   } else {
+                                                        //     Navigator.pop(
+                                                        //         context); // Close dialog if validation passed
+                                                        //   }
+                                                        // } else {
+                                                        //   Navigator.pop(
+                                                        //       context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
+                                                        // }
                                                         quantity =
                                                             qtysctrl.text;
                                                         Navigator.pop(context);

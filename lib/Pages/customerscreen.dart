@@ -13,7 +13,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Components/commonwidgets.dart';
- import '../confg/sizeconfig.dart';
+import '../confg/sizeconfig.dart';
 import 'Mapscreen.dart';
 
 class CustomersDataScreen extends StatefulWidget {

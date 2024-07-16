@@ -41,6 +41,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _restrict = false;
   String _appVersion = 'Loading...';
+  bool performLogout() {
+    try {
+      SharedPref().clear();
+      AppState().loginState = "";
+      return true;
+    } catch (e) {
+      print('Logout failed: $e');
+      return false;
+    }
+  }
 
   @override
   void initState() {
@@ -48,12 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchAppVersion();
   }
+
   Future<void> _fetchAppVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
       _appVersion = packageInfo.version;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 const Divider(),
-                  Text('v$_appVersion'),
+                Text('v$_appVersion'),
               ],
             ),
           ),
@@ -247,10 +259,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: _iconButtons(
                                 icon: Icons.inventory, title: 'Return')),
-                        GestureDetector(onTap: () {
-                          Navigator.of(context)
-                              .pushNamed(SchedulePage.routeName);
-                        },
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context)
+                                .pushNamed(SchedulePage.routeName);
+                          },
                           child: _iconButtons(
                               icon: Icons.calendar_today, title: 'Schedule'),
                         ),
@@ -458,7 +471,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () async {
             SharedPref().clear();
             AppState().loginState = "";
-            Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+            Navigator.of(context).pushNamedAndRemoveUntil(
+                LoginScreen.routeName, (Route<dynamic> route) => false);
           },
           child: Container(
             width: SizeConfig.safeBlockHorizontal! * 30,

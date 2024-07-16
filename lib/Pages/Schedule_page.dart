@@ -334,6 +334,8 @@ class _SchedulePageState extends State<SchedulePage> {
                         GestureDetector(
                           onTap: () {
                             _openGoogleMaps(data.location ?? '');
+                            // print('gggggggggggggggggggggggggggggg');
+                            // print(AppState().userId);
                           },
                           // _openMapScreen,
                           child: Image.asset(

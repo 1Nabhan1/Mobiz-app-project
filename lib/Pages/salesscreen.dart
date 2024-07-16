@@ -51,20 +51,61 @@ class _SalesScreenState extends State<SalesScreen> {
     initializeValues();
   }
 
-  Future<void> saveToSharedPreferences(String key, String value) async {
+  Future<void> saveToSharedPreferences(String key, dynamic value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, value);
+    if (value is String) {
+      await prefs.setString(key, value);
+    } else if (value is int) {
+      await prefs.setInt(key, value);
+    } else if (value is double) {
+      await prefs.setDouble(key, value);
+    } else if (value is bool) {
+      await prefs.setBool(key, value);
+    } else if (value is List<String>) {
+      await prefs.setStringList(key, value);
+    }
   }
 
+  Future<void> clearSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
+  // Future<void> initializeValues() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     for (int i = 0; i < cartItems.length; i++) {
+  //       qtys[i] = prefs.getString('qty$i') ?? '1';
+  //       amounts[i] =
+  //           prefs.getString('amount$i') ?? cartItems[i].price.toString();
+  //     }
+  //   });
+  // }
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      for (int i = 0; i < cartItems.length; i++) {
-        qtys[i] = prefs.getString('qty$i') ?? '1';
-        amounts[i] =
-            prefs.getString('amount$i') ?? cartItems[i].price.toString();
-      }
-    });
+
+    // Wait until productTypes and cartItems are populated
+    if (productTypes.isNotEmpty && cartItems.isNotEmpty) {
+      setState(() {
+        for (int i = 0; i < cartItems.length; i++) {
+          qtys[i] = prefs.getString('qty$i') ?? '1';
+          amounts[i] =
+              prefs.getString('amount$i') ?? cartItems[i].price.toString();
+
+          if (cartItems[i].units.isNotEmpty) {
+            cartItems[i].selectedUnitName =
+                prefs.getString('unitName$i') ?? cartItems[i].units.first.name;
+          }
+
+          for (int i = 0; i < cartItems.length; i++) {
+            selectedProductTypes[i] = productTypes.firstWhere(
+              (type) => type.name == prefs.getString('productType$i'),
+              orElse: () => productTypes.first,
+            );
+          }
+        }
+      });
+    }
   }
 
   Future<void> fetchCartItems() async {
@@ -300,6 +341,12 @@ class _SalesScreenState extends State<SalesScreen> {
         ),
       ),
       appBar: AppBar(
+        leading: GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              clearSharedPreferences();
+            },
+            child: Icon(Icons.arrow_back_rounded)),
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
         title: const Text(
           'Sales',
@@ -577,7 +624,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                             setState(() {
                                               selectedProductTypes[index] =
                                                   newValue;
-                                              if (newValue!.name == 'Normal') {
+                                              saveToSharedPreferences(
+                                                  'productType$index',
+                                                  newValue!.name);
+                                              if (newValue.name == 'Normal') {
                                                 amounts[index] =
                                                     cartItems[index]
                                                         .price
@@ -635,11 +685,38 @@ class _SalesScreenState extends State<SalesScreen> {
                                               for (var unit
                                                   in cartItems[index].units) {
                                                 if (unit.name == newValue) {
-                                                  amounts[index] =
-                                                      unit.price.toString();
+                                                  // Perform validation based on stock
+                                                  if (unit.stock >=
+                                                      int.parse(
+                                                          qtys[index] ?? '1')) {
+                                                    // Stock is sufficient
+                                                    amounts[index] =
+                                                        unit.price.toString();
+                                                  } else {
+                                                    // Stock is insufficient, handle this scenario (e.g., show error message)
+                                                    // For now, setting rate to default or handle as per your app logic
+                                                    amounts[index] =
+                                                        cartItems[index]
+                                                            .price
+                                                            .toString();
+                                                    // You can show a snackbar or dialog here indicating insufficient stock
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(SnackBar(
+                                                      content: Text(
+                                                          'Insufficient stock for ${unit.name}'),
+                                                      duration:
+                                                          Duration(seconds: 2),
+                                                    ));
+                                                  }
+                                                  saveToSharedPreferences(
+                                                      'amount$index',
+                                                      amounts[index]);
                                                   break;
                                                 }
                                               }
+                                              saveToSharedPreferences(
+                                                  'unitName$index', newValue);
                                             });
                                           },
                                           icon: SizedBox.shrink(),
@@ -648,65 +725,99 @@ class _SalesScreenState extends State<SalesScreen> {
                                     ),
                                     Text(' | '),
                                     GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                if (qtys[index] == null ||
-                                                    qtys[index]!.isEmpty) {
-                                                  qtys[index] = '1';
-                                                }
-
-                                                TextEditingController
-                                                    qtyController =
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: Text('Quantity'),
+                                              content: TextField(
+                                                controller:
                                                     TextEditingController(
-                                                  text: qtys[index],
-                                                );
-                                                return AlertDialog(
-                                                  title: const Text('Quantity'),
-                                                  content: TextField(
-                                                    controller: qtyController,
-                                                    //     TextEditingController(
-                                                    //   text: qtys[index] ?? '',
-                                                    // ),
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        qtys[index] = value;
-                                                        saveToSharedPreferences(
-                                                            'qty$index', value);
-                                                      });
-                                                    },
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    // controller: _discountData,
-                                                  ),
-                                                  actions: <Widget>[
-                                                    MaterialButton(
-                                                      color: AppConfig
-                                                          .colorPrimary,
-                                                      textColor: Colors.white,
-                                                      child: const Text('OK'),
-                                                      onPressed: () {
-                                                        quantity =
-                                                            qtysctrl.text;
-                                                        Navigator.pop(context);
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              });
-                                        },
-                                        child: Row(
-                                          children: [
-                                            Text('Qty: '),
-                                            Text(
-                                              '${qtys[index] ?? '1'}',
-                                              style: TextStyle(
+                                                        text: qtys[index]),
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    qtys[index] = value;
+                                                    saveToSharedPreferences(
+                                                        'qty$index', value);
+                                                  });
+                                                },
+                                                keyboardType:
+                                                    TextInputType.number,
+                                              ),
+                                              actions: <Widget>[
+                                                MaterialButton(
                                                   color: AppConfig.colorPrimary,
-                                                  fontWeight: FontWeight.bold),
+                                                  textColor: Colors.white,
+                                                  child: Text('OK'),
+                                                  onPressed: () {
+                                                    // Validate quantity against selected unit stock
+                                                    var selectedUnit =
+                                                        cartItems[index]
+                                                            .units
+                                                            .firstWhere(
+                                                              (unit) =>
+                                                                  unit.name ==
+                                                                  selectedUnitName,
+                                                              // orElse: () => null,
+                                                            );
+
+                                                    if (selectedUnit != null) {
+                                                      int enteredQuantity =
+                                                          int.tryParse(
+                                                                  qtys[index] ??
+                                                                      '1') ??
+                                                              0;
+                                                      if (enteredQuantity >
+                                                          selectedUnit.stock) {
+                                                        // Quantity entered exceeds available stock
+                                                        ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                                SnackBar(
+                                                          content: Text(
+                                                            'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
+                                                          ),
+                                                          duration: Duration(
+                                                              seconds: 2),
+                                                        ));
+                                                        // Reset quantity to available stock or handle as per your app logic
+                                                        setState(() {
+                                                          qtys[index] =
+                                                              selectedUnit.stock
+                                                                  .toString();
+                                                          saveToSharedPreferences(
+                                                              'qty$index',
+                                                              qtys[index]);
+                                                        });
+                                                      } else {
+                                                        Navigator.pop(
+                                                            context); // Close dialog if validation passed
+                                                      }
+                                                    } else {
+                                                      Navigator.pop(
+                                                          context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
+                                                    }
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      child: Row(
+                                        children: [
+                                          Text('Qty: '),
+                                          Text(
+                                            '${qtys[index] ?? '1'}',
+                                            style: TextStyle(
+                                              color: AppConfig.colorPrimary,
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                          ],
-                                        )),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                     Text(' | '),
                                     GestureDetector(
                                         onTap: () {
@@ -986,6 +1097,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
       setState(() {
         productTypes = loadedProductTypes;
+        initializeValues();
       });
     } else {
       throw Exception('Failed to load product types');
