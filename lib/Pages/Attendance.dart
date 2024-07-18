@@ -575,7 +575,7 @@ class _AttendanceState extends State<Attendance> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                               color: _isCheckedIn
-                                  ? Colors.grey.shade400
+                                  ? Colors.lightBlueAccent.shade700
                                   : Colors.grey.shade200,
                             ),
                             child: Column(
@@ -600,11 +600,10 @@ class _AttendanceState extends State<Attendance> {
                             height: 100,
                             width: 150,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: _isCheckedIn
-                                  ? Colors.grey.shade200
-                                  : Colors.grey.shade400,
-                            ),
+                                borderRadius: BorderRadius.circular(10),
+                                color: _isCheckedIn
+                                    ? Colors.lightBlueAccent
+                                    : Colors.lightBlueAccent.shade700),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -634,8 +633,8 @@ class _AttendanceState extends State<Attendance> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 color: _isCheckedIn
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade200,
+                                    ? Colors.lightBlueAccent.shade700
+                                    : Colors.lightBlueAccent,
                               ),
                               child: Column(
                                 mainAxisAlignment:
@@ -647,8 +646,8 @@ class _AttendanceState extends State<Attendance> {
                                     height: 22,
                                     decoration: BoxDecoration(
                                       color: _isCheckedIn
-                                          ? Colors.grey.shade400
-                                          : Colors.grey.shade200,
+                                          ? Colors.lightBlueAccent.shade700
+                                          : AppConfig.backgroundColor,
                                       borderRadius: BorderRadius.circular(2),
                                       border:
                                           _isCheckedIn ? null : Border.all(),
@@ -679,11 +678,10 @@ class _AttendanceState extends State<Attendance> {
                               height: 100,
                               width: 150,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: _isCheckedIn
-                                    ? Colors.grey.shade200
-                                    : Colors.grey.shade400,
-                              ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: _isCheckedIn
+                                      ? Colors.lightBlueAccent
+                                      : Colors.lightBlueAccent.shade700),
                               child: Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
@@ -696,9 +694,9 @@ class _AttendanceState extends State<Attendance> {
                                       borderRadius: BorderRadius.circular(2),
                                       color: _isCheckedIn
                                           ? AppConfig.backgroundColor
-                                          : Colors.grey.shade400,
-                                      border:
-                                          _isCheckedIn ? Border.all() : null,
+                                          : Colors.lightBlueAccent.shade700,
+                                      // border:
+                                      //     _isCheckedIn ? Border.all() : null,
                                     ),
                                     child: Center(
                                         child: Text(

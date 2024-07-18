@@ -147,9 +147,9 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                           ),
                           TextFormField(
                             keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
+                            // inputFormatters: [
+                            //   FilteringTextInputFormatter.digitsOnly
+                            // ],
                             controller: _amountController,
                             decoration: const InputDecoration(
                               helperText: '',
@@ -169,9 +169,9 @@ class _ExpenseAddState extends State<ExpenseAdd> {
                           ),
                           TextFormField(
                             keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
+                            // inputFormatters: [
+                            //   FilteringTextInputFormatter.digitsOnly
+                            // ],
                             controller: _vatAmountController,
                             decoration: const InputDecoration(
                               helperText: '',

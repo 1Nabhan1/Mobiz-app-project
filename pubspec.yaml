@@ -48,7 +48,7 @@ dependencies:
   image_picker:
   intl:
   printing:
-#  awesome_drawer_bar:
+  permission_handler:
   syncfusion_flutter_pdf:
   number_to_words:
   path_provider:

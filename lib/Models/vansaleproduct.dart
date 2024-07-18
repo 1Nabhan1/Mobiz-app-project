@@ -83,38 +83,40 @@ class Data {
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     customerId = json['customer_id'];
-    billMode = json['bill_mode'];
-    inDate = json['in_date'];
-    inTime = json['in_time'];
-    invoiceNo = json['invoice_no'];
-    deliveryNo = json['delivery_no'];
-    otherCharge = json['other_charge'];
-    discount = json['discount'];
-    roundOff = json['round_off'];
-    total = json['total'];
-    totalTax = json['total_tax'];
-    grandTotal = json['grand_total'];
-    receipt = json['receipt'];
-    balance = json['balance'];
-    orderType = json['order_type'];
-    ifVat = json['if_vat'];
-    vanId = json['van_id'];
-    userId = json['user_id'];
-    storeId = json['store_id'];
-    status = json['status'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    deletedAt = json['deleted_at'];
+    billMode = json['bill_mode'] ?? '';
+    inDate = json['in_date'] ?? '';
+    inTime = json['in_time'] ?? '';
+    invoiceNo = json['invoice_no'] ?? '';
+    deliveryNo = json['delivery_no'] ?? '';
+    otherCharge = json['other_charge'] ?? 0;
+    discount = json['discount'] ?? 0;
+    roundOff = json['round_off'] ?? '';
+    total = json['total'] ?? 0;
+    totalTax = json['total_tax'] ?? 0;
+    grandTotal = json['grand_total'] ?? 0;
+    receipt = json['receipt'] ?? 0;
+    balance = json['balance'] ?? 0;
+    orderType = json['order_type'] ?? 0;
+    ifVat = json['if_vat'] ?? 0;
+    vanId = json['van_id'] ?? 0;
+    userId = json['user_id'] ?? 0;
+    storeId = json['store_id'] ?? 0;
+    status = json['status'] ?? 0;
+    createdAt = json['created_at'] ?? '';
+    updatedAt = json['updated_at'] ?? '';
+    deletedAt = json['deleted_at'] ?? '';
+
     if (json['detail'] != null) {
       detail = <Detail>[];
       json['detail'].forEach((v) {
-        detail!.add(new Detail.fromJson(v));
+        detail!.add(Detail.fromJson(v));
       });
     }
+
     if (json['customer'] != null) {
       customer = <Customer>[];
       json['customer'].forEach((v) {
-        customer!.add(new Customer.fromJson(v));
+        customer!.add(Customer.fromJson(v));
       });
     }
   }
@@ -277,60 +279,60 @@ class Detail {
     id = json['id'];
     goodsOutId = json['goods_out_id'];
     itemId = json['item_id'];
-    productType = json['product_type'];
-    unit = json['unit'];
-    convertQty = json['convert_qty'];
-    quantity = json['quantity'];
-    rate = json['rate'];
-    prodiscount = json['prodiscount'];
-    taxable = json['taxable'];
-    taxAmt = json['tax_amt'];
-    mrp = json['mrp'];
-    amount = json['amount'];
-    vanId = json['van_id'];
-    userId = json['user_id'];
-    storeId = json['store_id'];
-    status = json['status'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    deletedAt = json['deleted_at'];
-    code = json['code'];
-    name = json['name'];
-    proImage = json['pro_image'];
-    categoryId = json['category_id'];
-    subCategoryId = json['sub_category_id'];
-    brandId = json['brand_id'];
-    supplierId = json['supplier_id'];
-    taxId = json['tax_id'];
-    taxPercentage = json['tax_percentage'];
-    taxInclusive = json['tax_inclusive'];
-    price = json['price'];
-    baseUnitId = json['base_unit_id'];
-    baseUnitQty = json['base_unit_qty'];
-    baseUnitDiscount = json['base_unit_discount'];
-    baseUnitBarcode = json['base_unit_barcode'];
-    baseUnitOpStock = json['base_unit_op_stock'];
-    secondUnitPrice = json['second_unit_price'];
-    secondUnitId = json['second_unit_id'];
-    secondUnitQty = json['second_unit_qty'];
-    secondUnitDiscount = json['second_unit_discount'];
-    secondUnitBarcode = json['second_unit_barcode'];
-    secondUnitOpStock = json['second_unit_op_stock'];
-    thirdUnitPrice = json['third_unit_price'];
-    thirdUnitId = json['third_unit_id'];
-    thirdUnitQty = json['third_unit_qty'];
-    thirdUnitDiscount = json['third_unit_discount'];
-    thirdUnitBarcode = json['third_unit_barcode'];
-    thirdUnitOpStock = json['third_unit_op_stock'];
-    fourthUnitPrice = json['fourth_unit_price'];
-    fourthUnitId = json['fourth_unit_id'];
-    fourthUnitQty = json['fourth_unit_qty'];
-    fourthUnitDiscount = json['fourth_unit_discount'];
-    isMultipleUnit = json['is_multiple_unit'];
-    fourthUnitOpStock = json['fourth_unit_op_stock'];
-    description = json['description'];
-    productQty = json['product_qty'];
-    percentage = json['percentage'];
+    productType = json['product_type'] ?? '';
+    unit = json['unit'] ?? '';
+    convertQty = json['convert_qty'] ?? 0;
+    quantity = json['quantity'] ?? 0;
+    rate = json['rate'] ?? 0;
+    prodiscount = json['prodiscount'] ?? 0;
+    taxable = json['taxable'] ?? 0;
+    taxAmt = json['tax_amt'] ?? 0;
+    mrp = json['mrp'] ?? 0;
+    amount = json['amount'] ?? 0;
+    vanId = json['van_id'] ?? 0;
+    userId = json['user_id'] ?? 0;
+    storeId = json['store_id'] ?? 0;
+    status = json['status'] ?? 0;
+    createdAt = json['created_at'] ?? '';
+    updatedAt = json['updated_at'] ?? '';
+    deletedAt = json['deleted_at'] ?? '';
+    code = json['code'] ?? '';
+    name = json['name'] ?? '';
+    proImage = json['pro_image'] ?? '';
+    categoryId = json['category_id'] ?? 0;
+    subCategoryId = json['sub_category_id'] ?? 0;
+    brandId = json['brand_id'] ?? 0;
+    supplierId = json['supplier_id'] ?? 0;
+    taxId = json['tax_id'] ?? 0;
+    taxPercentage = json['tax_percentage'] ?? 0;
+    taxInclusive = json['tax_inclusive'] ?? 0;
+    price = json['price'] ?? 0;
+    baseUnitId = json['base_unit_id'] ?? 0;
+    baseUnitQty = json['base_unit_qty'] ?? 0;
+    baseUnitDiscount = json['base_unit_discount'] ?? '';
+    baseUnitBarcode = json['base_unit_barcode'] ?? '';
+    baseUnitOpStock = json['base_unit_op_stock'] ?? 0;
+    secondUnitPrice = json['second_unit_price'] ?? '';
+    secondUnitId = json['second_unit_id'] ?? 0;
+    secondUnitQty = json['second_unit_qty'] ?? 0;
+    secondUnitDiscount = json['second_unit_discount'] ?? '';
+    secondUnitBarcode = json['second_unit_barcode'] ?? '';
+    secondUnitOpStock = json['second_unit_op_stock'] ?? '';
+    thirdUnitPrice = json['third_unit_price'] ?? '';
+    thirdUnitId = json['third_unit_id'] ?? 0;
+    thirdUnitQty = json['third_unit_qty'] ?? 0;
+    thirdUnitDiscount = json['third_unit_discount'] ?? '';
+    thirdUnitBarcode = json['third_unit_barcode'] ?? '';
+    thirdUnitOpStock = json['third_unit_op_stock'] ?? '';
+    fourthUnitPrice = json['fourth_unit_price'] ?? '';
+    fourthUnitId = json['fourth_unit_id'] ?? 0;
+    fourthUnitQty = json['fourth_unit_qty'] ?? 0;
+    fourthUnitDiscount = json['fourth_unit_discount'] ?? '';
+    isMultipleUnit = json['is_multiple_unit'] ?? 0;
+    fourthUnitOpStock = json['fourth_unit_op_stock'] ?? '';
+    description = json['description'] ?? '';
+    productQty = json['product_qty'] ?? 0;
+    percentage = json['percentage'] ?? 0;
   }
 
   Map<String, dynamic> toJson() {
@@ -416,7 +418,7 @@ class Customer {
   String? createdAt;
   String? updatedAt;
   String? deletedAt;
-  Null? erpCustomerCode;
+  String? erpCustomerCode;
 
   Customer(
       {this.id,

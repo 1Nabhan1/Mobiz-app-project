@@ -100,7 +100,14 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           padding: const EdgeInsets.all(18.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                (name ?? "").toUpperCase(),
+                style: TextStyle(
+                    fontSize: AppConfig.headLineSize,
+                    fontWeight: AppConfig.headLineWeight),
+              ),
               Row(
                 children: [
                   SizedBox(
@@ -130,13 +137,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          (name ?? "").toUpperCase(),
-                          style: TextStyle(
-                              fontSize: AppConfig.headLineSize,
-                              fontWeight: AppConfig.headLineWeight),
-                        ),
-                        CommonWidgets.verticalSpace(1),
+                        // CommonWidgets.verticalSpace(1),
                         Row(
                           children: [
                             const Icon(
@@ -236,7 +237,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(
                 children: [
                   Text(
-                    'Total Outstanding: $_data',
+                    'Total Outstanding: ${_data == '[]' ? '' : _data}',
                     style: TextStyle(
                         fontWeight: AppConfig.headLineWeight,
                         color: Colors.black.withOpacity(0.7)),

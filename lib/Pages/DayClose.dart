@@ -12,6 +12,7 @@ import '../Components/commonwidgets.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+ import 'Day_closeReport.dart';
 import 'homepage.dart';
 
 class Dayclose extends StatefulWidget {
@@ -100,12 +101,12 @@ class _DaycloseState extends State<Dayclose> {
           actions: [
             GestureDetector(
               onTap: () {
-                setState(() {
-                  selectedDate = DateTime.now();
-                });
+                Navigator.pushReplacementNamed(
+                  context, DaycloseReport.routeName,
+                );
               },
               child: Icon(
-                Icons.refresh,
+                Icons.report_gmailerrorred_outlined,
                 color: AppConfig.backgroundColor,
               ),
             ),
@@ -125,9 +126,9 @@ class _DaycloseState extends State<Dayclose> {
                   itemCount: 3,
                   itemBuilder: (context, index) =>
                       CommonWidgets.loadingContainers(
-                    height: SizeConfig.blockSizeVertical * 40,
-                    width: SizeConfig.blockSizeHorizontal * 40,
-                  ),
+                        height: SizeConfig.blockSizeVertical * 40,
+                        width: SizeConfig.blockSizeHorizontal * 40,
+                      ),
                 ),
               );
             } else if (snapshot.hasError) {
@@ -156,9 +157,9 @@ class _DaycloseState extends State<Dayclose> {
                   "collection_cheque_amount": data['collection_cheque'],
                   "last_day_balance_amount": data['last_day_balance_amount'],
                   "last_day_balance_no_of_cheque":
-                      data['last_day_balance_no_of_cheque'],
+                  data['last_day_balance_no_of_cheque'],
                   "last_day_balance_cheque_amount":
-                      data['last_day_balance_cheque_amount'],
+                  data['last_day_balance_cheque_amount'],
                   "cash_deposited": cashdeposit,
                   "cash_hand_over": cashHanded,
                   "no_of_cheque_deposited": Ncheqdepo,
@@ -182,11 +183,11 @@ class _DaycloseState extends State<Dayclose> {
                 if (response.statusCode == 200) {
                   if (mounted) {
                     CommonWidgets.showDialogueBox(
-                            context: context,
-                            title: "",
-                            msg: "Data Inserted Successfully")
+                        context: context,
+                        title: "",
+                        msg: "Data Inserted Successfully")
                         .then((value) =>
-                            Navigator.pushNamed(context, HomeScreen.routeName));
+                        Navigator.pushNamed(context, HomeScreen.routeName));
                   }
                   print('Data posted successfully');
                   print('Response: ${response.body}');
@@ -223,7 +224,7 @@ class _DaycloseState extends State<Dayclose> {
                           },
                           child: Text('OK',
                               style:
-                                  TextStyle(color: AppConfig.backgroundColor)),
+                              TextStyle(color: AppConfig.backgroundColor)),
                         ),
                       ],
                     );
@@ -257,23 +258,23 @@ class _DaycloseState extends State<Dayclose> {
                   });
                   if (cashdeposit.isNotEmpty && cashHanded.isNotEmpty) {
                     balcash = (((data['collection_cash']) +
-                                (data['last_day_balance_amount'])) -
-                            (double.parse(cashdeposit) +
-                                double.parse(cashHanded)))
+                        (data['last_day_balance_amount'])) -
+                        (double.parse(cashdeposit) +
+                            double.parse(cashHanded)))
                         .toString();
                   }
                   if (Ncheqdepo.isNotEmpty && cheqhandedovr.isNotEmpty) {
                     cheqhand = (((data['collection_no_cheque']) +
-                                (data['last_day_balance_no_of_cheque'])) -
-                            (double.parse(Ncheqdepo) +
-                                double.parse(cheqhandedovr)))
+                        (data['last_day_balance_no_of_cheque'])) -
+                        (double.parse(Ncheqdepo) +
+                            double.parse(cheqhandedovr)))
                         .toString();
                   }
                   if (cheqdepo.isNotEmpty && cheqhandedovr.isNotEmpty) {
                     amtinhand = (((data['collection_cheque']) +
-                                (data['last_day_balance_cheque_amount'])) -
-                            (double.parse(cheqdepo) +
-                                double.parse(cheqhandedamt)))
+                        (data['last_day_balance_cheque_amount'])) -
+                        (double.parse(cheqdepo) +
+                            double.parse(cheqhandedamt)))
                         .toString();
                   }
                 }
@@ -284,76 +285,76 @@ class _DaycloseState extends State<Dayclose> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [SizedBox(height: 10,),
-                      GestureDetector(
-                        onLongPress: () async {
-                          DateTime? pickedDate = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(2023, 12, 31),
-                            lastDate: DateTime(2028, 1, 31),
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
-                                    primary: AppConfig
-                                        .colorPrimary, // header background color
-                                    onPrimary:
-                                        Colors.white, // header text color
-                                    onSurface: AppConfig
-                                        .colorPrimary, // body text color
-                                  ),
-                                  textButtonTheme: TextButtonThemeData(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors
-                                          .deepPurple, // button text color
-                                    ),
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (pickedDate != null) {
-                            setState(() {
-                              selectedDate = pickedDate;
-                            });
-                          }
-                        },
-
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0,),
-                          child: HorizontalWeekCalendar(
-                            key: ValueKey(
-                                selectedDate), // Use ValueKey to trigger rebuild
-                            minDate: DateTime(2023, 12, 31),
-                            maxDate: DateTime(2028, 1, 31),
-                            initialDate: selectedDate,
-                            onDateChange: (date) {
-                              setState(() {
-                                selectedDate = date;
-                                futureData;
-                                fetchData();
-                              });
-                            },
-                            showTopNavbar: false,
-                            monthFormat: "MMMM yyyy",
-                            showNavigationButtons: true,
-                            weekStartFrom: WeekStartFrom.Monday,
-                            borderRadius: BorderRadius.circular(7),
-                            activeBackgroundColor: AppConfig.colorPrimary,
-                            activeTextColor: Colors.white,
-                            inactiveBackgroundColor:
-                                Colors.deepPurple.withOpacity(.3),
-                            inactiveTextColor: Colors.white,
-                            disabledTextColor: Colors.grey,
-                            disabledBackgroundColor:
-                                Colors.grey.withOpacity(.3),
-                            activeNavigatorColor: Colors.deepPurple,
-                            inactiveNavigatorColor: Colors.grey,
-                            monthColor: AppConfig.colorPrimary,
-                          ),
-                        ),
-                      ),
+                      // GestureDetector(
+                      //   onLongPress: () async {
+                      //     DateTime? pickedDate = await showDatePicker(
+                      //       context: context,
+                      //       initialDate: selectedDate,
+                      //       firstDate: DateTime(2023, 12, 31),
+                      //       lastDate: DateTime(2028, 1, 31),
+                      //       builder: (context, child) {
+                      //         return Theme(
+                      //           data: Theme.of(context).copyWith(
+                      //             colorScheme: ColorScheme.light(
+                      //               primary: AppConfig
+                      //                   .colorPrimary, // header background color
+                      //               onPrimary:
+                      //                   Colors.white, // header text color
+                      //               onSurface: AppConfig
+                      //                   .colorPrimary, // body text color
+                      //             ),
+                      //             textButtonTheme: TextButtonThemeData(
+                      //               style: TextButton.styleFrom(
+                      //                 foregroundColor: Colors
+                      //                     .deepPurple, // button text color
+                      //               ),
+                      //             ),
+                      //           ),
+                      //           child: child!,
+                      //         );
+                      //       },
+                      //     );
+                      //     if (pickedDate != null) {
+                      //       setState(() {
+                      //         selectedDate = pickedDate;
+                      //       });
+                      //     }
+                      //   },
+                      //
+                      //   child: Padding(
+                      //     padding: const EdgeInsets.symmetric(horizontal: 8.0,),
+                      //     child: HorizontalWeekCalendar(
+                      //       key: ValueKey(
+                      //           selectedDate), // Use ValueKey to trigger rebuild
+                      //       minDate: DateTime(2023, 12, 31),
+                      //       maxDate: DateTime(2028, 1, 31),
+                      //       initialDate: selectedDate,
+                      //       onDateChange: (date) {
+                      //         setState(() {
+                      //           selectedDate = date;
+                      //           futureData;
+                      //           fetchData();
+                      //         });
+                      //       },
+                      //       showTopNavbar: false,
+                      //       monthFormat: "MMMM yyyy",
+                      //       showNavigationButtons: true,
+                      //       weekStartFrom: WeekStartFrom.Monday,
+                      //       borderRadius: BorderRadius.circular(7),
+                      //       activeBackgroundColor: AppConfig.colorPrimary,
+                      //       activeTextColor: Colors.white,
+                      //       inactiveBackgroundColor:
+                      //           Colors.deepPurple.withOpacity(.3),
+                      //       inactiveTextColor: Colors.white,
+                      //       disabledTextColor: Colors.grey,
+                      //       disabledBackgroundColor:
+                      //           Colors.grey.withOpacity(.3),
+                      //       activeNavigatorColor: Colors.deepPurple,
+                      //       inactiveNavigatorColor: Colors.grey,
+                      //       monthColor: AppConfig.colorPrimary,
+                      //     ),
+                      //   ),
+                      // ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 15.0, vertical: 20),
@@ -380,7 +381,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                            '${data['no_of_sales']} | ${data['amount_of_sales']}',
+                                        '${data['no_of_sales']} | ${data['amount_of_sales']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -391,7 +392,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                            '${data['no_of_sales_order']} | ${data['amount_of_sales_order']}',
+                                        '${data['no_of_sales_order']} | ${data['amount_of_sales_order']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -402,7 +403,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                            '${data['no_of_sales_return']} | ${data['amount_of_sales_return']}',
+                                        '${data['no_of_sales_return']} | ${data['amount_of_sales_return']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -476,15 +477,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(CashDepositedcontrol,
-                                            'cashdeposit');
-                                      },
+                                  _showDialog(CashDepositedcontrol,
+                                      'cashdeposit');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : Dayclosedata!['cash_deposited']
+                                          ? ''
+                                          : Dayclosedata!['cash_deposited']
                                           : cashdeposit)),
                                   width: 70,
                                   height: 20,
@@ -500,15 +501,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(CashHandedOvercontrol,
-                                            'cashHanded');
-                                      },
+                                  _showDialog(CashHandedOvercontrol,
+                                      'cashHanded');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : Dayclosedata!['cash_hand_over']
+                                          ? ''
+                                          : Dayclosedata!['cash_hand_over']
                                           : cashHanded)),
                                   width: 70,
                                   height: 20,
@@ -524,15 +525,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(NoofChequeDepositedcontrol,
-                                            'Ncheqdepo');
-                                      },
+                                  _showDialog(NoofChequeDepositedcontrol,
+                                      'Ncheqdepo');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : "${Dayclosedata!['no_of_cheque_deposited']}"
+                                          ? ''
+                                          : "${Dayclosedata!['no_of_cheque_deposited']}"
                                           : Ncheqdepo)),
                                   width: 70,
                                   height: 20,
@@ -548,17 +549,17 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(
-                                            ChequeDepositedAmountcontrol,
-                                            'cheqdepoamt');
-                                      },
+                                  _showDialog(
+                                      ChequeDepositedAmountcontrol,
+                                      'cheqdepoamt');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : Dayclosedata![
-                                                  'cheque_deposited_amount']
+                                          ? ''
+                                          : Dayclosedata![
+                                      'cheque_deposited_amount']
                                           : cheqdepo)),
                                   width: 70,
                                   height: 20,
@@ -574,15 +575,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(NoofChequeHandedOvercontrol,
-                                            'cheqhandedovr');
-                                      },
+                                  _showDialog(NoofChequeHandedOvercontrol,
+                                      'cheqhandedovr');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : "${Dayclosedata!['no_of_cheque_hand_over']}"
+                                          ? ''
+                                          : "${Dayclosedata!['no_of_cheque_hand_over']}"
                                           : cheqhandedovr)),
                                   width: 70,
                                   height: 20,
@@ -598,17 +599,17 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                        _showDialog(
-                                            ChequeHandedOverAmountcontrol,
-                                            'cheqhandedamt');
-                                      },
+                                  _showDialog(
+                                      ChequeHandedOverAmountcontrol,
+                                      'cheqhandedamt');
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                              ? ''
-                                              : Dayclosedata![
-                                                  'cheque_hand_over_amount']
+                                          ? ''
+                                          : Dayclosedata![
+                                      'cheque_hand_over_amount']
                                           : cheqhandedamt)),
                                   width: 70,
                                   height: 20,
@@ -624,8 +625,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                     child: Text(isdayclose == false
                                         ? Dayclosedata == null
-                                            ? ''
-                                            : "${Dayclosedata!['balance_cash_in_hand']}"
+                                        ? ''
+                                        : "${Dayclosedata!['balance_cash_in_hand']}"
                                         : balcash)),
                                 width: 70,
                                 height: 20,
@@ -641,8 +642,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                   child: Text(isdayclose == false
                                       ? Dayclosedata == null
-                                          ? ''
-                                          : "${Dayclosedata!['no_of_cheque_in_hand']}"
+                                      ? ''
+                                      : "${Dayclosedata!['no_of_cheque_in_hand']}"
                                       : cheqhand),
                                 ),
                                 width: 70,
@@ -659,8 +660,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                   child: Text(isdayclose == false
                                       ? Dayclosedata == null
-                                          ? ''
-                                          : "${Dayclosedata!['cheque_amount_in_hand']}"
+                                      ? ''
+                                      : "${Dayclosedata!['cheque_amount_in_hand']}"
                                       : amtinhand),
                                 ),
                                 width: 70,
@@ -701,14 +702,14 @@ class _DaycloseState extends State<Dayclose> {
                               shape: WidgetStateProperty.all(
                                   BeveledRectangleBorder()),
                               minimumSize:
-                                  WidgetStateProperty.all(Size(70, 30)),
+                              WidgetStateProperty.all(Size(70, 30)),
                             ),
                             onPressed: isdayclose == false
                                 ? null
                                 : () {
-                                    postData();
-                                    // print(DateFormat('dd/MM/yyyy').format(selectedDate));
-                                  },
+                              postData();
+                              // print(DateFormat('dd/MM/yyyy').format(selectedDate));
+                            },
                             child: SizedBox(
                               width: 120,
                               child: Center(

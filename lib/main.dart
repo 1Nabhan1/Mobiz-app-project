@@ -24,6 +24,7 @@ import 'package:mobizapp/sales_screen.dart';
 import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/selectproduct.dart';
 import 'Pages/CustomeSOA.dart';
+import 'Pages/Day_closeReport.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Total_sales.dart';
@@ -55,7 +56,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // home: ProductTypeDropdown(),
+        // home: HomePagevv(),
         initialRoute: SplashScreen.routeName,
         routes: {
           // '/': (context) => Home(),
@@ -80,12 +81,13 @@ class MyApp extends StatelessWidget {
           SalesSelectProductsScreen.routeName: (context) =>
               SalesSelectProductsScreen(),
           SaleInvoiceScrreen.routeName: (context) => const SaleInvoiceScrreen(),
+          DaycloseReport.routeName: (context) => const DaycloseReport(),
           SalesSelectProductsorderScreen.routeName: (context) =>
               SalesSelectProductsorderScreen(),
           Salesselectproductreturn.routeName: (context) =>
               Salesselectproductreturn(),
           PaymentCollectionScreen.routeName: (context) =>
-              const PaymentCollectionScreen(),
+              PaymentCollectionScreen(),
           CustomerRegistration.routeName: (context) =>
               const CustomerRegistration(),
           ReceiptScreen.receiptScreen: (context) => const ReceiptScreen(),

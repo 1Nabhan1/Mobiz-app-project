@@ -284,7 +284,7 @@ class _SalesScreenState extends State<SalesScreen> {
       );
 
       if (response.statusCode == 200) {
-        // print(selectedUnitIds);
+        // print(productTypesList);
         // print('gggggggggggggggggggggggggggggggggggggg');
         print('Post successful');
         if (mounted) {
@@ -655,6 +655,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                     Flexible(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
+                                          isDense: true,
                                           alignment: Alignment.center,
                                           isExpanded: false,
                                           value: selectedUnitName,
@@ -896,9 +897,14 @@ class _SalesScreenState extends State<SalesScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text("REMARKS"),
+                          Text(
+                            "Remarks",
+                            style: TextStyle(
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          ),
                           SizedBox(
-                            width: 10,
+                            width: 2,
                           ),
                           InkWell(
                             onTap: () {
@@ -938,9 +944,9 @@ class _SalesScreenState extends State<SalesScreen> {
                               );
                             },
                             child: Container(
-                              width: MediaQuery.of(context).size.width * 0.5,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 3),
+                              width: MediaQuery.of(context).size.width * 0.67,
+                              // padding: EdgeInsets.symmetric(
+                              //     horizontal: 10, vertical: 3),
                               decoration: BoxDecoration(
                                 border: Border.all(
                                     color: AppConfig.buttonDeactiveColor),

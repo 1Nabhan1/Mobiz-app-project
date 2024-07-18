@@ -374,7 +374,7 @@ class _SchedulePageState extends State<SchedulePage> {
     RestDatasource api = RestDatasource();
 
     dynamic resJson = await api.getDetails(
-        '/api/get_scheduled_customer_by_user_with_date?date=${DateFormat('yyyy/MM/dd').format(selectedDate)}&store_id=${AppState().storeId}&user_id=${AppState().userId}',
+        '/api/get_scheduled_customer_by_user_with_date?date=${DateFormat('yyyy-MM-dd').format(selectedDate)}&store_id=${AppState().storeId}&user_id=${AppState().userId}',
         AppState().token);
     print('Cust $resJson');
     if (resJson['data'] != null && resJson['data'].length > 0) {

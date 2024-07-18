@@ -10,6 +10,7 @@ import 'package:mobizapp/Pages/customerregistration.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/confg/appconfig.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Components/commonwidgets.dart';
@@ -32,6 +33,29 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
   void initState() {
     super.initState();
     getCustomerDetails();
+    requestLocationPermission();
+  }
+
+  Future<void> requestLocationPermission() async {
+    var status = await Permission.location.status;
+    if (status.isDenied) {
+      if (await Permission.location.request().isGranted) {
+        getCustomerDetails();
+      } else {
+        Fluttertoast.showToast(
+          msg: "Location permission is required to use this feature.",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    } else {
+      getCustomerDetails();
+    }
   }
 
   @override

@@ -713,6 +713,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                     Flexible(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<String>(
+                                          isDense: true,
                                           alignment: Alignment.center,
                                           isExpanded: false,
                                           value: selectedUnitName,
@@ -980,9 +981,14 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text("REMARKS"),
+                          Text(
+                            "Remarks",
+                            style: TextStyle(
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          ),
                           SizedBox(
-                            width: 10,
+                            width: 2,
                           ),
                           InkWell(
                             onTap: () {
@@ -1022,23 +1028,25 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                               );
                             },
                             child: Container(
-                              width: MediaQuery.of(context).size.width * 0.5,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 3),
+                              width: MediaQuery.of(context).size.width * 0.67,
+                              // padding: EdgeInsets.symmetric(
+                              //     horizontal: 10, vertical: 3),
                               decoration: BoxDecoration(
                                 border: Border.all(
                                     color: AppConfig.buttonDeactiveColor),
                                 borderRadius:
                                     const BorderRadius.all(Radius.circular(5)),
                               ),
-                              child: Text(
-                                _remarksText,
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  // fontWeight: FontWeight.bold,
+                              child: Center(
+                                child: Text(
+                                  _remarksText,
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    // fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),

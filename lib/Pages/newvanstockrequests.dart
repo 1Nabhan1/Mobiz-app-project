@@ -379,92 +379,10 @@ class _VanStocksState extends State<VanStocks> {
           ? Center(
               child: Text('No items.'),
             )
-          : Column(
-              children: [
-                // Padding(
-                //   padding: const EdgeInsets.all(8.0),
-                //   child: Row(
-                //     children: [
-                //       Text(
-                //         (name ?? '').toUpperCase(),
-                //         style: TextStyle(
-                //           fontSize: AppConfig.textCaption3Size,
-                //           color: AppConfig.buttonDeactiveColor,
-                //         ),
-                //       ),
-                //       const Spacer(),
-                //       InkWell(
-                //         onTap: () {
-                //           setState(() {
-                //             _ifVat = 1;
-                //           });
-                //           total = 0;
-                //           tax = 0;
-                //           // _calculateTotal();
-                //         },
-                //         child: Container(
-                //           decoration: BoxDecoration(
-                //               border: Border.all(color: Colors.black),
-                //               color: (_ifVat == 1)
-                //                   ? AppConfig.colorPrimary
-                //                   : AppConfig.backButtonColor,
-                //               borderRadius: const BorderRadius.only(
-                //                   topLeft: Radius.circular(3),
-                //                   bottomLeft: Radius.circular(3))),
-                //           width: SizeConfig.blockSizeHorizontal * 13,
-                //           height: SizeConfig.blockSizeVertical * 3,
-                //           child: Center(
-                //             child: Text(
-                //               'VAT',
-                //               style: TextStyle(
-                //                 fontSize: AppConfig.textCaption3Size,
-                //                 color: (_ifVat == 1)
-                //                     ? AppConfig.backButtonColor
-                //                     : AppConfig.textBlack,
-                //               ),
-                //             ),
-                //           ),
-                //         ),
-                //       ),
-                //       InkWell(
-                //         onTap: () {
-                //           setState(() {
-                //             _ifVat = 0;
-                //           });
-                //           total = 0;
-                //           tax = 0;
-                //           // _calculateTotal();
-                //         },
-                //         child: Container(
-                //           decoration: BoxDecoration(
-                //               border: Border.all(color: Colors.black),
-                //               color: (_ifVat == 0)
-                //                   ? AppConfig.colorPrimary
-                //                   : AppConfig.backButtonColor,
-                //               borderRadius: const BorderRadius.only(
-                //                   topRight: Radius.circular(3),
-                //                   bottomRight: Radius.circular(3))),
-                //           width: SizeConfig.blockSizeHorizontal * 13,
-                //           height: SizeConfig.blockSizeVertical * 3,
-                //           child: Center(
-                //             child: Text(
-                //               'NO VAT',
-                //               style: TextStyle(
-                //                 fontSize: AppConfig.textCaption3Size,
-                //                 color: (_ifVat == 0)
-                //                     ? AppConfig.backButtonColor
-                //                     : AppConfig.textBlack,
-                //               ),
-                //             ),
-                //           ),
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
-                SizedBox(
-                  height: SizeConfig.blockSizeVertical * 58,
-                  child: ListView.builder(
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  ListView.builder(
                     physics: BouncingScrollPhysics(),
                     shrinkWrap: true,
                     itemCount: cartItems.length,
@@ -851,202 +769,202 @@ class _VanStocksState extends State<VanStocks> {
                       );
                     },
                   ),
-                ),
-                // Padding(
-                //   padding: const EdgeInsets.only(
-                //     right: 18.0,
-                //   ),
-                //   child: Column(
-                //     crossAxisAlignment: CrossAxisAlignment.end,
-                //     children: [
-                //       // Row(
-                //       //   mainAxisAlignment: MainAxisAlignment.end,
-                //       //   children: [
-                //       //     Text("REMARKS"),
-                //       //     SizedBox(
-                //       //       width: 10,
-                //       //     ),
-                //       //     InkWell(
-                //       //       onTap: () {
-                //       //         showDialog(
-                //       //           context: context,
-                //       //           builder: (context) {
-                //       //             return AlertDialog(
-                //       //               title: const Text('Remarks'),
-                //       //               content: TextField(
-                //       //                 controller: _remarksController,
-                //       //                 onChanged: (value) {
-                //       //                   setState(() {
-                //       //                     _remarksText = value;
-                //       //                   });
-                //       //                 },
-                //       //                 keyboardType: TextInputType.text,
-                //       //                 decoration: const InputDecoration(
-                //       //                   hintText: "Enter your remarks",
-                //       //                 ),
-                //       //               ),
-                //       //               actions: <Widget>[
-                //       //                 MaterialButton(
-                //       //                   color: AppConfig.colorPrimary,
-                //       //                   textColor: Colors.white,
-                //       //                   child: const Text('OK'),
-                //       //                   onPressed: () {
-                //       //                     setState(() {
-                //       //                       _remarksText =
-                //       //                           _remarksController.text;
-                //       //                     });
-                //       //                     Navigator.pop(context);
-                //       //                   },
-                //       //                 ),
-                //       //               ],
-                //       //             );
-                //       //           },
-                //       //         );
-                //       //       },
-                //       //       child: Container(
-                //       //         constraints: BoxConstraints(
-                //       //           minWidth: 70,
-                //       //           maxWidth: 150,
-                //       //         ),
-                //       //         padding: EdgeInsets.symmetric(
-                //       //             horizontal: 10, vertical: 3),
-                //       //         decoration: BoxDecoration(
-                //       //           border: Border.all(
-                //       //               color: AppConfig.buttonDeactiveColor),
-                //       //           borderRadius:
-                //       //               const BorderRadius.all(Radius.circular(5)),
-                //       //         ),
-                //       //         child: Text(
-                //       //           _remarksText,
-                //       //           style: TextStyle(
-                //       //             color: Colors.black,
-                //       //             // fontWeight: FontWeight.bold,
-                //       //           ),
-                //       //           maxLines: 1,
-                //       //           overflow: TextOverflow.ellipsis,
-                //       //         ),
-                //       //       ),
-                //       //     ),
-                //       //   ],
-                //       // ),
-                //       // SizedBox(
-                //       //   height: 10,
-                //       // ),
-                //       // Row(
-                //       //   mainAxisAlignment: MainAxisAlignment.end,
-                //       //   children: [
-                //       //     Text(
-                //       //       'Discount ',
-                //       //       style: TextStyle(
-                //       //         fontSize: AppConfig.textCaption3Size,
-                //       //       ),
-                //       //     ),
-                //       //     // InkWell(
-                //       //     //   onTap: () => setState(() {
-                //       //     //     _isPercentage = !_isPercentage;
-                //       //     //   }),
-                //       //     //   child: Container(
-                //       //     //     decoration: BoxDecoration(
-                //       //     //         border: Border.all(color: Colors.black),
-                //       //     //         color: (!_isPercentage)
-                //       //     //             ? AppConfig.colorPrimary
-                //       //     //             : AppConfig.backButtonColor,
-                //       //     //         borderRadius: const BorderRadius.only(
-                //       //     //             topLeft: Radius.circular(3),
-                //       //     //             bottomLeft: Radius.circular(3))),
-                //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
-                //       //     //     height: SizeConfig.blockSizeVertical * 3,
-                //       //     //     child: Center(
-                //       //     //       child: Text(
-                //       //     //         'AMOUNT',
-                //       //     //         style: TextStyle(
-                //       //     //           fontSize: AppConfig.textCaption3Size,
-                //       //     //           color: (!_isPercentage)
-                //       //     //               ? AppConfig.backButtonColor
-                //       //     //               : AppConfig.textBlack,
-                //       //     //         ),
-                //       //     //       ),
-                //       //     //     ),
-                //       //     //   ),
-                //       //     // ),
-                //       //     // InkWell(
-                //       //     //   onTap: () => setState(() {
-                //       //     //     _isPercentage = !_isPercentage;
-                //       //     //   }),
-                //       //     //   child: Container(
-                //       //     //     decoration: BoxDecoration(
-                //       //     //         border: Border.all(color: Colors.black),
-                //       //     //         color: (_isPercentage)
-                //       //     //             ? AppConfig.colorPrimary
-                //       //     //             : AppConfig.backButtonColor,
-                //       //     //         borderRadius: const BorderRadius.only(
-                //       //     //             topRight: Radius.circular(3),
-                //       //     //             bottomRight: Radius.circular(3))),
-                //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
-                //       //     //     height: SizeConfig.blockSizeVertical * 3,
-                //       //     //     child: Center(
-                //       //     //         child: Text(
-                //       //     //       'PERCENTAGE',
-                //       //     //       style: TextStyle(
-                //       //     //         fontSize: AppConfig.textCaption3Size,
-                //       //     //         color: (_isPercentage)
-                //       //     //             ? AppConfig.backButtonColor
-                //       //     //             : AppConfig.textBlack,
-                //       //     //       ),
-                //       //     //     )),
-                //       //     //   ),
-                //       //     // ),
-                //       //     // CommonWidgets.horizontalSpace(2),
-                //       //     // InkWell(
-                //       //     //   onTap: () {
-                //       //     //     showDialog(
-                //       //     //         context: context,
-                //       //     //         builder: (context) {
-                //       //     //           return AlertDialog(
-                //       //     //             title: const Text('Discount'),
-                //       //     //             content: TextField(
-                //       //     //               keyboardType: TextInputType.number,
-                //       //     //               controller: _discountData,
-                //       //     //               decoration: const InputDecoration(
-                //       //     //                   hintText: "Discount"),
-                //       //     //             ),
-                //       //     //             actions: <Widget>[
-                //       //     //               MaterialButton(
-                //       //     //                 color: AppConfig.colorPrimary,
-                //       //     //                 textColor: Colors.white,
-                //       //     //                 child: const Text('OK'),
-                //       //     //                 onPressed: () {
-                //       //     //                   Navigator.pop(context);
-                //       //     //                 },
-                //       //     //               ),
-                //       //     //             ],
-                //       //     //           );
-                //       //     //         });
-                //       //     //   },
-                //       //     //   child: Container(
-                //       //     //       width: SizeConfig.blockSizeHorizontal * 17,
-                //       //     //       height: SizeConfig.blockSizeVertical * 3,
-                //       //     //       decoration: BoxDecoration(
-                //       //     //           border: Border.all(
-                //       //     //               color: AppConfig.buttonDeactiveColor),
-                //       //     //           borderRadius: const BorderRadius.all(
-                //       //     //               Radius.circular(5))),
-                //       //     //       child: Center(
-                //       //     //         child: Text(_discountData.text.isEmpty
-                //       //     //             ? ''
-                //       //     //             : _discountData.text),
-                //       //     //       )),
-                //       //     // ),
-                //       //   ],
-                //       // ),
-                //       // Text('Total: $total'),
-                //       // Text('Tax: $tax'),
-                //       // Text('Round off: ${roundOffValue.toStringAsFixed(2)}'),
-                //       // Text('Grand Total: $roundedGrandTotal'),
-                //     ],
-                //   ),
-                // ),
-              ],
+                  // Padding(
+                  //   padding: const EdgeInsets.only(
+                  //     right: 18.0,
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.end,
+                  //     children: [
+                  //       // Row(
+                  //       //   mainAxisAlignment: MainAxisAlignment.end,
+                  //       //   children: [
+                  //       //     Text("REMARKS"),
+                  //       //     SizedBox(
+                  //       //       width: 10,
+                  //       //     ),
+                  //       //     InkWell(
+                  //       //       onTap: () {
+                  //       //         showDialog(
+                  //       //           context: context,
+                  //       //           builder: (context) {
+                  //       //             return AlertDialog(
+                  //       //               title: const Text('Remarks'),
+                  //       //               content: TextField(
+                  //       //                 controller: _remarksController,
+                  //       //                 onChanged: (value) {
+                  //       //                   setState(() {
+                  //       //                     _remarksText = value;
+                  //       //                   });
+                  //       //                 },
+                  //       //                 keyboardType: TextInputType.text,
+                  //       //                 decoration: const InputDecoration(
+                  //       //                   hintText: "Enter your remarks",
+                  //       //                 ),
+                  //       //               ),
+                  //       //               actions: <Widget>[
+                  //       //                 MaterialButton(
+                  //       //                   color: AppConfig.colorPrimary,
+                  //       //                   textColor: Colors.white,
+                  //       //                   child: const Text('OK'),
+                  //       //                   onPressed: () {
+                  //       //                     setState(() {
+                  //       //                       _remarksText =
+                  //       //                           _remarksController.text;
+                  //       //                     });
+                  //       //                     Navigator.pop(context);
+                  //       //                   },
+                  //       //                 ),
+                  //       //               ],
+                  //       //             );
+                  //       //           },
+                  //       //         );
+                  //       //       },
+                  //       //       child: Container(
+                  //       //         constraints: BoxConstraints(
+                  //       //           minWidth: 70,
+                  //       //           maxWidth: 150,
+                  //       //         ),
+                  //       //         padding: EdgeInsets.symmetric(
+                  //       //             horizontal: 10, vertical: 3),
+                  //       //         decoration: BoxDecoration(
+                  //       //           border: Border.all(
+                  //       //               color: AppConfig.buttonDeactiveColor),
+                  //       //           borderRadius:
+                  //       //               const BorderRadius.all(Radius.circular(5)),
+                  //       //         ),
+                  //       //         child: Text(
+                  //       //           _remarksText,
+                  //       //           style: TextStyle(
+                  //       //             color: Colors.black,
+                  //       //             // fontWeight: FontWeight.bold,
+                  //       //           ),
+                  //       //           maxLines: 1,
+                  //       //           overflow: TextOverflow.ellipsis,
+                  //       //         ),
+                  //       //       ),
+                  //       //     ),
+                  //       //   ],
+                  //       // ),
+                  //       // SizedBox(
+                  //       //   height: 10,
+                  //       // ),
+                  //       // Row(
+                  //       //   mainAxisAlignment: MainAxisAlignment.end,
+                  //       //   children: [
+                  //       //     Text(
+                  //       //       'Discount ',
+                  //       //       style: TextStyle(
+                  //       //         fontSize: AppConfig.textCaption3Size,
+                  //       //       ),
+                  //       //     ),
+                  //       //     // InkWell(
+                  //       //     //   onTap: () => setState(() {
+                  //       //     //     _isPercentage = !_isPercentage;
+                  //       //     //   }),
+                  //       //     //   child: Container(
+                  //       //     //     decoration: BoxDecoration(
+                  //       //     //         border: Border.all(color: Colors.black),
+                  //       //     //         color: (!_isPercentage)
+                  //       //     //             ? AppConfig.colorPrimary
+                  //       //     //             : AppConfig.backButtonColor,
+                  //       //     //         borderRadius: const BorderRadius.only(
+                  //       //     //             topLeft: Radius.circular(3),
+                  //       //     //             bottomLeft: Radius.circular(3))),
+                  //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
+                  //       //     //     height: SizeConfig.blockSizeVertical * 3,
+                  //       //     //     child: Center(
+                  //       //     //       child: Text(
+                  //       //     //         'AMOUNT',
+                  //       //     //         style: TextStyle(
+                  //       //     //           fontSize: AppConfig.textCaption3Size,
+                  //       //     //           color: (!_isPercentage)
+                  //       //     //               ? AppConfig.backButtonColor
+                  //       //     //               : AppConfig.textBlack,
+                  //       //     //         ),
+                  //       //     //       ),
+                  //       //     //     ),
+                  //       //     //   ),
+                  //       //     // ),
+                  //       //     // InkWell(
+                  //       //     //   onTap: () => setState(() {
+                  //       //     //     _isPercentage = !_isPercentage;
+                  //       //     //   }),
+                  //       //     //   child: Container(
+                  //       //     //     decoration: BoxDecoration(
+                  //       //     //         border: Border.all(color: Colors.black),
+                  //       //     //         color: (_isPercentage)
+                  //       //     //             ? AppConfig.colorPrimary
+                  //       //     //             : AppConfig.backButtonColor,
+                  //       //     //         borderRadius: const BorderRadius.only(
+                  //       //     //             topRight: Radius.circular(3),
+                  //       //     //             bottomRight: Radius.circular(3))),
+                  //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
+                  //       //     //     height: SizeConfig.blockSizeVertical * 3,
+                  //       //     //     child: Center(
+                  //       //     //         child: Text(
+                  //       //     //       'PERCENTAGE',
+                  //       //     //       style: TextStyle(
+                  //       //     //         fontSize: AppConfig.textCaption3Size,
+                  //       //     //         color: (_isPercentage)
+                  //       //     //             ? AppConfig.backButtonColor
+                  //       //     //             : AppConfig.textBlack,
+                  //       //     //       ),
+                  //       //     //     )),
+                  //       //     //   ),
+                  //       //     // ),
+                  //       //     // CommonWidgets.horizontalSpace(2),
+                  //       //     // InkWell(
+                  //       //     //   onTap: () {
+                  //       //     //     showDialog(
+                  //       //     //         context: context,
+                  //       //     //         builder: (context) {
+                  //       //     //           return AlertDialog(
+                  //       //     //             title: const Text('Discount'),
+                  //       //     //             content: TextField(
+                  //       //     //               keyboardType: TextInputType.number,
+                  //       //     //               controller: _discountData,
+                  //       //     //               decoration: const InputDecoration(
+                  //       //     //                   hintText: "Discount"),
+                  //       //     //             ),
+                  //       //     //             actions: <Widget>[
+                  //       //     //               MaterialButton(
+                  //       //     //                 color: AppConfig.colorPrimary,
+                  //       //     //                 textColor: Colors.white,
+                  //       //     //                 child: const Text('OK'),
+                  //       //     //                 onPressed: () {
+                  //       //     //                   Navigator.pop(context);
+                  //       //     //                 },
+                  //       //     //               ),
+                  //       //     //             ],
+                  //       //     //           );
+                  //       //     //         });
+                  //       //     //   },
+                  //       //     //   child: Container(
+                  //       //     //       width: SizeConfig.blockSizeHorizontal * 17,
+                  //       //     //       height: SizeConfig.blockSizeVertical * 3,
+                  //       //     //       decoration: BoxDecoration(
+                  //       //     //           border: Border.all(
+                  //       //     //               color: AppConfig.buttonDeactiveColor),
+                  //       //     //           borderRadius: const BorderRadius.all(
+                  //       //     //               Radius.circular(5))),
+                  //       //     //       child: Center(
+                  //       //     //         child: Text(_discountData.text.isEmpty
+                  //       //     //             ? ''
+                  //       //     //             : _discountData.text),
+                  //       //     //       )),
+                  //       //     // ),
+                  //       //   ],
+                  //       // ),
+                  //       // Text('Total: $total'),
+                  //       // Text('Tax: $tax'),
+                  //       // Text('Round off: ${roundOffValue.toStringAsFixed(2)}'),
+                  //       // Text('Grand Total: $roundedGrandTotal'),
+                  //     ],
+                  //   ),
+                  // ),
+                ],
+              ),
             ),
     );
   }
