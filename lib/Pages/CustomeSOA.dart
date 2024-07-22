@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/cupertino.dart';
@@ -6,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:convert';
 import 'package:pdf/widgets.dart' as pw;
@@ -107,8 +111,6 @@ class _SOAState extends State<SOA> {
           '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
       final logoResponse = await http.get(Uri.parse(api));
       if (logoResponse.statusCode != 200) {
-        // print(api);
-        // print('kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
         throw Exception('Failed to load logo image');
       }
       final Uint8List logoBytes = logoResponse.bodyBytes;
@@ -119,225 +121,240 @@ class _SOAState extends State<SOA> {
       String countryText =
           storeDetail.country != null ? "${storeDetail.country}" : "";
 
-      String finalText = "";
-
       pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Center(
-                  child: pw.Column(
-                    children: [
-                      pw.Center(
-                        child: pw.Image(
-                          pw.MemoryImage(logoBytes),
-                          height: 100,
-                          width: 100,
-                          fit: pw.BoxFit.cover,
-                        ),
-                      ),
-                      pw.Text(
-                        storeDetail.name,
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      if (storeDetail.address != null)
-                        pw.Text(storeDetail.address!),
-                      if (storeDetail.trn != null)
-                        pw.Text('TRN: ${storeDetail.trn}'),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Center(
-                  child: pw.Text(
-                    'Statement of Accounts',
-                    style: pw.TextStyle(
-                      fontSize: 20,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Divider(),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+        pw.MultiPage(
+          header: (pw.Context context) {
+            if (context.pageNumber == 1) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Center(
+                    child: pw.Column(
                       children: [
-                        pw.Text(
-                          "Customer : ${storeDetail.code} | ${storeDetail.name}",
-                          style: pw.TextStyle(
-                            fontSize: 15,
+                        pw.Center(
+                          child: pw.Image(
+                            pw.MemoryImage(logoBytes),
+                            height: 100,
+                            width: 100,
+                            fit: pw.BoxFit.cover,
                           ),
                         ),
-                        // Conditional display of address and country
-                        if (addressText.isNotEmpty || countryText.isNotEmpty)
+                        pw.Text(
+                          storeDetail.name,
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        if (storeDetail.address != null)
+                          pw.Text(storeDetail.address!),
+                        if (storeDetail.trn != null)
+                          pw.Text('TRN: ${storeDetail.trn}'),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+                  pw.Center(
+                    child: pw.Text(
+                      'Statement of Accounts',
+                      style: pw.TextStyle(
+                        fontSize: 20,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Divider(),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
                           pw.Text(
-                            "${addressText.isNotEmpty ? addressText : ''} ${countryText.isNotEmpty ? countryText : ''}",
+                            "Customer : ${storeDetail.code} | ${storeDetail.name}",
                             style: pw.TextStyle(
                               fontSize: 15,
                             ),
                           ),
-                      ],
-                    ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text(
-                          'From Date: ${_selectedDatefrom != null ? DateFormat('dd MMMM yyyy').format(_selectedDatefrom!) : 'Select Date'}',
-                          style: pw.TextStyle(
-                            fontSize: 15,
-                          ),
-                        ),
-                        pw.Text(
-                          'To Date: ${_selectedDateto != null ? DateFormat('dd MMMM yyyy').format(_selectedDateto!) : 'Select Date'}',
-                          style: pw.TextStyle(
-                            fontSize: 15,
-                          ),
-                        ),
-                        if (storeDetail.currency != null)
-                          pw.Text(
-                            'Currency: ${storeDetail.currency}',
-                            style: pw.TextStyle(fontSize: 15),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 20),
-                pw.Table(
-                  children: [
-                    pw.TableRow(
-                      decoration: pw.BoxDecoration(color: PdfColors.grey),
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Date',
-                              style:
-                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Reference',
-                              style:
-                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Amount',
-                              style:
-                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Payment',
-                              style:
-                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Balance',
-                              style:
-                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                    pw.TableRow(
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.grey200,
-                      ),
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text(''),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text(''),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text(''),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text('Opening Balance'),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text(balance.toStringAsFixed(2)),
-                        ),
-                      ],
-                    ),
-                    ...data.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      var row = entry.value;
-
-                      double amount = row[2] != null
-                          ? double.parse(row[2].toString())
-                          : 0.0;
-                      double payment = row[3] != null
-                          ? double.parse(row[3].toString())
-                          : 0.0;
-                      balance += amount;
-                      balance -= payment;
-
-                      return pw.TableRow(
-                        decoration: pw.BoxDecoration(
-                          color: index % 2 == 0
-                              ? PdfColors.white
-                              : PdfColors.grey200,
-                        ),
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(4),
-                            child: pw.Text(row[0].toString()),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(4),
-                            child: pw.Text(row[1].toString()),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(4),
-                            child: pw.Text(row[2].toString()),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(4),
-                            child: pw.Text(row[3].toString()),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(4),
-                            child: pw.Text(balance.toStringAsFixed(2)),
-                          ),
+                          if (addressText.isNotEmpty || countryText.isNotEmpty)
+                            pw.Text(
+                              "${addressText.isNotEmpty ? addressText : ''} ${countryText.isNotEmpty ? countryText : ''}",
+                              style: pw.TextStyle(
+                                fontSize: 15,
+                              ),
+                            ),
                         ],
-                      );
-                    }).toList(),
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'From Date: ${_selectedDatefrom != null ? DateFormat('dd MMMM yyyy').format(_selectedDatefrom!) : 'Select Date'}',
+                            style: pw.TextStyle(
+                              fontSize: 15,
+                            ),
+                          ),
+                          pw.Text(
+                            'To Date: ${_selectedDateto != null ? DateFormat('dd MMMM yyyy').format(_selectedDateto!) : 'Select Date'}',
+                            style: pw.TextStyle(
+                              fontSize: 15,
+                            ),
+                          ),
+                          if (storeDetail.currency != null)
+                            pw.Text(
+                              'Currency: ${storeDetail.currency}',
+                              style: pw.TextStyle(fontSize: 15),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 20),
+                ],
+              );
+            } else {
+              return pw.Container(); // Empty container for other pages
+            }
+          },
+          build: (pw.Context context) => [
+            pw.Table(
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.grey),
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Date',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Reference',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Amount',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Payment',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Balance',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
                   ],
                 ),
-                pw.SizedBox(height: 10),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey200,
+                  ),
                   children: [
-                    pw.Text(
-                      'Closing Balance: ${closing.toStringAsFixed(2)}',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
                     ),
-                    pw.SizedBox(width: 35),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text('Opening Balance'),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(balance.toStringAsFixed(2)),
+                    ),
+                  ],
+                ),
+                ...data.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  var row = entry.value;
+
+                  double amount =
+                      row[2] != null ? double.parse(row[2].toString()) : 0.0;
+                  double payment =
+                      row[3] != null ? double.parse(row[3].toString()) : 0.0;
+                  balance += amount;
+                  balance -= payment;
+
+                  return pw.TableRow(
+                    decoration: pw.BoxDecoration(
+                      color:
+                          index % 2 == 0 ? PdfColors.white : PdfColors.grey200,
+                    ),
+                    children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(row[0].toString()),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(row[1].toString()),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(row[2].toString()),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(row[3].toString()),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(balance.toStringAsFixed(2)),
+                      ),
+                    ],
+                  );
+                }).toList(),
+                // Add closing balance at the end of the table
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.white),
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Text(''),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 20),
+                      child: pw.Text('Closing Balance',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 20),
+                      child: pw.Text(closing.toStringAsFixed(2),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    ),
                   ],
                 ),
               ],
-            );
-          },
+            ),
+          ],
         ),
       );
 
-      await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+      final output = await getTemporaryDirectory();
+      final file = File('${output.path}/Custom SOA.pdf');
+      await file.writeAsBytes(await pdf.save());
+      await OpenFile.open(file.path);
     } else {
       throw Exception('Failed to load store details');
     }
@@ -886,7 +903,7 @@ class _SOAState extends State<SOA> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Text(
-                                    "Balance Due:$closing",
+                                    "Balance Due:${closing.toStringAsFixed(2)}",
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1126,7 +1143,7 @@ class _SOAState extends State<SOA> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Text(
-                                    "Balance Due:$closing",
+                                    "Balance Due:${closing.toStringAsFixed(2)}",
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),

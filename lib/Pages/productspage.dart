@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
-import 'package:mobizapp/Pages/Image_show.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -102,7 +101,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  void _searchProducts(String query) {
+  Future<void> _searchProducts(String query) async {
     setState(() {
       if (query.isEmpty) {
         _filteredProducts = List.from(_products);
@@ -114,6 +113,28 @@ class _ProductsScreenState extends State<ProductsScreen> {
             .toList();
       }
     });
+
+    if (_filteredProducts.isEmpty && _hasMore) {
+      await _fetchProducts();
+      _searchProducts(query); // Re-run the search after fetching more products
+    }
+  }
+
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: FadeInImage(
+          image: NetworkImage(imageUrl),
+          placeholder: const AssetImage('Assets/Images/no_image.jpg'),
+          imageErrorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              'Assets/Images/no_image.jpg',
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -219,20 +240,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _filteredProducts.length) {
-                      return Shimmer.fromColors(
-                        baseColor:
-                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                        highlightColor: AppConfig.backButtonColor,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                            ],
-                          ),
-                        ),
-                      );
+                      return SizedBox.shrink();
+                      //   Shimmer.fromColors(
+                      //   baseColor:
+                      //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                      //   highlightColor: AppConfig.backButtonColor,
+                      //   child: Center(
+                      //     child: Column(
+                      //       children: [
+                      //         CommonWidgets.loadingContainers(
+                      //             height: SizeConfig.blockSizeVertical * 10,
+                      //             width: SizeConfig.blockSizeHorizontal * 90),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // );
                     }
                     final product = _filteredProducts[index];
                     return Padding(
@@ -260,13 +282,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                     borderRadius: BorderRadius.circular(15.0),
                                     child: GestureDetector(
                                       onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => ImageShow(
-                                                  img:
-                                                      '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                            ));
+                                        _showImageDialog(
+                                          '${RestDatasource().Product_URL}/uploads/product/${product.proImage}',
+                                        );
                                       },
                                       child: FadeInImage(
                                         image: NetworkImage(

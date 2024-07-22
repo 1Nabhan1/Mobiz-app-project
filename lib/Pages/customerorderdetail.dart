@@ -104,18 +104,33 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
   // double tax = 0;
   double calculateTax() {
     double tax = 0;
-
+    double Tax = 0;
+    double totalRate = calculateTotalRate();
     for (int index = 0; index < cartItems.length; index++) {
       double rate = double.tryParse(
               amounts[index] ?? cartItems[index].price.toString()) ??
           0;
+      String discountValue = _discountData.text.trim();
+
+      double discountAmount = double.tryParse(discountValue) ?? 0;
+      double amt = totalRate - discountAmount;
+      double discountfrtax = (totalRate * discountAmount) / 100;
+      double netTotal = totalRate - discountfrtax;
+      double discount = (rate * discountAmount) / 100;
       int stock = cartItems[index].units[0].stock ?? 0;
       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      num taxPercentage = cartItems[index].taxPercentage ??
-          0; // Use the tax percentage from the product
-      double totaltax = ((rate * taxPercentage) / 100) * quantity;
-      tax += totaltax;
+      num taxPercentage = 5;
+      // cartItems[index].taxPercentage ?? 0;
+      double Tax = _isPercentage
+          ? ((netTotal * taxPercentage) / 100)
+          : (amt * taxPercentage) / 100;
+      // Use the tax percentage from the product
+      double totaltax = ((discountfrtax * taxPercentage) / 100);
+      tax = Tax;
+      // print(discountfrtax);
+      // print('fffffffffffffffffff');
     }
+
     return tax;
   }
 
@@ -124,20 +139,28 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
     String discountValue = _discountData.text.trim();
     double discountAmount = double.tryParse(discountValue) ?? 0;
     double totalRate = calculateTotalRate();
-    double totalTax = calculateTax();
+    double discountinpercent = (totalRate * discountAmount) / 100;
+    double totalTax = 5;
+    double nettotal = totalRate - discountinpercent;
+    double taxamt = calculateTax();
+    double taxamtperc = (nettotal * totalTax) / 100;
+
     double grandTotal = _ifVat == 1
         ? _isPercentage
-            ? totalRate - ((totalRate + totalTax) * discountAmount) / 100
-            : totalRate + totalTax - discountAmount
+            ? totalRate - ((totalRate * discountAmount) / 100) + taxamtperc
+            : (totalRate - discountAmount) + taxamt
         : _isPercentage
             ? totalRate - (totalRate * discountAmount) / 100
             : totalRate - discountAmount;
-    int roundedGrandTotal = customRound(grandTotal);
 
+    int roundedGrandTotal = customRound(grandTotal);
+    double roundOffValue = roundedGrandTotal - grandTotal;
+    // print('llllllllllllllll');
+    // print(grandTotal);
     return {
       'original': grandTotal,
       'rounded': roundedGrandTotal,
-      'roundOffValue': roundedGrandTotal - grandTotal,
+      'roundOffValue': roundOffValue,
     };
   }
 
@@ -284,7 +307,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
         'item_id': cartItems.map((item) => item.id).toList(),
         'quantity': quantities,
         'unit': selectedUnitIds,
-        'mrp': cartItems.map((item) => item.price).toList(),
+        'mrp': amounts.entries.map((entry) {
+          return double.parse(entry.value);
+        }).toList(),
         'customer_id': id,
         'if_vat': _ifVat == 1 ? 1 : 0,
         'product_type': productTypesList,

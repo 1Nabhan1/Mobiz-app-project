@@ -331,6 +331,7 @@
 class Invoice {
   final int id;
   final int customerId;
+  final int master_id;
   final String invoiceNo;
   final String invoiceDate;
   final String invoiceType;
@@ -340,6 +341,7 @@ class Invoice {
 
   Invoice({
     required this.id,
+    required this.master_id,
     required this.customerId,
     required this.invoiceNo,
     required this.invoiceDate,
@@ -352,6 +354,7 @@ class Invoice {
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
       id: json['id'],
+      master_id: json['master_id'],
       customerId: json['customer_id'],
       invoiceNo: json['invoice_no'],
       invoiceDate: json['invoice_date'],

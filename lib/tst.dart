@@ -3,22 +3,39 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mobizapp/Pages/CustomeSOA.dart';
+import 'package:shimmer/shimmer.dart';
 
+import 'Models/appstate.dart';
 import 'Models/paymentcollectionclass.dart';
+import 'Pages/customerdetailscreen.dart';
+import 'Utilities/rest_ds.dart';
 import 'confg/appconfig.dart';
 import 'confg/sizeconfig.dart';
 import '../Components/commonwidgets.dart';
 
 class PaymentCollectionScreen extends StatefulWidget {
   static const routeName = "/PaymentCollection";
-
+  // final String? id;
+  // final String? code;
+  // final String? name;
+  PaymentCollectionScreen({
+    Key? key,
+  }) : super(key: key);
   @override
   _PaymentCollectionScreenState createState() =>
       _PaymentCollectionScreenState();
 }
 
+int cuId = 0;
+String cuname = '';
+String cucode = '';
+String cupay = '';
+String cuoutstand = '';
+
 class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   List<Invoice> invoices = [];
+
   String dropdownvalue = 'Cash';
   var items = ['Cash', 'Cheque'];
   late Future<ApiResponse> futureInvoices;
@@ -27,17 +44,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   String PaidAmt = '';
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
   List<String> enteredValues = [];
-
-  Future<ApiResponse> fetchInvoices() async {
-    final response = await http.get(Uri.parse(
-        'http://68.183.92.8:3699/api/get_invoice_outstanding_detail?customer_id=38'));
-
-    if (response.statusCode == 200) {
-      return ApiResponse.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to load invoices');
-    }
-  }
+  List<String> invoiceTypes = [];
+  List<String> invoiceno = [];
+  List<String> invoicedate = [];
+  List<int> goodsTypes = [];
+  List<int> invoiceid = [];
 
   String formatDate(String date) {
     DateTime parsedDate = DateTime.parse(date);
@@ -51,16 +62,43 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   double getAllocatedAmount() {
-    return enteredValues
-        .where((value) => value.isNotEmpty)
-        .map((value) => double.parse(value))
-        .fold(0, (sum, amount) => sum + amount);
+    return enteredValues.asMap().entries.map((entry) {
+      int index = entry.key;
+      String value = entry.value;
+      if (value.isNotEmpty) {
+        double amount = double.parse(value);
+        String invoiceType = invoices[index].invoiceType.toLowerCase();
+        if (invoiceType == "sales") {
+          return amount;
+        } else if (invoiceType == "salesreturn" ||
+            invoiceType == "payment_voucher") {
+          return -amount;
+        }
+      }
+      return 0.0;
+    }).fold(0.0, (sum, amount) => sum + amount);
   }
 
   double getBalanceAmount() {
     double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
-    double allocatedAmount = getAllocatedAmount();
-    return paidAmount - allocatedAmount;
+
+    double allocatedAmount = enteredValues.asMap().entries.map((entry) {
+      int index = entry.key;
+      String value = entry.value;
+      if (value.isNotEmpty) {
+        double amount = double.parse(value);
+        String invoiceType = invoices[index].invoiceType.toLowerCase();
+        if (invoiceType == "sales") {
+          return -amount;
+        } else if (invoiceType == "salesreturn" ||
+            invoiceType == "payment_voucher") {
+          return amount;
+        }
+      }
+      return 0.0;
+    }).fold(0.0, (sum, amount) => sum + amount);
+
+    return paidAmount + allocatedAmount;
   }
 
   void updateBalanceAndAllocatedAmounts() {
@@ -69,6 +107,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      cuId = params!['customer'];
+      cucode = params!['code'];
+      cuname = params!['name'];
+      cupay = params!['paymentTerms'];
+      cuoutstand = params!['outstandamt'];
+    }
+
     PaidAmt = _paidAmt.text;
     return Scaffold(
       appBar: AppBar(
@@ -85,7 +133,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Code | Name | Payment Terms',
+                    '${cucode ?? ''} | ${cuname ?? ''} | ${cupay ?? ''}',
                     style:
                         const TextStyle(color: AppConfig.buttonDeactiveColor),
                   ),
@@ -97,7 +145,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                         style: TextStyle(color: AppConfig.buttonDeactiveColor),
                       ),
                       CommonWidgets.horizontalSpace(1),
-                      _inputBox(status: false, value: "4321"),
+                      _inputBox(
+                          status: false,
+                          value: "${cuoutstand == '[]' ? '' : cuoutstand}"),
+                      // ${_data == '[]' ? '' : _data}
                       const Spacer(),
                       const Text(
                         'Paid Amount',
@@ -179,7 +230,37 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
+                          return Shimmer.fromColors(
+                            baseColor:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          );
                         } else if (snapshot.hasError) {
                           return Center(
                               child: Text('Error: ${snapshot.error}'));
@@ -203,7 +284,25 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                             shrinkWrap: true,
                             itemCount: snapshot.data!.data.length,
                             itemBuilder: (context, index) {
+                              // Inside the itemBuilder
+
                               final invoice = snapshot.data!.data[index];
+                              // if (invoiceTypes.contains(invoice.invoiceType)) {
+                              invoiceTypes.clear();
+                              goodsTypes.clear();
+                              invoiceno.clear();
+                              invoicedate.clear();
+                              invoiceid.clear();
+
+                              // Add the data to the lists
+                              snapshot.data!.data.forEach((invoice) {
+                                invoiceTypes.add(invoice.invoiceType);
+                                goodsTypes.add(invoice.master_id);
+                                invoiceno.add(invoice.invoiceNo);
+                                invoicedate.add(invoice.invoiceDate);
+                                invoiceid.add(invoice.id);
+                              });
+                              // }
                               return Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 20),
@@ -307,63 +406,192 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 ),
               ),
             ),
-            Row(
-              children: [
-                const Text(
-                  'Mode of Payment',
-                  style: TextStyle(color: AppConfig.buttonDeactiveColor),
-                ),
-                CommonWidgets.horizontalSpace(1),
-                DropdownButton(
-                  value: dropdownvalue,
-                  icon: const Icon(Icons.keyboard_arrow_down),
-                  items: items.map((String items) {
-                    return DropdownMenuItem(
-                      value: items,
-                      child: Text(items),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownvalue = newValue!;
-                    });
-                  },
-                ),
-                CommonWidgets.horizontalSpace(2),
-                const Text(
-                  'Reference Number',
-                  style: TextStyle(color: AppConfig.buttonDeactiveColor),
-                ),
-                CommonWidgets.horizontalSpace(1),
-                _inputBox(status: true, value: ""),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(5)),
+                    border: Border.all(color: AppConfig.buttonDeactiveColor)),
+                width: SizeConfig.screenWidth,
+                child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Collection Type',
+                              style: TextStyle(
+                                  color: AppConfig.buttonDeactiveColor),
+                            ),
+                            CommonWidgets.horizontalSpace(1),
+                            Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color: AppConfig.buttonDeactiveColor,
+                                  )),
+                              constraints: BoxConstraints(
+                                minWidth: SizeConfig.blockSizeHorizontal * 13,
+                              ),
+                              height: SizeConfig.blockSizeVertical * 4,
+                              child: DropdownButton(
+                                alignment: Alignment.center,
+                                value: dropdownvalue,
+                                icon: const SizedBox(),
+                                underline: const SizedBox(),
+                                items: items.map((String items) {
+                                  return DropdownMenuItem(
+                                    value: items,
+                                    child: Text(items),
+                                  );
+                                }).toList(),
+                                // After selecting the desired option,it will
+                                // change button value to selected value
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    dropdownvalue = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+                            // _inputBox(
+                            //     status: true, value: "Cheque"),
+                            (dropdownvalue != "Cash")
+                                ? const Spacer()
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? const Text(
+                                    'Bank',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  )
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? CommonWidgets.horizontalSpace(1)
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? InkWell(
+                                    onTap: () {
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text('Bank'),
+                                              content: TextField(
+                                                onChanged: (value) async {},
+                                                keyboardType:
+                                                    TextInputType.name,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        hintText: "Bank"),
+                                              ),
+                                              actions: <Widget>[
+                                                MaterialButton(
+                                                  color: AppConfig.colorPrimary,
+                                                  textColor: Colors.white,
+                                                  child: const Text('OK'),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          }).then((value) => setState(() {}));
+                                    },
+                                    child: _inputBox(status: true, value: ''),
+                                  )
+                                : Container(),
+                          ],
+                        ),
+                        CommonWidgets.verticalSpace(1),
+                        (dropdownvalue != "Cash")
+                            ? Row(
+                                children: [
+                                  const Text(
+                                    'Cheque Date',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  ),
+                                  CommonWidgets.horizontalSpace(1),
+                                  InkWell(
+                                    onTap: () async {
+                                      DateTime? pickedDate =
+                                          await showDatePicker(
+                                              context: context,
+                                              initialDate: DateTime.now(),
+                                              firstDate: DateTime(1950),
+                                              lastDate: DateTime(2100));
+
+                                      if (pickedDate != null) {
+                                        formattedDate = DateFormat('dd-MM-yyyy')
+                                            .format(pickedDate);
+                                      } else {}
+                                    },
+                                    child: _inputBox(
+                                        status: true, value: "$formattedDate"),
+                                  ),
+                                  const Spacer(),
+                                  const Text(
+                                    'Cheque No',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  ),
+                                  CommonWidgets.horizontalSpace(1),
+                                  InkWell(
+                                    onTap: () {
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text('Cheque No'),
+                                              content: TextField(
+                                                onChanged: (value) async {},
+                                                keyboardType:
+                                                    TextInputType.name,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        hintText: "Cheque No"),
+                                              ),
+                                              actions: <Widget>[
+                                                MaterialButton(
+                                                  color: AppConfig.colorPrimary,
+                                                  textColor: Colors.white,
+                                                  child: const Text('OK'),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          }).then((value) => setState(() {}));
+                                    },
+                                    child: _inputBox(status: true, value: ''),
+                                  ),
+                                ],
+                              )
+                            : Container(),
+                      ],
+                    )),
+              ),
             ),
             CommonWidgets.verticalSpace(1),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Submit button functionality here
-                  },
-                  child: const Text('Submit'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: AppConfig.colorPrimary,
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConfig.colorPrimary, // Background color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3), // Rectangle shape
                   ),
                 ),
-                CommonWidgets.horizontalSpace(2),
-                ElevatedButton(
-                  onPressed: () {
-                    // Cancel button functionality here
-                  },
-                  child: const Text('Cancel'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: AppConfig.colorPrimary,
-                  ),
-                ),
-              ],
+                onPressed: () {
+                  postCollectionData();
+                },
+                child: Text("Save", style: TextStyle(color: Colors.white)),
+              ),
             ),
           ],
         ),
@@ -372,18 +600,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   void _showDialog(BuildContext context, int index, Invoice invoice) {
-    double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
-    double allocatedAmount = getAllocatedAmount();
-    double remainingAmount = paidAmount - allocatedAmount;
     double invoiceBalance = invoice.amount - invoice.paid;
 
-    double initialAmount =
-        remainingAmount < invoiceBalance ? remainingAmount : invoiceBalance;
-
     TextEditingController _amountController = TextEditingController(
-      text: enteredValues[index].isEmpty
-          ? initialAmount.toString()
-          : enteredValues[index],
+      text: invoiceBalance.toString(),
     );
 
     showDialog(
@@ -396,7 +616,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             controller: _amountController,
             onChanged: (value) {
               setState(() {
-                enteredValues[index] = value;
+                if (invoice.invoiceType.toLowerCase() == 'sales') {
+                  // Subtract entered amount from balance if invoice type is 'sales'
+                  enteredValues[index] = value;
+                } else {
+                  // Add entered amount to balance if invoice type is not 'sales'
+                  double currentBalance = double.parse(value) +
+                      double.parse(PaidAmt) -
+                      getAllocatedAmount();
+                  enteredValues[index] = currentBalance.toString();
+                }
               });
             },
             decoration: InputDecoration(hintText: "Enter amount"),
@@ -407,37 +636,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               textColor: Colors.white,
               child: const Text('OK'),
               onPressed: () {
-                double enteredAmount =
-                    double.tryParse(_amountController.text) ?? 0;
-                if (enteredAmount > invoiceBalance) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Entered amount cannot be greater than balance amount.'),
-                    ),
-                  );
-                } else if (enteredAmount > remainingAmount) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Entered amount cannot be greater than remaining paid amount.'),
-                    ),
-                  );
-                } else {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    if (invoice.invoiceType == 'sales') {
-                      PaidAmt =
-                          (double.parse(PaidAmt) - enteredAmount).toString();
-                    } else if (invoice.invoiceType == 'salesreturn' ||
-                        invoice.invoiceType == 'payment_voucher') {
-                      PaidAmt =
-                          (double.parse(PaidAmt) + enteredAmount).toString();
-                    }
-                    enteredValues[index] = _amountController.text;
-                    updateBalanceAndAllocatedAmounts();
-                  });
-                }
+                Navigator.of(context).pop();
+                setState(() {
+                  enteredValues[index] = _amountController.text;
+                  updateBalanceAndAllocatedAmounts();
+                });
               },
             ),
           ],
@@ -446,19 +649,108 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     );
   }
 
-  Widget _inputBox({required bool status, required String value}) {
+  Widget _inputBox({
+    required String value,
+    required bool status,
+  }) {
     return Container(
-      height: 40,
-      width: 100,
+      // padding: EdgeInsets.symmetric(horizontal: 30),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
-        color: status ? AppConfig.backgroundColor : AppConfig.backgroundColor,
-        border: Border.all(color: AppConfig.buttonDeactiveColor),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(
+          color: AppConfig.buttonDeactiveColor,
+        ),
       ),
-      child: Center(
-        child: Text(value),
+      constraints: BoxConstraints(
+        minWidth: SizeConfig.blockSizeHorizontal * 13,
+        minHeight: SizeConfig.blockSizeVertical * 3,
+      ),
+      child: Text(
+        textAlign: TextAlign.center,
+        value,
+        style: TextStyle(
+          color: status ? AppConfig.textBlack : AppConfig.buttonDeactiveColor,
+        ),
       ),
     );
+  }
+
+  Future<ApiResponse> fetchInvoices() async {
+    final String url =
+        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // print('llllllllllllllllllllllllll');
+      // print(id);
+      ApiResponse apiResponse = ApiResponse.fromJson(jsonDecode(response.body));
+      invoices = apiResponse.data;
+      // Initialize enteredValues list with the length of fetched invoices
+      enteredValues = List.filled(invoices.length, '');
+      return apiResponse;
+    } else {
+      throw Exception('Failed to load invoices');
+    }
+  }
+
+  Future<void> postCollectionData() async {
+    final url = '${RestDatasource().BASE_URL}/api/collection.post';
+    List<Map<String, dynamic>> collectionDetails = [];
+    for (int i = 0; i < invoices.length; i++) {
+      if (enteredValues[i].isNotEmpty) {
+        collectionDetails.add({
+          'InvoiceId': invoices[i].invoiceNo,
+          'Amount': double.parse(enteredValues[i]),
+        });
+      }
+    }
+    List<double> processedValues = enteredValues.map((value) {
+      return value.isEmpty ? 0.0 : double.parse(value);
+    }).toList();
+    final body = {
+      'van_id': AppState().vanId,
+      'store_id': AppState().storeId,
+      'user_id': AppState().userId,
+      'goods_out_id': goodsTypes,
+      'amount': processedValues,
+      'customer_id': cuId,
+      'invoice_type': invoiceTypes,
+      'collection_type': dropdownvalue,
+      'bank': '',
+      'cheque_no': '',
+      'cheque_date': '',
+      'invoice_no': invoiceno,
+      'invoice_date': invoicedate,
+      'invoice_id': invoiceid
+    };
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      print(processedValues);
+      print('dddddddddddddddd');
+      // Handle success response
+      print('Data posted successfully');
+      if (mounted) {
+        CommonWidgets.showDialogueBox(
+                context: context, title: "Alert", msg: "Transaction Successful")
+            .then(
+          (value) {
+            Navigator.pop(context);
+          },
+        );
+      }
+    } else {
+      // Handle error response
+      print('Failed to post data: ${response.statusCode}');
+    }
   }
 }
 

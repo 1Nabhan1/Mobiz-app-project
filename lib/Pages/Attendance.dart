@@ -576,7 +576,7 @@ class _AttendanceState extends State<Attendance> {
                               borderRadius: BorderRadius.circular(10),
                               color: _isCheckedIn
                                   ? Colors.lightBlueAccent.shade700
-                                  : Colors.grey.shade200,
+                                  : Colors.lightBlueAccent,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

@@ -105,7 +105,7 @@ class _VanStockScreenState extends State<VanStockScreen>
     }
   }
 
-  void _searchProducts(String query) {
+  Future<void> _searchProducts(String query) async {
     setState(() {
       if (query.isEmpty) {
         _filteredProducts = List.from(_products);
@@ -126,7 +126,34 @@ class _VanStockScreenState extends State<VanStockScreen>
             .toList();
       }
     });
+
+    if (_filteredProducts.isEmpty && _hasMore) {
+      await _fetchProducts();
+      _searchProducts(query); // Re-run the search after fetching more products
+    }
   }
+  // void _searchProducts(String query) {
+  //   setState(() {
+  //     if (query.isEmpty) {
+  //       _filteredProducts = List.from(_products);
+  //     } else {
+  //       _filteredProducts = _products
+  //           .where((product) =>
+  //               product.name!.toLowerCase().contains(query.toLowerCase()) ||
+  //               product.code!.toLowerCase().contains(query.toLowerCase()))
+  //           .toList();
+  //     }
+  //     if (query.isEmpty) {
+  //       _filteredProducts1 = List.from(_products1);
+  //     } else {
+  //       _filteredProducts1 = _products1
+  //           .where((product) =>
+  //               product.name!.toLowerCase().contains(query.toLowerCase()) ||
+  //               product.code!.toLowerCase().contains(query.toLowerCase()))
+  //           .toList();
+  //     }
+  //   });
+  // }
 
   @override
   void dispose() {

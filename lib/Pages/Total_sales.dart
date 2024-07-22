@@ -126,7 +126,6 @@ class _TotalSalesState extends State<TotalSales> {
                                     Colors.grey,
                                     Colors.blue.shade900,
                                   ],
-                                  total: snapshot.data!.totalSale.toDouble(),
                                 ),
                               ),
                               Column(

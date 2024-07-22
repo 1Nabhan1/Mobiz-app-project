@@ -5,16 +5,15 @@ import 'package:flutter/material.dart';
 class PieChartPainter extends CustomPainter {
   final List<double> values;
   final List<Color> colors;
-  final double total;
 
   PieChartPainter({
     required this.values,
     required this.colors,
-    required this.total,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    double total = values.reduce((a, b) => a + b);
     double startAngle = -90.0;
     final paint = Paint()..style = PaintingStyle.fill;
 

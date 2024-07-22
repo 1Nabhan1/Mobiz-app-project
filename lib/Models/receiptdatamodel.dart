@@ -71,7 +71,7 @@ class Data {
     masterId = json['master_id'];
     customerId = json['customer_id'];
     goodsOutId = json['goods_out_id'];
-    amount = json['amount'];
+    amount = json['total_amount'];
     inDate = json['in_date'];
     inTime = json['in_time'];
     collectionType = json['collection_type'];

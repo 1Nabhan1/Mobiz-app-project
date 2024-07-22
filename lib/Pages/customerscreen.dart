@@ -29,6 +29,9 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
   CustomerData customer = CustomerData();
   bool _initDone = false;
   bool _nodata = false;
+  List<Data> filteredCustomers = [];
+  String searchQuery = '';
+  bool _isSearching = false;
   @override
   void initState() {
     super.initState();
@@ -58,26 +61,71 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
     }
   }
 
+  void _searchCustomer(String query) {
+    final filteredList = customer.data!.where((customer) {
+      final customerName = customer.name?.toLowerCase() ?? '';
+      final searchLower = query.toLowerCase();
+      return customerName.contains(searchLower);
+    }).toList();
+
+    setState(() {
+      searchQuery = query;
+      filteredCustomers = filteredList;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppConfig.colorPrimary,
         iconTheme: const IconThemeData(color: AppConfig.backButtonColor),
-        title: const Text(
-          'Shops',
-          style: TextStyle(color: AppConfig.backButtonColor),
-        ),
+        title: _isSearching
+            ? TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: TextStyle(color: Colors.white),
+                  border: InputBorder.none,
+                ),
+                onChanged: (query) {
+                  _searchCustomer(query);
+                },
+                style: const TextStyle(color: Colors.white),
+              )
+            : const Text(
+                'Shops',
+                style: TextStyle(color: AppConfig.backButtonColor),
+              ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, CustomerRegistration.routeName);
-            },
-            child: const Icon(
+          _isSearching
+              ? IconButton(
+                  icon: const Icon(Icons.cancel),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = false;
+                      searchQuery = '';
+                      filteredCustomers = customer.data!;
+                    });
+                  },
+                )
+              : IconButton(
+                  icon: const Icon(Icons.search, size: 30),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = true;
+                    });
+                  },
+                ),
+          IconButton(
+            icon: Icon(
               Icons.add,
               size: 30,
               color: AppConfig.backgroundColor,
             ),
+            onPressed: () {
+              Navigator.pushNamed(context, CustomerRegistration.routeName);
+            },
           ),
           CommonWidgets.horizontalSpace(3),
         ],
@@ -91,10 +139,15 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                     child: ListView.separated(
                       separatorBuilder: (BuildContext context, int index) =>
                           CommonWidgets.verticalSpace(1),
-                      itemCount: customer.data!.length!,
+                      itemCount: (searchQuery.isEmpty
+                              ? customer.data!
+                              : filteredCustomers)
+                          .length,
                       shrinkWrap: true,
-                      itemBuilder: (context, index) =>
-                          _customersCard(customer.data![index]),
+                      itemBuilder: (context, index) => _customersCard(
+                          searchQuery.isEmpty
+                              ? customer.data![index]
+                              : filteredCustomers[index]),
                     ),
                   )
                 : (_nodata && _initDone)
@@ -284,6 +337,8 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
       customer = CustomerData.fromJson(resJson);
 
       setState(() {
+        customer = CustomerData.fromJson(resJson);
+        filteredCustomers = customer.data!;
         _initDone = true;
       });
     } else {

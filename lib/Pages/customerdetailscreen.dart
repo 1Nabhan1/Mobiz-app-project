@@ -326,7 +326,23 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                     onTap: () {
                       Navigator.pushNamed(
                           context, PaymentCollectionScreen.routeName,
-                          arguments: {'customer': id});
+                          arguments: {
+                            'customer': id,
+                            'name': name,
+                            'code': code,
+                            'paymentTerms': paymentTerms,
+                            'outstandamt': _data
+                          });
+
+                      // Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (context) => PaymentCollectionScreen(
+                      //         id: 'customer',
+                      //         code: 'code',
+                      //         name: 'name',
+                      //       ),
+                      //     ));
                     },
                     child: _iconButtons(
                         icon: Icons.payments, title: 'Payment Collection'))

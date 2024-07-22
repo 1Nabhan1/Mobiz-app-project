@@ -102,7 +102,7 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
     }
   }
 
-  void _searchProducts(String query) {
+  Future<void> _searchProducts(String query) async {
     setState(() {
       if (query.isEmpty) {
         _filteredProducts = List.from(_products);
@@ -114,6 +114,11 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
             .toList();
       }
     });
+
+    if (_filteredProducts.isEmpty && _hasMore) {
+      await _fetchProducts();
+      _searchProducts(query); // Re-run the search after fetching more products
+    }
   }
 
   @override
@@ -154,7 +159,8 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                     ),
                     border: Border.all(color: AppConfig.colorPrimary),
                   ),
-                  child: TextField(autofocus: true,
+                  child: TextField(
+                    autofocus: true,
                     style: TextStyle(color: Colors.white),
                     controller: _searchData,
                     decoration: const InputDecoration(
@@ -217,20 +223,21 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                   itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _filteredProducts.length) {
-                      return Shimmer.fromColors(
-                        baseColor:
-                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                        highlightColor: AppConfig.backButtonColor,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                            ],
-                          ),
-                        ),
-                      );
+                      return SizedBox.shrink();
+                      //   Shimmer.fromColors(
+                      //   baseColor:
+                      //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                      //   highlightColor: AppConfig.backButtonColor,
+                      //   child: Center(
+                      //     child: Column(
+                      //       children: [
+                      //         CommonWidgets.loadingContainers(
+                      //             height: SizeConfig.blockSizeVertical * 10,
+                      //             width: SizeConfig.blockSizeHorizontal * 90),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // );
                     }
                     final product = _filteredProducts[index];
                     return GestureDetector(

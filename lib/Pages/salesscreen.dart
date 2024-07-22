@@ -30,6 +30,7 @@ class _SalesScreenState extends State<SalesScreen> {
   final TextEditingController _remarksController = TextEditingController();
   String _remarksText = "";
   Map<int, String> amounts = {};
+
   Map<int, String> qtys = {};
   TextEditingController _searchData = TextEditingController();
   int? id;
@@ -143,18 +144,33 @@ class _SalesScreenState extends State<SalesScreen> {
   // double tax = 0;
   double calculateTax() {
     double tax = 0;
-
+    double Tax = 0;
+    double totalRate = calculateTotalRate();
     for (int index = 0; index < cartItems.length; index++) {
       double rate = double.tryParse(
               amounts[index] ?? cartItems[index].price.toString()) ??
           0;
+      String discountValue = _discountData.text.trim();
+
+      double discountAmount = double.tryParse(discountValue) ?? 0;
+      double amt = totalRate - discountAmount;
+      double discountfrtax = (totalRate * discountAmount) / 100;
+      double netTotal = totalRate - discountfrtax;
+      double discount = (rate * discountAmount) / 100;
       int stock = cartItems[index].units[0].stock ?? 0;
       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      num taxPercentage = cartItems[index].taxPercentage ??
-          0; // Use the tax percentage from the product
-      double totaltax = ((rate * taxPercentage) / 100) * quantity;
-      tax += totaltax;
+      num taxPercentage = 5;
+      // cartItems[index].taxPercentage ?? 0;
+      double Tax = _isPercentage
+          ? ((netTotal * taxPercentage) / 100)
+          : (amt * taxPercentage) / 100;
+      // Use the tax percentage from the product
+      double totaltax = ((discountfrtax * taxPercentage) / 100);
+      tax = Tax;
+      // print(discountfrtax);
+      // print('fffffffffffffffffff');
     }
+
     return tax;
   }
 
@@ -163,20 +179,28 @@ class _SalesScreenState extends State<SalesScreen> {
     String discountValue = _discountData.text.trim();
     double discountAmount = double.tryParse(discountValue) ?? 0;
     double totalRate = calculateTotalRate();
-    double totalTax = calculateTax();
+    double discountinpercent = (totalRate * discountAmount) / 100;
+    double totalTax = 5;
+    double nettotal = totalRate - discountinpercent;
+    double taxamt = calculateTax();
+    double taxamtperc = (nettotal * totalTax) / 100;
+
     double grandTotal = _ifVat == 1
         ? _isPercentage
-            ? totalRate - ((totalRate + totalTax) * discountAmount) / 100
-            : totalRate + totalTax - discountAmount
+            ? totalRate - ((totalRate * discountAmount) / 100) + taxamtperc
+            : (totalRate - discountAmount) + taxamt
         : _isPercentage
             ? totalRate - (totalRate * discountAmount) / 100
             : totalRate - discountAmount;
-    int roundedGrandTotal = customRound(grandTotal);
 
+    int roundedGrandTotal = customRound(grandTotal);
+    double roundOffValue = roundedGrandTotal - grandTotal;
+    // print('llllllllllllllll');
+    // print(grandTotal);
     return {
       'original': grandTotal,
       'rounded': roundedGrandTotal,
-      'roundOffValue': roundedGrandTotal - grandTotal,
+      'roundOffValue': roundOffValue,
     };
   }
 
@@ -255,6 +279,11 @@ class _SalesScreenState extends State<SalesScreen> {
             selectedProductType != null ? selectedProductType.id : 1;
         productTypesList.add(productType);
       }
+      // List<double> amountsList = amounts.entries.map((entry) {
+      //   return double.parse(entry.value);
+      // }).toList();
+
+      // int jsonAmounts = jsonEncode(amountsList);
       var data = {
         'van_id': AppState().vanId,
         'store_id': AppState().storeId,
@@ -262,7 +291,9 @@ class _SalesScreenState extends State<SalesScreen> {
         'item_id': cartItems.map((item) => item.id).toList(),
         'quantity': quantities,
         'unit': selectedUnitIds,
-        'mrp': cartItems.map((item) => item.price).toList(),
+        'mrp': amounts.entries.map((entry) {
+          return double.parse(entry.value);
+        }).toList(),
         'customer_id': id,
         'if_vat': _ifVat == 1 ? 1 : 0,
         'product_type': productTypesList,
@@ -284,8 +315,9 @@ class _SalesScreenState extends State<SalesScreen> {
       );
 
       if (response.statusCode == 200) {
-        // print(productTypesList);
-        // print('gggggggggggggggggggggggggggggggggggggg');
+        // print(jsonAmounts);
+        // print(cartItems.map((item) => item.price).toList());
+        // print(AppState().storeId);
         print('Post successful');
         if (mounted) {
           CommonWidgets.showDialogueBox(

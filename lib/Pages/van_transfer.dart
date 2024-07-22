@@ -13,7 +13,8 @@ class VanTransfer extends StatefulWidget {
 }
 
 class _VanTransferState extends State<VanTransfer> {
-  int _selectedValue = 0;
+  String? selectedVan;
+  List<String> vans = ['N 87395', 'N 87396', 'N 87397', 'N 87398'];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,73 +119,91 @@ class _VanTransferState extends State<VanTransfer> {
                     borderRadius: BorderRadius.circular(10)),
                 child: Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10)),
+                    Container(
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           children: [
-                            Row(
-                              children: <Widget>[
-                                Row(
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 30),
+                                decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Radio(
-                                      value: 1,
-                                      groupValue: _selectedValue,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedValue = value!;
-                                        });
-                                      },
+                                    Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          .47,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              .03,
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(5)),
+                                      child: Center(
+                                          child: Text(
+                                        "Select Van to Transfer",
+                                        style: TextStyle(
+                                            color: AppConfig.colorPrimary,
+                                            fontWeight: FontWeight.w600),
+                                      )),
                                     ),
-                                    Text('N 87395'),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          .32,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              .03,
+                                      decoration: BoxDecoration(
+                                          color: Colors.grey.shade400,
+                                          border:
+                                              Border.all(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(5)),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          isDense: true,
+                                          isExpanded: true,
+                                          style: TextStyle(),
+                                          value: selectedVan,
+                                          hint: Center(
+                                            child: Text(
+                                              'Select here',
+                                              // style: TextStyle(fontSize: 5),
+                                            ),
+                                          ),
+                                          items: vans.map((String van) {
+                                            return DropdownMenuItem<String>(
+                                              value: van,
+                                              child: Center(
+                                                  child: Text(
+                                                van,
+                                                style: TextStyle(
+                                                    color: Colors.black),
+                                              )),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              selectedVan = newValue;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
-                                Row(
-                                  children: [
-                                    Radio(
-                                      value: 2,
-                                      groupValue: _selectedValue,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedValue = value!;
-                                        });
-                                      },
-                                    ),
-                                    Text('N 87395'),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Radio(
-                                      value: 3,
-                                      groupValue: _selectedValue,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _selectedValue = value!;
-                                        });
-                                      },
-                                    ),
-                                    Text('N 87395'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Radio(
-                                  value: 4,
-                                  groupValue: _selectedValue,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedValue = value!;
-                                    });
-                                  },
-                                ),
-                                Text('N 87395'),
-                              ],
+                              ),
                             ),
                           ],
                         ),

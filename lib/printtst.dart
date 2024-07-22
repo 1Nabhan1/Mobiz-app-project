@@ -109,7 +109,8 @@ class _PrinterTestState extends State<PrinterTest> {
       printer.printCustom(companyAddress, 1, 1);
       printer.printCustom(companyTRN, 1, 1);
       printer.printNewLine();
-
+      printer.printCustom(
+          "------------------------------------------------", 1, 0);
       // Print customer details
       printer.printCustom("Customer: $customerName", 1, 0);
       printer.printCustom("Email: $customerEmail", 1, 0);
@@ -118,17 +119,23 @@ class _PrinterTestState extends State<PrinterTest> {
       printer.printNewLine();
 
       // Print invoice details
-      printer.printCustom("Invoice No: $invoiceNumber", 1, 0);
-      printer.printCustom("Date: $invoiceDate", 1, 0);
-      printer.printCustom("Due Date: $dueDate", 1, 0);
+      printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
+      printer.printCustom("Date: $invoiceDate", 1, 2);
+      printer.printCustom("Due Date: $dueDate", 1, 2);
       printer.printNewLine();
-
-      // Print product details
-      printer.printCustom("S.No  Product", 1, 0);
-      printer.printCustom("1     $productDescription", 1, 0);
-      printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
       printer.printCustom(
-          "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
+          "------------------------------------------------", 1, 0);
+      // Print product details
+      printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
+      printer.printCustom(
+          "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
+          1,
+          0);
+      printer.printCustom(
+          "------------------------------------------------", 1, 0);
+      // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
+      // printer.printCustom(
+      //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
       printer.printNewLine();
 
       // Print totals

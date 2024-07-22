@@ -100,31 +100,27 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 CommonWidgets.verticalSpace(8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    children: [
-                      CommonWidgets.horizontalSpace(3),
-                      CircleAvatar(
-                        radius: 35.0,
-                        backgroundColor: Colors.transparent,
-                        child: Image.asset(
-                          'Assets/Images/profile.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ],
+                CircleAvatar(
+                  radius: 55.0,
+                  backgroundColor: Colors.transparent,
+                  child: Image.asset(
+                    'Assets/Images/profile.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
+                CommonWidgets.verticalSpace(3),
                 ListTile(
+                  leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),
                   onTap: () {},
                 ),
                 ListTile(
+                  leading: Icon(Icons.call),
                   title: const Text('Contact Us'),
                   onTap: () {},
                 ),
                 ListTile(
+                  leading: Icon(Icons.print),
                   title: const Text('Printer'),
                   onTap: () {
                     Navigator.push(
@@ -135,7 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 ListTile(
-                  title: const Text('Log Out'),
+                  leading: Icon(Icons.logout),
+                  title: Text('Log Out'),
                   onTap: () {
                     conformation(context);
                   },
