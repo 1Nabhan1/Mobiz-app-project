@@ -15,15 +15,14 @@ import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 
-class SalesSelectProductsScreen extends StatefulWidget {
-  static const routeName = "/SalesSelectProductsScreen";
+class Vanselectproducts extends StatefulWidget {
+  static const routeName = "/Vanselectproducts";
 
   @override
-  _SalesSelectProductsScreenState createState() =>
-      _SalesSelectProductsScreenState();
+  _VanselectproductsState createState() => _VanselectproductsState();
 }
 
-class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
+class _VanselectproductsState extends State<Vanselectproducts> {
   final ScrollController _scrollController = ScrollController();
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
@@ -39,7 +38,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? cartItems = prefs.getStringList('cartItems') ?? [];
+    List<String>? cartItems = prefs.getStringList('vantrans') ?? [];
 
     bool alreadyExists = cartItems.any((item) {
       Map<String, dynamic> itemMap = jsonDecode(item);
@@ -48,13 +47,13 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
     if (!alreadyExists) {
       cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItems', cartItems);
+      await prefs.setStringList('vantrans', cartItems);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${product.name} added')),
       );
     } else {
       cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItems', cartItems);
+      await prefs.setStringList('vantrans', cartItems);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${product.name} added')),
       );
@@ -109,15 +108,15 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       } else {
         _filteredProducts = _products
             .where((product) =>
-        product.name!.toLowerCase().contains(query.toLowerCase()) ||
-            product.code!.toLowerCase().contains(query.toLowerCase()))
+                product.name!.toLowerCase().contains(query.toLowerCase()) ||
+                product.code!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
 
     if (_filteredProducts.isEmpty && _hasMore) {
       await _fetchProducts();
-      _searchProducts(query); // Re-run the search after fetching more products
+      _searchProducts(query);
     }
   }
 
@@ -130,14 +129,14 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      id = params!['customerId'];
-      name = params['name'];
-      code = params['code'];
-      payment = params['paymentTerms'];
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //   ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   id = params!['customerId'];
+    //   name = params['name'];
+    //   code = params['code'];
+    //   payment = params['paymentTerms'];
+    // }
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
@@ -245,12 +244,17 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                       onTap: () {
                         addToCart(product);
                         Navigator.pushReplacementNamed(
-                            context, SalesScreen.routeName, arguments: {
-                          'customerId': id,
-                          'name': name,
-                          'code': code,
-                          'paymentTerms': payment
-                        });
+                          context,
+                          '/VanTransfer',
+                          // arguments: {
+                          //   'product':
+                          //       product,
+                          //   'customerId': id,
+                          //   'name': name,
+                          //   'code': code,
+                          //   'paymentTerms': payment
+                          // },
+                        );
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -335,7 +339,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                                             ),
                                           )
                                         ],
-                                      ),
+                                      )
                                     ],
                                   ),
                                 ],

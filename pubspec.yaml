@@ -50,6 +50,11 @@ dependencies:
   printing:
   permission_handler:
   syncfusion_flutter_pdf:
+#  speech_to_text:
+#  avatar_glow:
+#  highlight_text:
+#  translator:
+#  flutter_tts:
   number_to_words:
   path_provider:
   open_file:

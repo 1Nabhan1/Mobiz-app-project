@@ -26,6 +26,106 @@ class ReceiptsData {
 
 class Data {
   int? id;
+  int? customerId;
+  String? inDate;
+  String? inTime;
+  String? collectionType;
+  String? bank;
+  String? chequeDate;
+  String? chequeNo;
+  String? voucherNo;
+  String? totalAmount;
+  int? vanId;
+  int? userId;
+  int? storeId;
+  String? createdAt;
+  String? updatedAt;
+  String? deletedAt;
+  List<Sales>? sales;
+  List<Customer>? customer;
+
+  Data({
+    this.id,
+    this.customerId,
+    this.inDate,
+    this.inTime,
+    this.collectionType,
+    this.bank,
+    this.chequeDate,
+    this.chequeNo,
+    this.voucherNo,
+    this.totalAmount,
+    this.vanId,
+    this.userId,
+    this.storeId,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.sales,
+    this.customer,
+  });
+
+  Data.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    customerId = json['customer_id'];
+    inDate = json['in_date'];
+    inTime = json['in_time'];
+    collectionType = json['collection_type'];
+    bank = json['bank'];
+    chequeDate = json['cheque_date'];
+    chequeNo = json['cheque_no'];
+    voucherNo = json['voucher_no'];
+    totalAmount = json['total_amount'];
+    vanId = json['van_id'];
+    userId = json['user_id'];
+    storeId = json['store_id'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+    deletedAt = json['deleted_at'];
+    if (json['sales'] != null) {
+      sales = <Sales>[];
+      json['sales'].forEach((v) {
+        sales!.add(new Sales.fromJson(v));
+      });
+    }
+    if (json['customer'] != null) {
+      customer = <Customer>[];
+      json['customer'].forEach((v) {
+        customer!.add(new Customer.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['customer_id'] = this.customerId;
+    data['in_date'] = this.inDate;
+    data['in_time'] = this.inTime;
+    data['collection_type'] = this.collectionType;
+    data['bank'] = this.bank;
+    data['cheque_date'] = this.chequeDate;
+    data['cheque_no'] = this.chequeNo;
+    data['voucher_no'] = this.voucherNo;
+    data['total_amount'] = this.totalAmount;
+    data['van_id'] = this.vanId;
+    data['user_id'] = this.userId;
+    data['store_id'] = this.storeId;
+    data['created_at'] = this.createdAt;
+    data['updated_at'] = this.updatedAt;
+    data['deleted_at'] = this.deletedAt;
+    if (this.sales != null) {
+      data['sales'] = this.sales!.map((v) => v.toJson()).toList();
+    }
+    if (this.customer != null) {
+      data['customer'] = this.customer!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Sales {
+  int? id;
   int? masterId;
   int? customerId;
   int? goodsOutId;
@@ -37,41 +137,46 @@ class Data {
   String? chequeDate;
   String? chequeNo;
   String? voucherNo;
+  String? invoiceDate;
+  String? invoiceType;
+  String? invoiceNo;
   int? userId;
   int? vanId;
   int? storeId;
   String? createdAt;
   String? updatedAt;
   String? deletedAt;
-  List<Customer>? customer;
 
-  Data(
-      {this.id,
-      this.masterId,
-      this.customerId,
-      this.goodsOutId,
-      this.amount,
-      this.inDate,
-      this.inTime,
-      this.collectionType,
-      this.bank,
-      this.chequeDate,
-      this.chequeNo,
-      this.voucherNo,
-      this.userId,
-      this.vanId,
-      this.storeId,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.customer});
+  Sales({
+    this.id,
+    this.masterId,
+    this.customerId,
+    this.goodsOutId,
+    this.amount,
+    this.inDate,
+    this.inTime,
+    this.collectionType,
+    this.bank,
+    this.chequeDate,
+    this.chequeNo,
+    this.voucherNo,
+    this.invoiceDate,
+    this.invoiceType,
+    this.invoiceNo,
+    this.userId,
+    this.vanId,
+    this.storeId,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+  });
 
-  Data.fromJson(Map<String, dynamic> json) {
+  Sales.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     masterId = json['master_id'];
     customerId = json['customer_id'];
     goodsOutId = json['goods_out_id'];
-    amount = json['total_amount'];
+    amount = json['amount'];
     inDate = json['in_date'];
     inTime = json['in_time'];
     collectionType = json['collection_type'];
@@ -79,18 +184,15 @@ class Data {
     chequeDate = json['cheque_date'];
     chequeNo = json['cheque_no'];
     voucherNo = json['voucher_no'];
+    invoiceDate = json['invoice_date'];
+    invoiceType = json['invoice_type'];
+    invoiceNo = json['invoice_no'];
     userId = json['user_id'];
     vanId = json['van_id'];
     storeId = json['store_id'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     deletedAt = json['deleted_at'];
-    if (json['customer'] != null) {
-      customer = <Customer>[];
-      json['customer'].forEach((v) {
-        customer!.add(new Customer.fromJson(v));
-      });
-    }
   }
 
   Map<String, dynamic> toJson() {
@@ -107,15 +209,15 @@ class Data {
     data['cheque_date'] = this.chequeDate;
     data['cheque_no'] = this.chequeNo;
     data['voucher_no'] = this.voucherNo;
+    data['invoice_date'] = this.invoiceDate;
+    data['invoice_type'] = this.invoiceType;
+    data['invoice_no'] = this.invoiceNo;
     data['user_id'] = this.userId;
     data['van_id'] = this.vanId;
     data['store_id'] = this.storeId;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     data['deleted_at'] = this.deletedAt;
-    if (this.customer != null) {
-      data['customer'] = this.customer!.map((v) => v.toJson()).toList();
-    }
     return data;
   }
 }
@@ -142,27 +244,28 @@ class Customer {
   String? deletedAt;
   String? erpCustomerCode;
 
-  Customer(
-      {this.id,
-      this.name,
-      this.code,
-      this.address,
-      this.contactNumber,
-      this.whatsappNumber,
-      this.email,
-      this.trn,
-      this.custImage,
-      this.paymentTerms,
-      this.creditLimit,
-      this.creditDays,
-      this.routeId,
-      this.provinceId,
-      this.storeId,
-      this.status,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.erpCustomerCode});
+  Customer({
+    this.id,
+    this.name,
+    this.code,
+    this.address,
+    this.contactNumber,
+    this.whatsappNumber,
+    this.email,
+    this.trn,
+    this.custImage,
+    this.paymentTerms,
+    this.creditLimit,
+    this.creditDays,
+    this.routeId,
+    this.provinceId,
+    this.storeId,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.erpCustomerCode,
+  });
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];

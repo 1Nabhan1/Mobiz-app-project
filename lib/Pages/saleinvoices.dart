@@ -206,10 +206,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            trailing: Transform.rotate(
-              angle: 100,
-              child: const Icon(Icons.touch_app, color: Colors.transparent),
-            ),
+            trailing: SizedBox.shrink(),
             backgroundColor: AppConfig.backgroundColor,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +373,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                                 ),
                                 const Text(' | '),
                                 Text(
-                                  'Amount: ${data.detail![i].amount}',
+                                  'Amount: ${data.detail![i].amount?.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: AppConfig.textCaption3Size,
                                   ),
@@ -630,7 +627,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
               ? '1'
               : '0';
       row.cells[6].value = '${invoice.data!.detail![k].taxAmt}';
-      row.cells[7].value = '${invoice.data!.detail![k].amount}';
+      row.cells[7].value = '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
 
     // Define no border style
@@ -767,9 +764,11 @@ Salesman: ${invoice.data!.user![0].name}
   }
 
   Future<Uint8List> _readImageData(String? image) async {
+    // print(image);
+    // print('jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj');
     try {
       final response = await http
-          .get(Uri.parse('https://mobiz.yes45.in/uploads/store/$image'));
+          .get(Uri.parse('${RestDatasource().Image_URL}/uploads/store/$image'));
 
       print('Response Data $response');
 

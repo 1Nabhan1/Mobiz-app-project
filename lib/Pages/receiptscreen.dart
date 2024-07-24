@@ -45,52 +45,56 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           CommonWidgets.verticalSpace(1),
           (_initDone && !_noData)
               ? SizedBox(
-                  height: SizeConfig.blockSizeVertical * 85,
-                  child: ListView.separated(
-                      separatorBuilder: (BuildContext context, int index) =>
-                          CommonWidgets.verticalSpace(1),
-                      itemCount: 10, //products.data!.length,
-                      shrinkWrap: true,
-                      itemBuilder: (context, index) =>
-                          _productsCard(receiptsData.data![index])),
-                )
+            height: SizeConfig.blockSizeVertical * 85,
+            child: ListView.separated(
+              separatorBuilder: (BuildContext context, int index) =>
+                  CommonWidgets.verticalSpace(1),
+              itemCount: receiptsData.data?.length ?? 0,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                final data = receiptsData.data![index];
+                return _productsCard(data);
+              },
+            ),
+          )
               : (_noData && _initDone)
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                          CommonWidgets.verticalSpace(3),
-                          const Center(
-                            child: Text('No Data'),
-                          ),
-                        ])
-                  : Shimmer.fromColors(
-                      baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      highlightColor: AppConfig.backButtonColor,
-                      child: Center(
-                        child: Column(
-                          children: [
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                          ],
-                        ),
-                      ),
-                    ),
+              ? Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CommonWidgets.verticalSpace(3),
+              const Center(
+                child: Text('No Data'),
+              ),
+            ],
+          )
+              : Shimmer.fromColors(
+            baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+            highlightColor: AppConfig.backButtonColor,
+            child: Center(
+              child: Column(
+                children: [
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                  CommonWidgets.loadingContainers(
+                      height: SizeConfig.blockSizeVertical * 10,
+                      width: SizeConfig.blockSizeHorizontal * 90),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -153,7 +157,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   ],
                 ),
                 Text(
-                  'Amount: ${data.amount}',
+                  'Amount: ${data.totalAmount}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
@@ -167,25 +171,54 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               ],
             ),
             children: [
-              Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Row(
-                  children: [
-                    Column(
+              Wrap(
+                children: List.generate(data.sales?.length ?? 0, (index) {
+                  final sale = data.sales![index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Invoice'),
-                        Text(
-                          'Amount: ${data.amount}',
-                          style: TextStyle(
-                            fontSize: AppConfig.textCaption3Size,
-                          ),
+                        Divider(),
+                        Row(
+                          children: [
+                            Text('Invoice: '),
+                            Text(
+                              sale.invoiceNo ?? 'Invoice',
+                              style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text('Invoice Type: '),
+                            Text(
+                              sale.invoiceType ?? 'Invoice',
+                              style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text('Amount: '),
+                            Text(
+                              sale.amount ?? '',
+                              style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  );
+                }),
               )
+
             ],
           ),
         ),

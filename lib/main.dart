@@ -17,9 +17,9 @@ import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/splashscreen.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
+import 'package:mobizapp/Pages/vanselectproduct.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
-import 'package:mobizapp/shraetst2.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/selectproduct.dart';
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // home: HomePagevv(),
+        // home: SpeechScreen(),
         initialRoute: SplashScreen.routeName,
         routes: {
           // '/': (context) => Home(),
@@ -105,8 +105,8 @@ class MyApp extends StatelessWidget {
           ExpenseAdd.routeName: (context) => ExpenseAdd(),
           OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
           VanStocksoff.routeName: (context) => VanStocksoff(),
-          SelectProductsScreenoff.routeName: (context) =>
-              SelectProductsScreenoff(),
+          SelectProductsScreenoff.routeName: (context) => SelectProductsScreenoff(),
+          Vanselectproducts.routeName: (context) => Vanselectproducts(),
         });
   }
 }

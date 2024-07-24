@@ -24,13 +24,14 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _search = false;
   // List<String?> selectedUnitNames = [];
   bool _isPercentage = false;
+  final TextEditingController _roundoff = TextEditingController();
   final TextEditingController _discountData = TextEditingController();
   final TextEditingController amountctrl = TextEditingController();
   final TextEditingController qtysctrl = TextEditingController();
   final TextEditingController _remarksController = TextEditingController();
   String _remarksText = "";
   Map<int, String> amounts = {};
-
+  String roundoff = '';
   Map<int, String> qtys = {};
   TextEditingController _searchData = TextEditingController();
   int? id;
@@ -72,16 +73,6 @@ class _SalesScreenState extends State<SalesScreen> {
     await prefs.clear();
   }
 
-  // Future<void> initializeValues() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     for (int i = 0; i < cartItems.length; i++) {
-  //       qtys[i] = prefs.getString('qty$i') ?? '1';
-  //       amounts[i] =
-  //           prefs.getString('amount$i') ?? cartItems[i].price.toString();
-  //     }
-  //   });
-  // }
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -176,6 +167,8 @@ class _SalesScreenState extends State<SalesScreen> {
 
   // double grnddtotal = 0;
   Map<String, dynamic> grandTotal() {
+    roundoff = _roundoff.text;
+    double rundff = double.tryParse(roundoff) ?? 0;
     String discountValue = _discountData.text.trim();
     double discountAmount = double.tryParse(discountValue) ?? 0;
     double totalRate = calculateTotalRate();
@@ -193,7 +186,8 @@ class _SalesScreenState extends State<SalesScreen> {
             ? totalRate - (totalRate * discountAmount) / 100
             : totalRate - discountAmount;
 
-    int roundedGrandTotal = customRound(grandTotal);
+    double roundedGrandTotal = grandTotal + rundff;
+    // int roundedGrandTotal = customRound(grandTotal);
     double roundOffValue = roundedGrandTotal - grandTotal;
     // print('llllllllllllllll');
     // print(grandTotal);
@@ -248,7 +242,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
     double total = calculateTotalRate();
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    int roundedGrandTotal = grandTotalMap['rounded'];
+    double roundedGrandTotal = grandTotalMap['rounded'];
     double roundOffValue = grandTotalMap['roundOffValue'];
 
     void postDataToApi() async {
@@ -675,8 +669,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                                 ProductType>(
                                               value: productType,
                                               child: Center(
-                                                  child: Text(productType
-                                                      .name)), // Center align the item text
+                                                  child:
+                                                      Text(productType.name)),
                                             );
                                           }).toList(),
                                           icon: SizedBox.shrink(),
@@ -1111,8 +1105,52 @@ class _SalesScreenState extends State<SalesScreen> {
                       ),
                       Text('Total: $total'),
                       Text('Tax: ${tax.toStringAsFixed(2)}'),
-                      Text('Round off: ${roundOffValue.toStringAsFixed(2)}'),
-                      Text('Grand Total: $roundedGrandTotal'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text('Round off:'),
+                          InkWell(
+                            onTap: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Round off'),
+                                      content: TextField(
+                                        keyboardType: TextInputType.number,
+                                        controller: _roundoff,
+                                        decoration: const InputDecoration(
+                                            hintText: "Round off"),
+                                      ),
+                                      actions: <Widget>[
+                                        MaterialButton(
+                                          color: AppConfig.colorPrimary,
+                                          textColor: Colors.white,
+                                          child: const Text('OK'),
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  });
+                            },
+                            child: Container(
+                                width: SizeConfig.blockSizeHorizontal * 17,
+                                height: SizeConfig.blockSizeVertical * 3,
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: AppConfig.buttonDeactiveColor),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(5))),
+                                child: Center(
+                                  child: Text(roundoff),
+                                )),
+                          ),
+                        ],
+                      ),
+                      Text(
+                          'Grand Total: ${roundedGrandTotal.toStringAsFixed(2)}'),
                     ],
                   ),
                 ),
