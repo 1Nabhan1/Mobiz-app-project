@@ -95,7 +95,7 @@ class _DaycloseReportState extends State<DaycloseReport> {
                       child: Text(
                           'Failed to load data from API Please try again later.'));
                 } else if (!snapshot1.hasData || snapshot1.data!.data.isEmpty) {
-                  return Center(child: Text('No data available from API'));
+                  return Center(child: Text('No data available'));
                 } else {
                   return ListView.builder(
                     shrinkWrap: true,
@@ -114,6 +114,8 @@ class _DaycloseReportState extends State<DaycloseReport> {
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: ListTile(
+                              trailing: Text(
+                                  '${dayClose1.approvel == 1 ? 'Waiting for\nApproval' : dayClose1.approvel == 2 ? 'Approved' : dayClose1.approvel == 0 ? '' : ''}'),
                               title: Text('Invoice ID: ${dayClose1.invoiceNo}'),
                               subtitle: Text('Date: ${dayClose1.inDate}'),
                               onTap: () {

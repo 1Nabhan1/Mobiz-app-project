@@ -315,7 +315,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
                   ),
                 ),
                 Text(
-                  'Total Tax: ${data.totalTax ?? ''}',
+                  'Total Vat: ${data.totalTax ?? ''}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
@@ -668,7 +668,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
     String bottomInvoiceDetails = '''
   ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount}' : '\t'}
   Total: ${invoice.data!.total}
-  Tax: ${invoice.data!.totalTax}
+  Vat: ${invoice.data!.totalTax}
   ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Round off: ${invoice.data!.roundOff}\nGrand Total: ${invoice.data!.grandTotal}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
 
 

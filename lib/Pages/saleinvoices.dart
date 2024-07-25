@@ -253,7 +253,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                     //   )
 
                     ? Text(
-                        'Total: ${data.total}',
+                        'Total: ${data.total?.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
@@ -265,7 +265,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                         ),
                       ),
                 Text(
-                  'Discount(%): ${data.discount}',
+                  'Discount(%): ${data.discount?.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
@@ -275,7 +275,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                   child: Row(
                     children: [
                       Text(
-                        'Round Off: ${data.roundOff ?? ''}',
+                  'Round off:${double.parse(data.roundOff ?? '').toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
@@ -302,13 +302,13 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                   ),
                 ),
                 Text(
-                  'Total Tax: ${data.totalTax ?? ''}',
+                  'Total Vat: ${(data.totalTax?.toStringAsFixed(2) )?? ''}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
                 ),
                 Text(
-                  'Grand Total: ${data.grandTotal}',
+                  'Grand Total: ${data.grandTotal?.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
@@ -499,7 +499,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           headtextSize.height),
     );
 
-    final String addresss = '${invoice.data!.store![0].address ?? 'null'}';
+    final String addresss = '${invoice.data!.store![0].address ?? 'N/A'}';
     final PdfFont addressfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
 
     final Size addresstextSize = addressfont.measureString(addresss);
@@ -513,7 +513,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           addresstextSize.width, addresstextSize.height),
     );
 
-    final String trn = 'TRN:${invoice.data!.customer![0].trn ?? '  null'}';
+    final String trn = 'TRN:${invoice.data!.store![0].trn ?? 'N/A'}';
     final PdfFont trnfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
 
     final Size trntextSize = trnfont.measureString(trn);
@@ -572,7 +572,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     page.graphics.drawString(
       address,
       PdfStandardFont(PdfFontFamily.helvetica, 12),
-      bounds: Rect.fromLTWH(0, 200, pageSize.width / 2, 100),
+      bounds: Rect.fromLTWH(0, 200, pageSize.width / 0, 100),
     );
 
     page.graphics.drawString(
@@ -620,14 +620,15 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       row.cells[0].value = '${k + 1}';
       row.cells[1].value = '${invoice.data!.detail![k].name}';
       row.cells[2].value = '${invoice.data!.detail![k].unit}';
-      row.cells[3].value = '${invoice.data!.detail![k].mrp}';
+      row.cells[3].value = '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
       row.cells[4].value = '${invoice.data!.detail![k].quantity}';
       row.cells[5].value =
           (invoice.data!.detail![k].productType!.toLowerCase() == "foc")
               ? '1'
               : '0';
-      row.cells[6].value = '${invoice.data!.detail![k].taxAmt}';
-      row.cells[7].value = '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
+      row.cells[6].value = '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      row.cells[7].value =
+          '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
 
     // Define no border style
@@ -686,10 +687,10 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
     // Draw invoice details at the bottom right.
     String bottomInvoiceDetails = '''
-  ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount}' : '\t'}
-  Total: ${invoice.data!.total}
-  Tax: ${invoice.data!.totalTax}
-  ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Round off: ${invoice.data!.roundOff}\nGrand Total: ${invoice.data!.grandTotal}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
+  ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount?.toStringAsFixed(2)}' : '\t'}
+  Total: ${invoice.data!.total?.toStringAsFixed(2)}
+  Vat: ${invoice.data!.totalTax?.toStringAsFixed(2)}
+  ${'${invoice.data!.roundOff}' != 0 ? 'Round off:${double.parse(invoice.data!.roundOff ?? '').toStringAsFixed(2)}\nGrand Total: ${invoice.data!.grandTotal?.toStringAsFixed(2)}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
   
  
   ''';
@@ -710,7 +711,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
 // in word
     String textData =
-        'Amount in Words: ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()}';
+        'Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY';
 
 // Adjust the vertical position for the van details
     double vanDetailsTop = tableBottom + 20 + 100 + 10;
@@ -727,13 +728,12 @@ Salesman: ${invoice.data!.user![0].name}
       PdfStandardFont(PdfFontFamily.helvetica, 12),
       bounds: Rect.fromLTWH(
         0,
-        vanDetailsTop -
-            30, // Adjust vertical position to be above the van details
+        vanDetailsTop-17, // Adjust vertical position to be above the van details
         pageSize.width,
         100,
       ),
       format: PdfStringFormat(
-        alignment: PdfTextAlignment.center,
+        alignment: PdfTextAlignment.left,
       ),
     );
 // Draw van details at the bottom left.

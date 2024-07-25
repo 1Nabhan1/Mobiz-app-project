@@ -35,6 +35,7 @@ class SOA extends StatefulWidget {
 
 int? id;
 String? name;
+String? address;
 String? code;
 String? payment;
 
@@ -171,19 +172,35 @@ class _SOAState extends State<SOA> {
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            "Customer : ${storeDetail.code} | ${storeDetail.name}",
-                            style: pw.TextStyle(
-                              fontSize: 15,
-                            ),
-                          ),
-                          if (addressText.isNotEmpty || countryText.isNotEmpty)
-                            pw.Text(
-                              "${addressText.isNotEmpty ? addressText : ''} ${countryText.isNotEmpty ? countryText : ''}",
+                          pw.SizedBox(
+                            width: 300,
+                            child: pw.Text(
+                              overflow: pw.TextOverflow.span,
+                              "Customer : ${code} | ${name}",
                               style: pw.TextStyle(
                                 fontSize: 15,
                               ),
                             ),
+                          ),
+                          pw.SizedBox(
+                            width: 300,
+                            child: pw.Text(
+                              overflow: pw.TextOverflow.span,
+                              "Address : $address",
+                              style: pw.TextStyle(
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          // if (addressText.isNotEmpty || countryText.isNotEmpty)
+                          //   pw.SizedBox(width: 300,
+                          //     child: pw.Text(overflow: pw.TextOverflow.span,
+                          //       "${addressText.isNotEmpty ? addressText : ''} ${countryText.isNotEmpty ? countryText : ''}",
+                          //       style: pw.TextStyle(
+                          //         fontSize: 15,
+                          //       ),
+                          //     ),
+                          //   )
                         ],
                       ),
                       pw.Column(
@@ -317,7 +334,6 @@ class _SOAState extends State<SOA> {
                     ],
                   );
                 }).toList(),
-                // Add closing balance at the end of the table
                 pw.TableRow(
                   decoration: pw.BoxDecoration(color: PdfColors.white),
                   children: [
@@ -456,6 +472,7 @@ class _SOAState extends State<SOA> {
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params!['name'];
+      address = params['address'];
       code = params!['code'];
       payment = params!['paymentTerms'];
     }

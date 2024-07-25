@@ -32,11 +32,13 @@ class DayCloseData {
   final int id;
   final String inDate;
   final String invoiceNo;
+  final int approvel;
 
   DayCloseData({
     required this.id,
     required this.inDate,
     required this.invoiceNo,
+    required this.approvel,
   });
 
   factory DayCloseData.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class DayCloseData {
       id: json['id'],
       inDate: json['in_date'],
       invoiceNo: json['invoice_no'],
+      approvel: json['approvel'],
     );
   }
 
@@ -52,6 +55,7 @@ class DayCloseData {
       'id': id,
       'in_date': inDate,
       'invoice_no': invoiceNo,
+      'approvel': approvel,
     };
   }
 }

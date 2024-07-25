@@ -10,10 +10,14 @@ import '../Utilities/sharepref.dart';
 import '../confg/sizeconfig.dart';
 import '../Models/appstate.dart';
 import '../Pages/homepage.dart';
+import '../Pages/error_handling_screen.dart';
+import 'homepage_Driver.dart';
+import 'homepage_driver.dart'; // Import your ErrorHandlingScreen here
 
 class LoginScreen extends StatefulWidget {
   static const routeName = "/LoginScreen";
-  const LoginScreen({super.key});
+
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -185,7 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   OutlineInputBorder myinputborder() {
-    // Return type is OutlineInputBorder
     return const OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(20)),
       borderSide: BorderSide(
@@ -238,22 +241,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Save to shared preferences
           sharedPref.save("app_state", appState);
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+
+          // Navigation logic based on rol_id
+          if (loginResp.user!.rolId == 2) {
+            // Navigate to current page (assuming it's the same login page)
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+            }
+          } else if (loginResp.user!.rolId == 4) {
+            // Navigate to ErrorHandlingScreen
+            if (mounted) {
+              Navigator.of(context)
+                  .pushReplacementNamed(HomepageDriver.routeName);
+            }
           }
         } else {
+          // Handle null user or authorisation
           if (mounted) {
             CommonWidgets.showDialogueBox(
                 context: context, title: "Error", msg: "Something went wrong");
           }
         }
       } else {
+        // Handle unsuccessful login
         if (mounted) {
           CommonWidgets.showDialogueBox(
               context: context, title: "Error", msg: "Invalid Email/Password");
         }
       }
     } catch (e) {
+      // Handle exceptions
       if (mounted) {
         CommonWidgets.showDialogueBox(
             context: context, title: "Error", msg: "Invalid Email/Password");

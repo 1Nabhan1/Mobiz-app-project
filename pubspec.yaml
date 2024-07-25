@@ -55,6 +55,7 @@ dependencies:
 #  highlight_text:
 #  translator:
 #  flutter_tts:
+  flutter_screenutil:
   number_to_words:
   path_provider:
   open_file:

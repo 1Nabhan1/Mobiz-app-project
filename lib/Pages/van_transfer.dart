@@ -57,7 +57,7 @@ class _VanTransferState extends State<VanTransfer> {
         cartItems = products;
         selectedProductTypes = List.generate(
           cartItems.length,
-          (index) => null,
+              (index) => null,
         );
       });
     }
@@ -76,24 +76,25 @@ class _VanTransferState extends State<VanTransfer> {
     } else if (value is List<String>) {
       await prefs.setStringList(key, value);
     }
-    print('ddddd');
   }
 
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (vans.isNotEmpty && cartItems.isNotEmpty) {
-    setState(() {
-      for (int i = 0; i < cartItems.length; i++) {
-        qtys[i] = prefs.getString('qtyvan$i') ?? '1';
-        amounts[i] =
-            prefs.getString('amountvan$i') ?? cartItems[i].price.toString();
+      setState(() {
+        selectedVan = prefs.getString('selectedVan');
+        selectedVanId = prefs.getInt('selectedVanId');
+        for (int i = 0; i < cartItems.length; i++) {
+          qtys[i] = prefs.getString('qtyvan$i') ?? '1';
+          amounts[i] =
+              prefs.getString('amountvan$i') ?? cartItems[i].price.toString();
 
-        if (cartItems[i].units.isNotEmpty) {
-          cartItems[i].selectedUnitName =
-              prefs.getString('unitNamevan$i') ?? cartItems[i].units.first.name;
+          if (cartItems[i].units.isNotEmpty) {
+            cartItems[i].selectedUnitName = prefs.getString('unitNamevan$i') ??
+                cartItems[i].units.first.name;
+          }
         }
-      }
-    });
+      });
     }
   }
 
@@ -114,7 +115,7 @@ class _VanTransferState extends State<VanTransfer> {
       products.removeAt(index);
 
       List<String> updatedCartItemsJson =
-          products.map((product) => jsonEncode(product.toJson())).toList();
+      products.map((product) => jsonEncode(product.toJson())).toList();
 
       await prefs.setStringList('vantrans', updatedCartItemsJson);
       setState(() {
@@ -131,7 +132,9 @@ class _VanTransferState extends State<VanTransfer> {
     if (response.statusCode == 200) {
       final List<dynamic> jsonResponse = json.decode(response.body)['data'];
       setState(() {
+
         vans = jsonResponse.map((van) => VanData.fromJson(van)).toList();
+        initializeValues();
       });
     } else {
       throw Exception('Failed to load vans');
@@ -165,7 +168,7 @@ class _VanTransferState extends State<VanTransfer> {
           children: [
             Padding(
               padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
+              const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -239,7 +242,7 @@ class _VanTransferState extends State<VanTransfer> {
             ),
             Padding(
               padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
+              const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
@@ -267,14 +270,14 @@ class _VanTransferState extends State<VanTransfer> {
                                 ),
                                 child: Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
                                       width: MediaQuery.of(context).size.width *
                                           .47,
                                       height:
-                                          MediaQuery.of(context).size.height *
-                                              .03,
+                                      MediaQuery.of(context).size.height *
+                                          .03,
                                       decoration: BoxDecoration(
                                         border: Border.all(color: Colors.grey),
                                         borderRadius: BorderRadius.circular(5),
@@ -293,8 +296,8 @@ class _VanTransferState extends State<VanTransfer> {
                                       width: MediaQuery.of(context).size.width *
                                           .32,
                                       height:
-                                          MediaQuery.of(context).size.height *
-                                              .03,
+                                      MediaQuery.of(context).size.height *
+                                          .03,
                                       decoration: BoxDecoration(
                                         color: Colors.grey.shade400,
                                         border: Border.all(color: Colors.grey),
@@ -323,11 +326,18 @@ class _VanTransferState extends State<VanTransfer> {
                                               ),
                                             );
                                           }).toList(),
-                                          onChanged: (String? newValue) {
+                                          onChanged: (String? newValue) async {
                                             setState(() {
                                               selectedVan = newValue;
-                                              selectedVanId = vans.firstWhere((van) => van.name == newValue).id;
+                                              selectedVanId = vans
+                                                  .firstWhere((van) =>
+                                              van.name == newValue)
+                                                  .id;
                                             });
+                                            await saveToSharedPreferences(
+                                                'selectedVan', newValue);
+                                            await saveToSharedPreferences(
+                                                'selectedVanId', selectedVanId);
                                           },
                                         ),
                                       ),
@@ -398,7 +408,7 @@ class _VanTransferState extends State<VanTransfer> {
             ),
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+              const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -497,14 +507,14 @@ class _VanTransferState extends State<VanTransfer> {
                                       children: [
                                         Row(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                           children: [
                                             SizedBox(
                                               width: 50,
                                               height: 60,
                                               child: ClipRRect(
                                                 borderRadius:
-                                                    BorderRadius.circular(10),
+                                                BorderRadius.circular(10),
                                                 child: FadeInImage(
                                                   image: NetworkImage(
                                                     '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
@@ -529,13 +539,13 @@ class _VanTransferState extends State<VanTransfer> {
                                                 CommonWidgets.verticalSpace(1),
                                                 Row(
                                                   crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
+                                                  CrossAxisAlignment.start,
                                                   children: [
                                                     CommonWidgets
                                                         .horizontalSpace(1),
                                                     SizedBox(
                                                       width: SizeConfig
-                                                              .blockSizeHorizontal *
+                                                          .blockSizeHorizontal *
                                                           70,
                                                       child: Text(
                                                         '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
@@ -551,7 +561,7 @@ class _VanTransferState extends State<VanTransfer> {
                                             ),
                                             CircleAvatar(
                                               backgroundColor:
-                                                  Colors.grey.withOpacity(0.2),
+                                              Colors.grey.withOpacity(0.2),
                                               radius: 10,
                                               child: GestureDetector(
                                                 onTap: () async {
@@ -573,51 +583,51 @@ class _VanTransferState extends State<VanTransfer> {
                                             children: [
                                               Flexible(
                                                 child:
-                                                    DropdownButtonHideUnderline(
+                                                DropdownButtonHideUnderline(
                                                   child: DropdownButton<String>(
                                                     isDense: true,
                                                     alignment: Alignment.center,
                                                     isExpanded: false,
                                                     value: selectedUnitName,
                                                     items: unitNames.map<
-                                                            DropdownMenuItem<
-                                                                String>>(
-                                                        (String value) {
-                                                      return DropdownMenuItem<
-                                                          String>(
-                                                        value: value,
-                                                        child: Center(
-                                                          child: Text(
-                                                            value,
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: AppConfig
-                                                                  .colorPrimary,
-                                                              fontWeight:
+                                                        DropdownMenuItem<
+                                                            String>>(
+                                                            (String value) {
+                                                          return DropdownMenuItem<
+                                                              String>(
+                                                            value: value,
+                                                            child: Center(
+                                                              child: Text(
+                                                                value,
+                                                                style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: AppConfig
+                                                                      .colorPrimary,
+                                                                  fontWeight:
                                                                   FontWeight
                                                                       .bold,
+                                                                ),
+                                                              ),
                                                             ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
+                                                          );
+                                                        }).toList(),
                                                     onChanged:
                                                         (String? newValue) {
                                                       setState(() {
                                                         cartItems[index]
-                                                                .selectedUnitName =
+                                                            .selectedUnitName =
                                                             newValue;
 
                                                         // Find the selected unit and update the rate
                                                         for (var unit
-                                                            in cartItems[index]
-                                                                .units) {
+                                                        in cartItems[index]
+                                                            .units) {
                                                           if (unit.name ==
                                                               newValue) {
                                                             // Perform validation based on stock
                                                             if (unit.stock >=
                                                                 int.parse(qtys[
-                                                                        index] ??
+                                                                index] ??
                                                                     '1')) {
                                                               // Stock is sufficient
                                                               amounts[index] =
@@ -628,22 +638,22 @@ class _VanTransferState extends State<VanTransfer> {
                                                               // For now, setting rate to default or handle as per your app logic
                                                               amounts[index] =
                                                                   cartItems[
-                                                                          index]
+                                                                  index]
                                                                       .price
                                                                       .toString();
                                                               // You can show a snackbar or dialog here indicating insufficient stock
                                                               ScaffoldMessenger
-                                                                      .of(
-                                                                          context)
+                                                                  .of(
+                                                                  context)
                                                                   .showSnackBar(
-                                                                      SnackBar(
-                                                                content: Text(
-                                                                    'Insufficient stock for ${unit.name}'),
-                                                                duration:
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                        'Insufficient stock for ${unit.name}'),
+                                                                    duration:
                                                                     Duration(
                                                                         seconds:
-                                                                            2),
-                                                              ));
+                                                                        2),
+                                                                  ));
                                                             }
                                                             saveToSharedPreferences(
                                                                 'amountvan$index',
@@ -670,9 +680,9 @@ class _VanTransferState extends State<VanTransfer> {
                                                         title: Text('Quantity'),
                                                         content: TextField(
                                                           controller:
-                                                              TextEditingController(
-                                                                  text: qtys[
-                                                                      index]),
+                                                          TextEditingController(
+                                                              text: qtys[
+                                                              index]),
                                                           onChanged: (value) {
                                                             setState(() {
                                                               qtys[index] =
@@ -683,51 +693,51 @@ class _VanTransferState extends State<VanTransfer> {
                                                             });
                                                           },
                                                           keyboardType:
-                                                              TextInputType
-                                                                  .number,
+                                                          TextInputType
+                                                              .number,
                                                         ),
                                                         actions: <Widget>[
                                                           MaterialButton(
                                                             color: AppConfig
                                                                 .colorPrimary,
                                                             textColor:
-                                                                Colors.white,
+                                                            Colors.white,
                                                             child: Text('OK'),
                                                             onPressed: () {
                                                               // Validate quantity against selected unit stock
                                                               var selectedUnit =
-                                                                  cartItems[
-                                                                          index]
-                                                                      .units
-                                                                      .firstWhere(
-                                                                        (unit) =>
-                                                                            unit.name ==
-                                                                            selectedUnitName,
-                                                                        // orElse: () => null,
-                                                                      );
+                                                              cartItems[
+                                                              index]
+                                                                  .units
+                                                                  .firstWhere(
+                                                                    (unit) =>
+                                                                unit.name ==
+                                                                    selectedUnitName,
+                                                                // orElse: () => null,
+                                                              );
 
                                                               if (selectedUnit !=
                                                                   null) {
                                                                 int enteredQuantity =
                                                                     int.tryParse(qtys[index] ??
-                                                                            '1') ??
+                                                                        '1') ??
                                                                         0;
                                                                 if (enteredQuantity >
                                                                     selectedUnit
                                                                         .stock) {
                                                                   // Quantity entered exceeds available stock
                                                                   ScaffoldMessenger.of(
-                                                                          context)
+                                                                      context)
                                                                       .showSnackBar(
-                                                                          SnackBar(
-                                                                    content:
+                                                                      SnackBar(
+                                                                        content:
                                                                         Text(
-                                                                      'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
-                                                                    ),
-                                                                    duration: Duration(
-                                                                        seconds:
+                                                                          'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
+                                                                        ),
+                                                                        duration: Duration(
+                                                                            seconds:
                                                                             2),
-                                                                  ));
+                                                                      ));
                                                                   // Reset quantity to available stock or handle as per your app logic
                                                                   setState(() {
                                                                     qtys[index] =
@@ -737,7 +747,7 @@ class _VanTransferState extends State<VanTransfer> {
                                                                     saveToSharedPreferences(
                                                                         'qtyvan$index',
                                                                         qtys[
-                                                                            index]);
+                                                                        index]);
                                                                   });
                                                                 } else {
                                                                   Navigator.pop(
@@ -763,7 +773,7 @@ class _VanTransferState extends State<VanTransfer> {
                                                         color: AppConfig
                                                             .colorPrimary,
                                                         fontWeight:
-                                                            FontWeight.bold,
+                                                        FontWeight.bold,
                                                       ),
                                                     ),
                                                   ],
@@ -839,9 +849,9 @@ class _VanTransferState extends State<VanTransfer> {
                       //     horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         border:
-                            Border.all(color: AppConfig.buttonDeactiveColor),
+                        Border.all(color: AppConfig.buttonDeactiveColor),
                         borderRadius:
-                            const BorderRadius.all(Radius.circular(5)),
+                        const BorderRadius.all(Radius.circular(5)),
                       ),
                       child: Center(
                         child: Text(
@@ -867,8 +877,8 @@ class _VanTransferState extends State<VanTransfer> {
                     backgroundColor: AppConfig.colorPrimary),
                 onPressed: (cartItems.isNotEmpty)
                     ? () async {
-                        postDataToApi();
-                      }
+                  postDataToApi();
+                }
                     : null,
                 child: Text(
                   'TRANSFER',
@@ -910,7 +920,7 @@ class _VanTransferState extends State<VanTransfer> {
 
       ProductType? selectedProductType = selectedProductTypes[index];
       Object productType =
-          selectedProductType != null ? selectedProductType.id : 1;
+      selectedProductType != null ? selectedProductType.id : 1;
       productTypesList.add(productType);
     }
     var data = {
@@ -945,9 +955,9 @@ class _VanTransferState extends State<VanTransfer> {
       print('Post successful');
       if (mounted) {
         CommonWidgets.showDialogueBox(
-                context: context, title: "Alert", msg: "Created Successfully")
+            context: context, title: "Alert", msg: "Created Successfully")
             .then(
-          (value) {
+              (value) {
             clearCart();
           },
         );

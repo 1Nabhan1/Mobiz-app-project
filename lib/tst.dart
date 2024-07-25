@@ -37,12 +37,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   List<Invoice> invoices = [];
 
   String dropdownvalue = 'Cash';
-  var items = ['Cash', 'Cheque'];
+  var items = ['Cash', 'cheque'];
   late Future<ApiResponse> futureInvoices;
   List<bool> expandedStates = [];
   TextEditingController _paidAmt = TextEditingController();
   String PaidAmt = '';
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  TextEditingController _bankController = TextEditingController();
+  String bankData = '';
+  TextEditingController _chequeController = TextEditingController();
+  String chequeData = '';
   List<String> enteredValues = [];
   List<String> invoiceTypes = [];
   List<String> invoiceno = [];
@@ -473,36 +477,39 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 : Container(),
                             (dropdownvalue != "Cash")
                                 ? InkWell(
-                                    onTap: () {
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text('Bank'),
-                                              content: TextField(
-                                                onChanged: (value) async {},
-                                                keyboardType:
-                                                    TextInputType.name,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        hintText: "Bank"),
-                                              ),
-                                              actions: <Widget>[
-                                                MaterialButton(
-                                                  color: AppConfig.colorPrimary,
-                                                  textColor: Colors.white,
-                                                  child: const Text('OK'),
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                ),
-                                              ],
-                                            );
-                                          }).then((value) => setState(() {}));
-                                    },
-                                    child: _inputBox(status: true, value: ''),
-                                  )
+                              onTap: () {
+                                showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Bank'),
+                                      content: TextField(
+                                        controller: _bankController,
+                                        keyboardType: TextInputType.name,
+                                        decoration: const InputDecoration(
+                                          hintText: "Bank",
+                                        ),
+                                      ),
+                                      actions: <Widget>[
+                                        MaterialButton(
+                                          color: AppConfig.colorPrimary,
+                                          textColor: Colors.white,
+                                          child: const Text('OK'),
+                                          onPressed: () {
+                                            setState(() {
+                                              bankData = _bankController.text;
+                                            });
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: _inputBox(status: true, value: bankData),
+                            )
                                 : Container(),
                           ],
                         ),
@@ -543,33 +550,36 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                   InkWell(
                                     onTap: () {
                                       showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text('Cheque No'),
-                                              content: TextField(
-                                                onChanged: (value) async {},
-                                                keyboardType:
-                                                    TextInputType.name,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        hintText: "Cheque No"),
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('Cheque No'),
+                                            content: TextField(
+                                              controller: _chequeController,
+                                              keyboardType: TextInputType.name,
+                                              decoration: const InputDecoration(
+                                                hintText: "Cheque No",
                                               ),
-                                              actions: <Widget>[
-                                                MaterialButton(
-                                                  color: AppConfig.colorPrimary,
-                                                  textColor: Colors.white,
-                                                  child: const Text('OK'),
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                ),
-                                              ],
-                                            );
-                                          }).then((value) => setState(() {}));
+                                            ),
+                                            actions: <Widget>[
+                                              MaterialButton(
+                                                color: AppConfig.colorPrimary,
+                                                textColor: Colors.white,
+                                                child: const Text('OK'),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    chequeData = _chequeController.text;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
                                     },
-                                    child: _inputBox(status: true, value: ''),
+                                    child: _inputBox(status: true, value: chequeData),
                                   ),
                                 ],
                               )
@@ -716,9 +726,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'customer_id': cuId,
       'invoice_type': invoiceTypes,
       'collection_type': dropdownvalue,
-      'bank': '',
-      'cheque_no': '',
-      'cheque_date': '',
+      'bank': _bankController.text,
+      'cheque_no':  _chequeController.text,
+      'cheque_date': formattedDate,
       'invoice_no': invoiceno,
       'invoice_date': invoicedate,
       'invoice_id': invoiceid

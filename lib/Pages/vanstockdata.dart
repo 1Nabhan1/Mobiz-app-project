@@ -51,7 +51,7 @@ class _VanStockScreenState extends State<VanStockScreen>
     _fetchreturn();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
-              _scrollController.position.maxScrollExtent &&
+          _scrollController.position.maxScrollExtent &&
           _hasMore &&
           !_isLoading) {}
     });
@@ -69,7 +69,9 @@ class _VanStockScreenState extends State<VanStockScreen>
     try {
       final productData = await _getProducts(_currentPage);
       setState(() {
-        _products.addAll(productData.data.products);
+        _products.addAll(productData.data.products.where((product) =>
+        product.units.isNotEmpty &&
+            product.units[0].stock > 0)); // Filter out products with zero stock
         _filteredProducts = List.from(_products);
         _currentPage++;
         _hasMore = _currentPage <= productData.data.lastPage;
@@ -108,12 +110,22 @@ class _VanStockScreenState extends State<VanStockScreen>
   Future<void> _searchProducts(String query) async {
     setState(() {
       if (query.isEmpty) {
-        _filteredProducts = List.from(_products);
+        _filteredProducts = _products
+            .where((product) =>
+        product.units.isNotEmpty &&
+            product.units[0].stock >
+                0) // Filter out products with zero stock
+            .toList();
       } else {
         _filteredProducts = _products
             .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
+        (product.name!.toLowerCase().contains(query.toLowerCase()) ||
+            product.code!
+                .toLowerCase()
+                .contains(query.toLowerCase())) &&
+            product.units.isNotEmpty &&
+            product.units[0].stock >
+                0) // Filter out products with zero stock
             .toList();
       }
       if (query.isEmpty) {
@@ -121,8 +133,8 @@ class _VanStockScreenState extends State<VanStockScreen>
       } else {
         _filteredProducts1 = _products1
             .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
+        product.name!.toLowerCase().contains(query.toLowerCase()) ||
+            product.code!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -195,28 +207,28 @@ class _VanStockScreenState extends State<VanStockScreen>
           actions: [
             (_search)
                 ? Container(
-                    height: SizeConfig.blockSizeVertical * 5,
-                    width: SizeConfig.blockSizeHorizontal * 76,
-                    decoration: BoxDecoration(
-                      color: AppConfig.colorPrimary,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(10),
-                      ),
-                      border: Border.all(color: AppConfig.colorPrimary),
-                    ),
-                    child: TextField(
-                      autofocus: true,
-                      style: TextStyle(color: Colors.white),
-                      controller: _searchData,
-                      // onChanged: _filterProducts,
-                      decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.all(5),
-                          hintText: "Search...",
-                          hintStyle:
-                              TextStyle(color: AppConfig.backgroundColor),
-                          border: InputBorder.none),
-                    ),
-                  )
+              height: SizeConfig.blockSizeVertical * 5,
+              width: SizeConfig.blockSizeHorizontal * 76,
+              decoration: BoxDecoration(
+                color: AppConfig.colorPrimary,
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(10),
+                ),
+                border: Border.all(color: AppConfig.colorPrimary),
+              ),
+              child: TextField(
+                autofocus: true,
+                style: TextStyle(color: Colors.white),
+                controller: _searchData,
+                // onChanged: _filterProducts,
+                decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.all(5),
+                    hintText: "Search...",
+                    hintStyle:
+                    TextStyle(color: AppConfig.backgroundColor),
+                    border: InputBorder.none),
+              ),
+            )
                 : Container(),
             CommonWidgets.horizontalSpace(1),
             GestureDetector(
@@ -258,411 +270,373 @@ class _VanStockScreenState extends State<VanStockScreen>
               ),
               Expanded(
                   child: TabBarView(
-                controller: _tabController,
-                children: [
-                  Container(
-                    child: Column(
-                      children: [
-                        _isLoading && _products.isEmpty
-                            ? Shimmer.fromColors(
-                                baseColor: AppConfig.buttonDeactiveColor
-                                    .withOpacity(0.1),
-                                highlightColor: AppConfig.backButtonColor,
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                    ],
-                                  ),
+                    controller: _tabController,
+                    children: [
+                      Container(
+                        child: Column(
+                          children: [
+                            _isLoading && _products.isEmpty
+                                ? Shimmer.fromColors(
+                              baseColor: AppConfig.buttonDeactiveColor
+                                  .withOpacity(0.1),
+                              highlightColor: AppConfig.backButtonColor,
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                  ],
                                 ),
-                              )
-                            : _filteredProducts.isEmpty
+                              ),
+                            )
+                                : _filteredProducts.isEmpty
                                 ? Center(
-                                    child: Text(
-                                        'No products found'), // Show message when no data after loading
-                                  )
+                              child: Text(
+                                  'No products found'), // Show message when no data after loading
+                            )
                                 : Expanded(
-                                    child: ListView.builder(
-                                      controller: _scrollController,
-                                      itemCount: _filteredProducts.length +
-                                          (_hasMore ? 1 : 0),
-                                      itemBuilder: (context, index) {
-                                        if (index == _filteredProducts.length) {
-                                          return Shimmer.fromColors(
-                                            baseColor: AppConfig
-                                                .buttonDeactiveColor
-                                                .withOpacity(0.1),
-                                            highlightColor:
-                                                AppConfig.backButtonColor,
-                                            child: Center(
-                                              child: Column(
-                                                children: [
-                                                  CommonWidgets.loadingContainers(
-                                                      height: SizeConfig
-                                                              .blockSizeVertical *
-                                                          10,
-                                                      width: SizeConfig
-                                                              .blockSizeHorizontal *
-                                                          90),
-                                                ],
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: _filteredProducts.length +
+                                    (_hasMore ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == _filteredProducts.length) {
+                                    return SizedBox.shrink();
+                                  }
+                                  final product =
+                                  _filteredProducts[index];
+                                  return Card(
+                                    elevation: 3,
+                                    child: Container(
+                                      width:
+                                      SizeConfig.blockSizeHorizontal *
+                                          90,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color:
+                                            // selectedItems.contains(index)
+                                            //     ? AppConfig.colorPrimary
+                                            //     :
+                                            Colors.transparent),
+                                        color: AppConfig.backgroundColor,
+                                        borderRadius:
+                                        const BorderRadius.all(
+                                          Radius.circular(10),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding:
+                                        const EdgeInsets.all(5.0),
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 50,
+                                              height: 50,
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                BorderRadius.circular(
+                                                    15.0),
+                                                child: FadeInImage(
+                                                  image: NetworkImage(
+                                                      '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                                  placeholder:
+                                                  const AssetImage(
+                                                      'Assets/Images/no_image.jpg'),
+                                                  imageErrorBuilder:
+                                                      (context, error,
+                                                      stackTrace) {
+                                                    return Image.asset(
+                                                        'Assets/Images/no_image.jpg',
+                                                        fit: BoxFit
+                                                            .fitWidth);
+                                                  },
+                                                  fit: BoxFit.fitWidth,
+                                                ),
                                               ),
                                             ),
-                                          );
-                                        }
-                                        final product =
-                                            _filteredProducts[index];
-                                        return Card(
-                                          elevation: 3,
-                                          child: Container(
-                                            width:
-                                                SizeConfig.blockSizeHorizontal *
-                                                    90,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color:
-                                                      // selectedItems.contains(index)
-                                                      //     ? AppConfig.colorPrimary
-                                                      //     :
-                                                      Colors.transparent),
-                                              color: AppConfig.backgroundColor,
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                Radius.circular(10),
-                                              ),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(5.0),
-                                              child: Row(
-                                                children: [
-                                                  SizedBox(
-                                                    width: 50,
-                                                    height: 50,
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              15.0),
-                                                      child: FadeInImage(
-                                                        image: NetworkImage(
-                                                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                                        placeholder:
-                                                            const AssetImage(
-                                                                'Assets/Images/no_image.jpg'),
-                                                        imageErrorBuilder:
-                                                            (context, error,
-                                                                stackTrace) {
-                                                          return Image.asset(
-                                                              'Assets/Images/no_image.jpg',
-                                                              fit: BoxFit
-                                                                  .fitWidth);
-                                                        },
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
+                                            CommonWidgets.horizontalSpace(
+                                                3),
+                                            Column(
+                                              crossAxisAlignment:
+                                              CrossAxisAlignment
+                                                  .start,
+                                              children: [
+                                                Tooltip(
+                                                  message: product.name!
+                                                      .toUpperCase(),
+                                                  child: SizedBox(
+                                                    width: SizeConfig
+                                                        .blockSizeHorizontal *
+                                                        70,
+                                                    child: Text(
+                                                      '${product.code} | ${product.name!.toUpperCase()}',
+                                                      style: TextStyle(
+                                                          fontSize: AppConfig
+                                                              .textCaption2Size),
                                                     ),
                                                   ),
-                                                  CommonWidgets.horizontalSpace(
-                                                      3),
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Tooltip(
-                                                        message: product.name!
-                                                            .toUpperCase(),
-                                                        child: SizedBox(
-                                                          width: SizeConfig
-                                                                  .blockSizeHorizontal *
-                                                              70,
-                                                          child: Text(
-                                                            '${product.code} | ${product.name!.toUpperCase()}',
-                                                            style: TextStyle(
-                                                                fontSize: AppConfig
-                                                                    .textCaption2Size),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Row(
-                                                        children: [
-                                                          // for (int i = data.productDetail!.length - 1;
-                                                          //     i >= 0;
-                                                          //     i--)
-                                                          Text(
-                                                            product.units !=
-                                                                        null &&
-                                                                    product.units
-                                                                            .length >
-                                                                        0
-                                                                ? '${product.units[0].name}:${product.units[0].stock}'
-                                                                : '',
-                                                            style: TextStyle(
-                                                              fontSize: AppConfig
-                                                                  .textCaption3Size,
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                            width: 10,
-                                                          ),
-                                                          Text(
-                                                            product.units !=
-                                                                        null &&
-                                                                    product.units
-                                                                            .length >
-                                                                        1
-                                                                ? '${product.units[1].name}:${product.units[1].stock}'
-                                                                : '',
-                                                            style: TextStyle(
-                                                              fontSize: AppConfig
-                                                                  .textCaption3Size,
-                                                            ),
-                                                          )
-                                                        ],
-                                                      )
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    child: Column(
-                      children: [
-                        _isLoading && _filteredProducts1.isEmpty
-                            ? Shimmer.fromColors(
-                                baseColor: AppConfig.buttonDeactiveColor
-                                    .withOpacity(0.1),
-                                highlightColor: AppConfig.backButtonColor,
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                      CommonWidgets.loadingContainers(
-                                          height:
-                                              SizeConfig.blockSizeVertical * 10,
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  90),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : _filteredProducts1.isEmpty
-                                ? Center(
-                                    child: Text(
-                                        'No products found'), // Show message when no data after loading
-                                  )
-                                : Expanded(
-                                    child: ListView.builder(
-                                      controller: _scrollController,
-                                      itemCount: _filteredProducts1.length +
-                                          (_hasMore ? 1 : 0),
-                                      itemBuilder: (context, index) {
-                                        if (index ==
-                                            _filteredProducts1.length) {
-                                          return Shimmer.fromColors(
-                                            baseColor: AppConfig
-                                                .buttonDeactiveColor
-                                                .withOpacity(0.1),
-                                            highlightColor:
-                                                AppConfig.backButtonColor,
-                                            child: Center(
-                                              child: Column(
-                                                children: [
-                                                  CommonWidgets.loadingContainers(
-                                                      height: SizeConfig
-                                                              .blockSizeVertical *
-                                                          10,
-                                                      width: SizeConfig
-                                                              .blockSizeHorizontal *
-                                                          90),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                        final product =
-                                            _filteredProducts1[index];
-                                        return Card(
-                                          elevation: 3,
-                                          child: Container(
-                                            width:
-                                                SizeConfig.blockSizeHorizontal *
-                                                    90,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color:
-                                                      // selectedItems.contains(index)
-                                                      //     ? AppConfig.colorPrimary
-                                                      //     :
-                                                      Colors.transparent),
-                                              color: AppConfig.backgroundColor,
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                Radius.circular(10),
-                                              ),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(5.0),
-                                              child: Row(
-                                                children: [
-                                                  SizedBox(
-                                                    width: 50,
-                                                    height: 50,
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              15.0),
-                                                      child: FadeInImage(
-                                                        image: NetworkImage(
-                                                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                                        placeholder:
-                                                            const AssetImage(
-                                                                'Assets/Images/no_image.jpg'),
-                                                        imageErrorBuilder:
-                                                            (context, error,
-                                                                stackTrace) {
-                                                          return Image.asset(
-                                                              'Assets/Images/no_image.jpg',
-                                                              fit: BoxFit
-                                                                  .fitWidth);
-                                                        },
-                                                        fit: BoxFit.fitWidth,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    // for (int i = data.productDetail!.length - 1;
+                                                    //     i >= 0;
+                                                    //     i--)
+                                                    Text(
+                                                      product.units !=
+                                                          null &&
+                                                          product.units
+                                                              .length >
+                                                              0
+                                                          ? '${product.units[0].name}:${product.units[0].stock}'
+                                                          : '',
+                                                      style: TextStyle(
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
                                                       ),
                                                     ),
-                                                  ),
-                                                  CommonWidgets.horizontalSpace(
-                                                      3),
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Tooltip(
-                                                        message: product.name!
-                                                            .toUpperCase(),
-                                                        child: SizedBox(
-                                                          width: SizeConfig
-                                                                  .blockSizeHorizontal *
-                                                              70,
-                                                          child: Text(
-                                                            '${product.code} | ${product.name!.toUpperCase()}',
-                                                            style: TextStyle(
-                                                                fontSize: AppConfig
-                                                                    .textCaption2Size),
-                                                          ),
-                                                        ),
+                                                    SizedBox(
+                                                      width: 10,
+                                                    ),
+                                                    Text(
+                                                      product.units !=
+                                                          null &&
+                                                          product.units
+                                                              .length >
+                                                              1
+                                                          ? '${product.units[1].name}:${product.units[1].stock}'
+                                                          : '',
+                                                      style: TextStyle(
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
                                                       ),
-                                                      Row(
-                                                        children: [
-                                                          // for (int i = data.productDetail!.length - 1;
-                                                          //     i >= 0;
-                                                          //     i--)
-                                                          Text(
-                                                            product.units !=
-                                                                        null &&
-                                                                    product.units
-                                                                            .length >
-                                                                        0
-                                                                ? '${product.units[0].name}:${product.units[0].stock}'
-                                                                : '',
-                                                            style: TextStyle(
-                                                              fontSize: AppConfig
-                                                                  .textCaption3Size,
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                            width: 10,
-                                                          ),
-                                                          Text(
-                                                            product.units !=
-                                                                        null &&
-                                                                    product.units
-                                                                            .length >
-                                                                        1
-                                                                ? '${product.units[1].name}:${product.units[1].stock}'
-                                                                : '',
-                                                            style: TextStyle(
-                                                              fontSize: AppConfig
-                                                                  .textCaption3Size,
-                                                            ),
-                                                          )
-                                                        ],
-                                                      )
-                                                    ],
-                                                  ),
-                                                ],
+                                                    )
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        child: Column(
+                          children: [
+                            _isLoading && _filteredProducts1.isEmpty
+                                ? Shimmer.fromColors(
+                              baseColor: AppConfig.buttonDeactiveColor
+                                  .withOpacity(0.1),
+                              highlightColor: AppConfig.backButtonColor,
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                    CommonWidgets.loadingContainers(
+                                        height:
+                                        SizeConfig.blockSizeVertical * 10,
+                                        width:
+                                        SizeConfig.blockSizeHorizontal *
+                                            90),
+                                  ],
+                                ),
+                              ),
+                            )
+                                : _filteredProducts1.isEmpty
+                                ? Center(
+                              child: Text(
+                                  'No products found'), // Show message when no data after loading
+                            )
+                                : Expanded(
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: _filteredProducts1.length +
+                                    (_hasMore ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index ==
+                                      _filteredProducts1.length) {
+                                    return SizedBox.shrink();
+                                  }
+                                  final product =
+                                  _filteredProducts1[index];
+                                  return Card(
+                                    elevation: 3,
+                                    child: Container(
+                                      width:
+                                      SizeConfig.blockSizeHorizontal *
+                                          90,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color:
+                                            // selectedItems.contains(index)
+                                            //     ? AppConfig.colorPrimary
+                                            //     :
+                                            Colors.transparent),
+                                        color: AppConfig.backgroundColor,
+                                        borderRadius:
+                                        const BorderRadius.all(
+                                          Radius.circular(10),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding:
+                                        const EdgeInsets.all(5.0),
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 50,
+                                              height: 50,
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                BorderRadius.circular(
+                                                    15.0),
+                                                child: FadeInImage(
+                                                  image: NetworkImage(
+                                                      '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                                  placeholder:
+                                                  const AssetImage(
+                                                      'Assets/Images/no_image.jpg'),
+                                                  imageErrorBuilder:
+                                                      (context, error,
+                                                      stackTrace) {
+                                                    return Image.asset(
+                                                        'Assets/Images/no_image.jpg',
+                                                        fit: BoxFit
+                                                            .fitWidth);
+                                                  },
+                                                  fit: BoxFit.fitWidth,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
+                                            CommonWidgets.horizontalSpace(
+                                                3),
+                                            Column(
+                                              crossAxisAlignment:
+                                              CrossAxisAlignment
+                                                  .start,
+                                              children: [
+                                                Tooltip(
+                                                  message: product.name!
+                                                      .toUpperCase(),
+                                                  child: SizedBox(
+                                                    width: SizeConfig
+                                                        .blockSizeHorizontal *
+                                                        70,
+                                                    child: Text(
+                                                      '${product.code} | ${product.name!.toUpperCase()}',
+                                                      style: TextStyle(
+                                                          fontSize: AppConfig
+                                                              .textCaption2Size),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    // for (int i = data.productDetail!.length - 1;
+                                                    //     i >= 0;
+                                                    //     i--)
+                                                    Text(
+                                                      product.units !=
+                                                          null &&
+                                                          product.units
+                                                              .length >
+                                                              0
+                                                          ? '${product.units[0].name}:${product.units[0].stock}'
+                                                          : '',
+                                                      style: TextStyle(
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                      ),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 10,
+                                                    ),
+                                                    Text(
+                                                      product.units !=
+                                                          null &&
+                                                          product.units
+                                                              .length >
+                                                              1
+                                                          ? '${product.units[1].name}:${product.units[1].stock}'
+                                                          : '',
+                                                      style: TextStyle(
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                      ),
+                                                    )
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                      ],
-                    ),
-                  ),
-                ],
-              ))
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ))
             ],
           ),
         ));

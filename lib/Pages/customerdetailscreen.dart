@@ -279,6 +279,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       Navigator.pushNamed(context, SOA.routeName, arguments: {
                         'customerId': id,
                         'name': name,
+                        'address': address,
                         'code': code,
                         'paymentTerms': paymentTerms
                       });

@@ -68,7 +68,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
-              _scrollController.position.maxScrollExtent &&
+          _scrollController.position.maxScrollExtent &&
           _hasMore &&
           !_isLoading) {
         _fetchProducts();
@@ -88,7 +88,9 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
     try {
       final productData = await fetchProducts(_currentPage);
       setState(() {
-        _products.addAll(productData.data.products);
+        _products.addAll(productData.data.products.where((product) =>
+        product.units.isNotEmpty &&
+            product.units[0].stock > 0)); // Filter out products with zero stock
         _filteredProducts = List.from(_products);
         _currentPage++;
         _hasMore = _currentPage <= productData.data.lastPage;
@@ -105,12 +107,17 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   Future<void> _searchProducts(String query) async {
     setState(() {
       if (query.isEmpty) {
-        _filteredProducts = List.from(_products);
+        _filteredProducts = _products
+            .where((product) =>
+        product.units.isNotEmpty && product.units[0].stock > 0) // Filter out products with zero stock
+            .toList();
       } else {
         _filteredProducts = _products
             .where((product) =>
-        product.name!.toLowerCase().contains(query.toLowerCase()) ||
-            product.code!.toLowerCase().contains(query.toLowerCase()))
+        (product.name!.toLowerCase().contains(query.toLowerCase()) ||
+            product.code!.toLowerCase().contains(query.toLowerCase())) &&
+            product.units.isNotEmpty &&
+            product.units[0].stock > 0) // Filter out products with zero stock
             .toList();
       }
     });
@@ -132,7 +139,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params['name'];
       code = params['code'];
@@ -149,26 +156,26 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
         actions: [
           (_search)
               ? Container(
-                  height: SizeConfig.blockSizeVertical * 5,
-                  width: SizeConfig.blockSizeHorizontal * 76,
-                  decoration: BoxDecoration(
-                    color: AppConfig.colorPrimary,
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                    border: Border.all(color: AppConfig.colorPrimary),
-                  ),
-                  child: TextField(
-                    autofocus: true,
-                    style: TextStyle(color: Colors.white),
-                    controller: _searchData,
-                    decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.all(5),
-                        hintText: "Search...",
-                        hintStyle: TextStyle(color: AppConfig.backgroundColor),
-                        border: InputBorder.none),
-                  ),
-                )
+            height: SizeConfig.blockSizeVertical * 5,
+            width: SizeConfig.blockSizeHorizontal * 76,
+            decoration: BoxDecoration(
+              color: AppConfig.colorPrimary,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(10),
+              ),
+              border: Border.all(color: AppConfig.colorPrimary),
+            ),
+            child: TextField(
+              autofocus: true,
+              style: TextStyle(color: Colors.white),
+              controller: _searchData,
+              decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.all(5),
+                  hintText: "Search...",
+                  hintStyle: TextStyle(color: AppConfig.backgroundColor),
+                  border: InputBorder.none),
+            ),
+          )
               : Container(),
           CommonWidgets.horizontalSpace(1),
           GestureDetector(
@@ -191,162 +198,162 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       ),
       body: _isLoading && _products.isEmpty
           ? Shimmer.fromColors(
-              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-              highlightColor: AppConfig.backButtonColor,
-              child: Center(
-                child: Column(
-                  children: [
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                  ],
-                ),
-              ),
-            )
+        baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+        highlightColor: AppConfig.backButtonColor,
+        child: Center(
+          child: Column(
+            children: [
+              CommonWidgets.loadingContainers(
+                  height: SizeConfig.blockSizeVertical * 10,
+                  width: SizeConfig.blockSizeHorizontal * 90),
+              CommonWidgets.loadingContainers(
+                  height: SizeConfig.blockSizeVertical * 10,
+                  width: SizeConfig.blockSizeHorizontal * 90),
+              CommonWidgets.loadingContainers(
+                  height: SizeConfig.blockSizeVertical * 10,
+                  width: SizeConfig.blockSizeHorizontal * 90),
+              CommonWidgets.loadingContainers(
+                  height: SizeConfig.blockSizeVertical * 10,
+                  width: SizeConfig.blockSizeHorizontal * 90),
+              CommonWidgets.loadingContainers(
+                  height: SizeConfig.blockSizeVertical * 10,
+                  width: SizeConfig.blockSizeHorizontal * 90),
+            ],
+          ),
+        ),
+      )
           : _filteredProducts.isEmpty
-              ? Center(
-                  child: Text('No products found'),
-                )
-              : ListView.builder(
-                  controller: _scrollController,
-                  itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == _filteredProducts.length) {
-                      return SizedBox.shrink();
-                      //   Shimmer.fromColors(
-                      //   baseColor:
-                      //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      //   highlightColor: AppConfig.backButtonColor,
-                      //   child: Center(
-                      //     child: Column(
-                      //       children: [
-                      //         CommonWidgets.loadingContainers(
-                      //             height: SizeConfig.blockSizeVertical * 10,
-                      //             width: SizeConfig.blockSizeHorizontal * 90),
-                      //       ],
-                      //     ),
-                      //   ),
-                      // );
-                    }
-                    final product = _filteredProducts[index];
-                    return GestureDetector(
-                      onTap: () {
-                        addToCart(product);
-                        Navigator.pushReplacementNamed(
-                            context, SalesScreen.routeName, arguments: {
-                          'customerId': id,
-                          'name': name,
-                          'code': code,
-                          'paymentTerms': payment
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 15.0, vertical: 2),
-                        child: Card(
-                          elevation: 3,
-                          child: Container(
-                            width: SizeConfig.blockSizeHorizontal * 90,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.transparent),
-                              color: AppConfig.backgroundColor,
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(10),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 50,
-                                    height: 50,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(15.0),
-                                      child: FadeInImage(
-                                        image: NetworkImage(
-                                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                        placeholder: const AssetImage(
-                                            'Assets/Images/no_image.jpg'),
-                                        imageErrorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image.asset(
-                                              'Assets/Images/no_image.jpg',
-                                              fit: BoxFit.fitWidth);
-                                        },
-                                        fit: BoxFit.fitWidth,
-                                      ),
-                                    ),
-                                  ),
-                                  CommonWidgets.horizontalSpace(3),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Tooltip(
-                                        message: product.name!.toUpperCase(),
-                                        child: SizedBox(
-                                          width:
-                                              SizeConfig.blockSizeHorizontal *
-                                                  70,
-                                          child: Text(
-                                            '${product.code} | ${product.name!.toUpperCase()}',
-                                            style: TextStyle(
-                                                fontSize:
-                                                    AppConfig.textCaption2Size),
-                                          ),
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            product.units != null &&
-                                                    product.units.length > 0
-                                                ? '${product.units[0].name}:${product.units[0].stock}'
-                                                : '',
-                                            style: TextStyle(
-                                              fontSize:
-                                                  AppConfig.textCaption3Size,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          Text(
-                                            product.units != null &&
-                                                    product.units.length > 1
-                                                ? '${product.units[1].name}:${product.units[1].stock}'
-                                                : '',
-                                            style: TextStyle(
-                                              fontSize:
-                                                  AppConfig.textCaption3Size,
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+          ? Center(
+        child: Text('No products found'),
+      )
+          : ListView.builder(
+        controller: _scrollController,
+        itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _filteredProducts.length) {
+            return SizedBox.shrink();
+            //   Shimmer.fromColors(
+            //   baseColor:
+            //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
+            //   highlightColor: AppConfig.backButtonColor,
+            //   child: Center(
+            //     child: Column(
+            //       children: [
+            //         CommonWidgets.loadingContainers(
+            //             height: SizeConfig.blockSizeVertical * 10,
+            //             width: SizeConfig.blockSizeHorizontal * 90),
+            //       ],
+            //     ),
+            //   ),
+            // );
+          }
+          final product = _filteredProducts[index];
+          return GestureDetector(
+            onTap: () {
+              addToCart(product);
+              Navigator.pushReplacementNamed(
+                  context, SalesScreen.routeName, arguments: {
+                'customerId': id,
+                'name': name,
+                'code': code,
+                'paymentTerms': payment
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 15.0, vertical: 2),
+              child: Card(
+                elevation: 3,
+                child: Container(
+                  width: SizeConfig.blockSizeHorizontal * 90,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.transparent),
+                    color: AppConfig.backgroundColor,
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(10),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15.0),
+                            child: FadeInImage(
+                              image: NetworkImage(
+                                  '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                              placeholder: const AssetImage(
+                                  'Assets/Images/no_image.jpg'),
+                              imageErrorBuilder:
+                                  (context, error, stackTrace) {
+                                return Image.asset(
+                                    'Assets/Images/no_image.jpg',
+                                    fit: BoxFit.fitWidth);
+                              },
+                              fit: BoxFit.fitWidth,
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                        CommonWidgets.horizontalSpace(3),
+                        Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Tooltip(
+                              message: product.name!.toUpperCase(),
+                              child: SizedBox(
+                                width:
+                                SizeConfig.blockSizeHorizontal *
+                                    70,
+                                child: Text(
+                                  '${product.code} | ${product.name!.toUpperCase()}',
+                                  style: TextStyle(
+                                      fontSize:
+                                      AppConfig.textCaption2Size),
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  product.units != null &&
+                                      product.units.length > 0
+                                      ? '${product.units[0].name}:${product.units[0].stock}'
+                                      : '',
+                                  style: TextStyle(
+                                    fontSize:
+                                    AppConfig.textCaption3Size,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Text(
+                                  product.units != null &&
+                                      product.units.length > 1
+                                      ? '${product.units[1].name}:${product.units[1].stock}'
+                                      : '',
+                                  style: TextStyle(
+                                    fontSize:
+                                    AppConfig.textCaption3Size,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
