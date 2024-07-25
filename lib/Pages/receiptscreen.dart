@@ -12,7 +12,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
-import 'package:http/http.dart'as http;
+import 'package:http/http.dart' as http;
 import '../Models/Store_model.dart';
 import '../Models/receiptdatamodel.dart';
 import '../confg/appconfig.dart';
@@ -44,27 +44,16 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     if (response.statusCode == 200) {
       // Parse JSON response into StoreDetail object
       StoreDetail storeDetail =
-      StoreDetail.fromJson(json.decode(response.body));
+          StoreDetail.fromJson(json.decode(response.body));
 
       final pdf = pw.Document();
-      // double balance = opening;
       final String api =
           '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
       final logoResponse = await http.get(Uri.parse(api));
       if (logoResponse.statusCode != 200) {
-        // print(api);
-        // print('kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
         throw Exception('Failed to load logo image');
       }
       final Uint8List logoBytes = logoResponse.bodyBytes;
-
-      // String addressText = storeDetail.address != null
-      //     ? "Address: ${storeDetail.address}, "
-      //     : "";
-      // String countryText =
-      // storeDetail.country != null ? "${storeDetail.country}" : "";
-      //
-      // String finalText = "";
 
       pdf.addPage(
         pw.MultiPage(
@@ -91,10 +80,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
-                      if (storeDetail.address != null)
-                        pw.Text(storeDetail.address!),
-                      if (storeDetail.trn != null)
-                        pw.Text('TRN: ${storeDetail.trn}'),
+                      pw.SizedBox(height: 3),
+                      pw.Text('Address: ${storeDetail.address ?? 'N/A'}'),
+                      pw.SizedBox(height: 3),
+                      pw.Text('TRN: ${storeDetail.trn ?? 'N/A'}'),
+                      pw.SizedBox(height: 3),
                       pw.Text('Receipts', style: pw.TextStyle(fontSize: 24)),
                     ],
                   ),
@@ -102,81 +92,138 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 pw.SizedBox(height: 20),
                 pw.Divider(color: PdfColors.grey, height: 1, thickness: 1),
                 pw.SizedBox(height: 20),
-                pw.Text('${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime} | ${data.voucherNo}',),
+                pw.Text(
+                  '${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime} | ${data.voucherNo}',
+                ),
                 pw.SizedBox(height: 3),
                 pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children:[
-                          pw.Row(
-                              children: [
-                                pw.Text('Customer:'),
-                                pw.Text((data.customer!.isNotEmpty)
-                                    ? data.customer![0].code ?? ''
-                                    : '',
-                                  style: pw.TextStyle(
-                                      fontSize: AppConfig.textCaption3Size,
-                                      fontWeight: pw.FontWeight.bold),),
-                                pw.SizedBox(height: 3),
-                                pw.Text(' | '),
-                                pw.Text('${data.customer![0].name}')
-                              ]
-                          ),
-                          pw.SizedBox(height: 3),
-                          pw.Text('Email: ${data.customer![0].email}'),
-                          pw.SizedBox(height: 3),
-                          pw.Text('Contact N0: ${data.customer![0].contactNumber}'),
-                          pw.SizedBox(height: 3),
-                          pw.Text('TRN : ${data.customer![0].trn}'),
-                        ]
+                      children: [
+                        pw.Row(
+                          children: [
+                            pw.Text('Customer:'),
+                            pw.Text(
+                              (data.customer!.isNotEmpty)
+                                  ? data.customer![0].code ?? ''
+                                  : '',
+                              style: pw.TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                            pw.SizedBox(height: 3),
+                            pw.Text(' | '),
+                            pw.Text('${data.customer![0].name}')
+                          ],
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Text('Email: ${data.customer![0].email}'),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                            'Contact No: ${data.customer![0].contactNumber}'),
+                        pw.SizedBox(height: 3),
+                        pw.Text('TRN : ${data.customer![0].trn}'),
+                      ],
                     ),
                     pw.Column(
                       children: [
-                        if (data.sales![0].invoiceNo != null)
-                            pw.Text('Invoice No: ${data.sales![0].invoiceNo}'),
-                            pw.Text('Date : ${data.sales![0].inDate}'),
-                            pw.Text('Due Date: ${data.sales![0].inDate}'),
-                      ]
+                        pw.Text(
+                            'Invoice No: ${data.sales![0].invoiceNo ?? 'N/A'}'),
+                        pw.Text('Date : ${data.sales![0].inDate}'),
+                        pw.Text('Due Date: ${data.sales![0].inDate}'),
+                      ],
                     )
-                  ]
+                  ],
                 ),
                 pw.SizedBox(height: 20),
                 pw.Divider(color: PdfColors.grey, height: 1, thickness: 1),
                 pw.SizedBox(height: 20),
-                pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: List.generate(data.sales?.length ?? 0, (index) {
-                    final sale = data.sales![index];
-                    return pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                // pw.Text('Sales Details', style: pw.TextStyle(fontSize: 18)),
+                pw.SizedBox(height: 10),
+                pw.Table(
+                  border: pw.TableBorder(
+                    top: pw.BorderSide.none,
+                    bottom: pw.BorderSide.none,
+                    left: pw.BorderSide.none,
+                    right: pw.BorderSide.none,
+                    horizontalInside: pw.BorderSide.none,
+                    verticalInside: pw.BorderSide.none,
+                  ),
+                  children: [
+                    pw.TableRow(
+                      verticalAlignment: pw.TableCellVerticalAlignment.middle,
+                      // decoration: pw.BoxDecoration(color: PdfColors.grey300),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4.0),
+                          child: pw.Text(
+                            'Invoice No',
+                            style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4.0),
+                          child: pw.Text(
+                            'Invoice Type',
+                            style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(4.0),
+                          child: pw.Text(
+                            'Amount',
+                            style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    ...data.sales!.map((sale) {
+                      return pw.TableRow(
                         children: [
-                          // pw.Divider(),
-                          pw.Text(
-                            'Invoice No: ${sale.invoiceNo ?? 'N/A'}',
-                            style: pw.TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8.0),
+                            child: pw.Text(
+                              sale.invoiceNo ?? 'N/A',
+                              style: pw.TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
                             ),
                           ),
-                          pw.Text(
-                            'Invoice Type: ${sale.invoiceType ?? 'N/A'}',
-                            style: pw.TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8.0),
+                            child: pw.Text(
+                              sale.invoiceType ?? 'N/A',
+                              style: pw.TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
                             ),
                           ),
-                          pw.Text(
-                            'Amount: ${sale.amount ?? 'N/A'}',
-                            style: pw.TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8.0),
+                            child: pw.Text(
+                              sale.amount?.toString() ?? 'N/A',
+                              style: pw.TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
+                              // textAlign: pw.TextAlign.right,
                             ),
                           ),
-
                         ],
-                      ),
-                    );
-                  }),
+                      );
+                    }).toList(),
+                  ],
                 ),
                 pw.SizedBox(height: 20),
                 pw.Divider(color: PdfColors.grey, height: 1, thickness: 1),
@@ -185,14 +232,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   mainAxisAlignment: pw.MainAxisAlignment.end,
                   children: [
                     pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
                         pw.Text('Type: ${data.collectionType}'),
                         pw.SizedBox(height: 3),
                         pw.Text('Amount: ${data.totalAmount}'),
-                      ]
-                    )
-                  ]
-                )
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -207,7 +255,6 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       throw Exception('Failed to load store details');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -225,56 +272,56 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           CommonWidgets.verticalSpace(1),
           (_initDone && !_noData)
               ? SizedBox(
-            height: SizeConfig.blockSizeVertical * 85,
-            child: ListView.separated(
-              separatorBuilder: (BuildContext context, int index) =>
-                  CommonWidgets.verticalSpace(1),
-              itemCount: receiptsData.data?.length ?? 0,
-              shrinkWrap: true,
-              itemBuilder: (context, index) {
-                final data = receiptsData.data![index];
-                return _productsCard(data);
-              },
-            ),
-          )
+                  height: SizeConfig.blockSizeVertical * 85,
+                  child: ListView.separated(
+                    separatorBuilder: (BuildContext context, int index) =>
+                        CommonWidgets.verticalSpace(1),
+                    itemCount: receiptsData.data?.length ?? 0,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      final data = receiptsData.data![index];
+                      return _productsCard(data);
+                    },
+                  ),
+                )
               : (_noData && _initDone)
-              ? Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CommonWidgets.verticalSpace(3),
-              const Center(
-                child: Text('No Data'),
-              ),
-            ],
-          )
-              : Shimmer.fromColors(
-            baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-            highlightColor: AppConfig.backButtonColor,
-            child: Center(
-              child: Column(
-                children: [
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                  CommonWidgets.loadingContainers(
-                      height: SizeConfig.blockSizeVertical * 10,
-                      width: SizeConfig.blockSizeHorizontal * 90),
-                ],
-              ),
-            ),
-          ),
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CommonWidgets.verticalSpace(3),
+                        const Center(
+                          child: Text('No Data'),
+                        ),
+                      ],
+                    )
+                  : Shimmer.fromColors(
+                      baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                      highlightColor: AppConfig.backButtonColor,
+                      child: Center(
+                        child: Column(
+                          children: [
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                            CommonWidgets.loadingContainers(
+                                height: SizeConfig.blockSizeVertical * 10,
+                                width: SizeConfig.blockSizeHorizontal * 90),
+                          ],
+                        ),
+                      ),
+                    ),
         ],
       ),
     );
@@ -282,11 +329,17 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
   Widget _productsCard(Data data) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Container(
         // width: SizeConfig.blockSizeHorizontal * 90,
         decoration: BoxDecoration(
-          boxShadow: [BoxShadow(spreadRadius: 2,blurRadius: 2,blurStyle: BlurStyle.inner,color: Colors.grey.shade200)],
+          boxShadow: [
+            BoxShadow(
+                spreadRadius: 2,
+                blurRadius: 2,
+                blurStyle: BlurStyle.inner,
+                color: Colors.grey.shade200)
+          ],
           border: Border.all(color: Colors.grey.withOpacity(0.3)),
           color: AppConfig.backgroundColor,
           borderRadius: const BorderRadius.all(
@@ -299,11 +352,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            trailing:  SizedBox(width: 60,
+            trailing: SizedBox(
+              width: 60,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.print, color: Colors.blueAccent),
+                  GestureDetector(
+                      onTap: () => generatePdf(data),
+                      child: Icon(Icons.print, color: Colors.blueAccent)),
                   SizedBox(width: 10),
                   GestureDetector(
                     onTap: () => generatePdf(data),
@@ -339,7 +395,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                               fontWeight: AppConfig.headLineWeight),
                         ),
                         Text(' | '),
-                        Text(overflow: TextOverflow.fade,
+                        Text(
+                          overflow: TextOverflow.fade,
                           (data.customer!.isNotEmpty)
                               ? data.customer![0].name ?? ''
                               : '',
@@ -363,7 +420,6 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ),
                   ],
                 ),
-
               ],
             ),
             children: [
@@ -371,25 +427,26 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 children: List.generate(data.sales?.length ?? 0, (index) {
                   final sale = data.sales![index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0, vertical: 4.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Divider(),
-
                         Text(
-                          'Invoice No: ${sale.invoiceNo??'N/A'}',
+                          'Invoice No: ${sale.invoiceNo ?? 'N/A'}',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),
                         ),
                         Text(
-                          'Invoice Type: ${sale.invoiceType??'N/A'}',
+                          'Invoice Type: ${sale.invoiceType ?? 'N/A'}',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),
                         ),
-                        Text('Amount: ${sale.amount??'N/A'}',
+                        Text(
+                          'Amount: ${sale.amount ?? 'N/A'}',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),
