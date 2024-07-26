@@ -372,8 +372,8 @@ class _DaycloseState extends State<Dayclose> {
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
-                            Text(
-                                'Scheduled ${data['sheduled']} | Visited  ${data['vist_customer']} | Not Visited ${data['non_vist_customer']} | Pending ${data['pending']}'),
+                            // Text(
+                            //     'Scheduled ${data['sheduled']} | Visited  ${data['vist_customer']} | Not Visited ${data['non_vist_customer']} | Pending ${data['pending']}'),
                             RichText(
                               text: TextSpan(
                                   text: 'Sales  ',
