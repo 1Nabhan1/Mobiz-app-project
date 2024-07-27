@@ -293,6 +293,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
         'if_vat': _ifVat == 1 ? 1 : 0,
         'product_type': productTypesList,
         'total_tax': tax,
+        'discount_type': _isPercentage ? '1' : '0',
         "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
         "total": total,
         "round_off": roundOffValue,

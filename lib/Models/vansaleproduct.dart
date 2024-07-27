@@ -35,6 +35,7 @@ class Data {
   num? otherCharge;
   num? discount;
   String? roundOff;
+  String? discount_type;
   num? total;
   num? totalTax;
   num? grandTotal;
@@ -59,6 +60,7 @@ class Data {
       this.inDate,
       this.inTime,
       this.invoiceNo,
+      this.discount_type,
       this.deliveryNo,
       this.otherCharge,
       this.discount,
@@ -90,6 +92,7 @@ class Data {
     deliveryNo = json['delivery_no'] ?? '';
     otherCharge = json['other_charge'] ?? 0;
     discount = json['discount'] ?? 0;
+    discount_type = json['discount_type'] ?? '';
     roundOff = json['round_off'] ?? '';
     total = json['total'] ?? 0;
     totalTax = json['total_tax'] ?? 0;

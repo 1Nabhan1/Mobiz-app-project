@@ -428,9 +428,9 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
         _initDone = true;
       });
     }
-    print(AppState().storeId);
-    print(AppState().vanId);
-    print('ggggggggggggggggggggggggggggggggggggggggggggg');
+    // print(AppState().storeId);
+    // print(AppState().vanId);
+    // print('ggggggggggggggggggggggggggggggggggggggggggggg');
   }
 
   Future<void> _createPdf(Invoice.InvoiceData invoice, bool isPrint) async {
@@ -493,7 +493,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
           addresstextSize.width, addresstextSize.height),
     );
 
-    final String trn = 'TRN:${invoice.data!.customer![0].trn ?? '  null'}';
+    final String trn = 'TRN:${invoice.data!.store![0].trn ?? '  null'}';
     final PdfFont trnfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
 
     final Size trntextSize = trnfont.measureString(trn);

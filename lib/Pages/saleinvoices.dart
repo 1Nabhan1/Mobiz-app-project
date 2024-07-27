@@ -264,45 +264,51 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                           fontSize: AppConfig.textCaption3Size,
                         ),
                       ),
-                Text(
-                  'Discount(%): ${data.discount?.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: AppConfig.textCaption3Size,
-                  ),
-                ),
-                SizedBox(
-                  width: SizeConfig.blockSizeHorizontal * 90,
-                  child: Row(
-                    children: [
-                      Text(
-                  'Round off:${double.parse(data.roundOff ?? '').toStringAsFixed(2)}',
+                data.discount_type == '0'
+                    ? Text(
+                        'Discount: ${data.discount?.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
+                      )
+                    : data.discount_type == '1'
+                        ? Text(
+                            'Discount(%): ${data.discount?.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: AppConfig.textCaption3Size,
+                            ),
+                          )
+                        : SizedBox.shrink(),
+                Row(
+                  children: [
+                    Text(
+                      'Round off:${double.parse(data.roundOff ?? '').toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: AppConfig.textCaption3Size,
                       ),
-                      const Spacer(),
-                      InkWell(
-                        onTap: () => _getInvoiceData(data.id!, false),
-                        child: const Icon(
-                          Icons.print,
-                          color: Colors.blue,
-                          size: 30,
-                        ),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      onTap: () => _getInvoiceData(data.id!, false),
+                      child: const Icon(
+                        Icons.print,
+                        color: Colors.blue,
+                        size: 30,
                       ),
-                      CommonWidgets.horizontalSpace(2),
-                      InkWell(
-                        onTap: () => _getInvoiceData(data.id!, false),
-                        child: const Icon(
-                          Icons.document_scanner,
-                          color: Colors.red,
-                          size: 30,
-                        ),
+                    ),
+                    CommonWidgets.horizontalSpace(2),
+                    InkWell(
+                      onTap: () => _getInvoiceData(data.id!, false),
+                      child: const Icon(
+                        Icons.document_scanner,
+                        color: Colors.red,
+                        size: 30,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 Text(
-                  'Total Vat: ${(data.totalTax?.toStringAsFixed(2) )?? ''}',
+                  'Total Vat: ${(data.totalTax?.toStringAsFixed(2)) ?? ''}',
                   style: TextStyle(
                     fontSize: AppConfig.textCaption3Size,
                   ),
@@ -373,7 +379,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                                 ),
                                 const Text(' | '),
                                 Text(
-                                  'Amount: ${data.detail![i].amount?.toStringAsFixed(2)}',
+                                  'Amount: ${data.detail![i].taxable?.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: AppConfig.textCaption3Size,
                                   ),
@@ -620,13 +626,15 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       row.cells[0].value = '${k + 1}';
       row.cells[1].value = '${invoice.data!.detail![k].name}';
       row.cells[2].value = '${invoice.data!.detail![k].unit}';
-      row.cells[3].value = '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
+      row.cells[3].value =
+          '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
       row.cells[4].value = '${invoice.data!.detail![k].quantity}';
       row.cells[5].value =
           (invoice.data!.detail![k].productType!.toLowerCase() == "foc")
               ? '1'
               : '0';
-      row.cells[6].value = '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      row.cells[6].value =
+          '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
       row.cells[7].value =
           '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
@@ -728,7 +736,8 @@ Salesman: ${invoice.data!.user![0].name}
       PdfStandardFont(PdfFontFamily.helvetica, 12),
       bounds: Rect.fromLTWH(
         0,
-        vanDetailsTop-17, // Adjust vertical position to be above the van details
+        vanDetailsTop -
+            17, // Adjust vertical position to be above the van details
         pageSize.width,
         100,
       ),

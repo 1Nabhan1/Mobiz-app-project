@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:lottie/lottie.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
@@ -101,14 +102,18 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 CommonWidgets.verticalSpace(8),
                 CircleAvatar(
-                  radius: 55.0,
-                  backgroundColor: Colors.transparent,
-                  child: Image.asset(
-                    'Assets/Images/profile.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                CommonWidgets.verticalSpace(3),
+                    radius: 70.0,
+                    backgroundColor: Colors.transparent,
+                    child: Lottie.asset(
+                        'Assets/Images/Animation - 1722081243637.json',
+                        fit: BoxFit.cover,
+                        width: 70)
+                    // Image.asset(
+                    //   'Assets/Images/profile.png',
+                    //   fit: BoxFit.contain,
+                    // ),
+                    ),
+                // CommonWidgets.verticalSpace(3),
                 ListTile(
                   leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),

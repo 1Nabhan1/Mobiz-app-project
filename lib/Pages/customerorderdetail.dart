@@ -315,6 +315,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
         'product_type': productTypesList,
         'total_tax': tax,
         "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
+        'discount_type': _isPercentage ? '1' : '0',
         "total": total,
         "round_off": roundOffValue,
         "grand_total": roundedGrandTotal,

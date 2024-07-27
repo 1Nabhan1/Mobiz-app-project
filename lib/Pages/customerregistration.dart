@@ -30,7 +30,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
 
   Future<void> _pickImage() async {
     final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.gallery);
 
     setState(() {
       if (pickedFile != null) {
@@ -108,6 +108,31 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   ];
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      if (params != null) {
+        _nameController.text = params['name'] ?? '';
+        _customercode = params['code'];
+        _addressController.text = params['address'] ?? '';
+        _contactNumberController.text = params['phone'] ?? '';
+        _whatsappNumberController.text = params['whatsappNumber'] ?? '';
+        _trnController.text = params['trn'] ?? '';
+        _location = params['location'] ?? 'Click the icon to fetch the data';
+        _selectPaymentTerms = params['paymentTerms'] ?? '';
+        _selectedProvinceid = params['provinceId'];
+        _selectedrouteid = params['routeId'];
+        id = params['id'];
+        if (params['credit_days'] != null && params['credit_days'] != '') {
+          _creditDays.text = params['credit_days'].toString();
+        }
+        if (params['credit_limit'] != null && params['credit_limit'] != '') {
+          _creditLimit.text = params['credit_limit'].toString();
+        }
+        _emailController.text = params['email'] ?? '';
+        _isUpdate = true;
+      }
+    });
     namefocus = FocusNode();
     addressfocus = FocusNode();
     contactfocus = FocusNode();
@@ -145,32 +170,32 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
 
   @override
   Widget build(BuildContext context) {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      _nameController.text = params!['name'] ?? '';
-      _customercode = params['code'];
-      _addressController.text = params['address'] ?? '';
-      _contactNumberController.text = params['phone'] ?? '';
-      _whatsappNumberController.text = params['whatsappNumber'] ?? '';
-      _trnController.text = params['trn'] ?? '';
-      _location = params['location'] ?? 'Click the icon to fetch the data';
-      _selectPaymentTerms = params['paymentTerms'] ?? '';
-      _selectedProvinceid = params['provinceId'];
-      _selectedrouteid = params['routeId'];
-      id = params['id'];
-      if (params['credit_days'] != null && params['credit_days'] != '') {
-        _creditDays.text = params['credit_days'].toString();
-      }
-      if (params['credit_limit'] != null && params['credit_limit'] != '') {
-        _creditLimit.text = params['credit_limit'].toString();
-      }
-
-      _emailController.text = params['email'] ?? '';
-      // print(_trnController.text);
-      // print('dddddddddddddddddddddddddddddddddddddd');
-      _isUpdate = true;
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //   ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   _nameController.text = params!['name'] ?? '';
+    //   _customercode = params['code'];
+    //   _addressController.text = params['address'] ?? '';
+    //   _contactNumberController.text = params['phone'] ?? '';
+    //   _whatsappNumberController.text = params['whatsappNumber'] ?? '';
+    //   _trnController.text = params['trn'] ?? '';
+    //   _location = params['location'] ?? 'Click the icon to fetch the data';
+    //   _selectPaymentTerms = params['paymentTerms'] ?? '';
+    //   _selectedProvinceid = params['provinceId'];
+    //   _selectedrouteid = params['routeId'];
+    //   id = params['id'];
+    //   if (params['credit_days'] != null && params['credit_days'] != '') {
+    //     _creditDays.text = params['credit_days'].toString();
+    //   }
+    //   if (params['credit_limit'] != null && params['credit_limit'] != '') {
+    //     _creditLimit.text = params['credit_limit'].toString();
+    //   }
+    //
+    //   _emailController.text = params['email'] ?? '';
+    //   // print(_trnController.text);
+    //   // print('dddddddddddddddddddddddddddddddddddddd');
+    //   _isUpdate = true;
+    // }
     return Scaffold(
         appBar: AppBar(
             title: const Text(
@@ -184,418 +209,399 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
           child: SingleChildScrollView(
             child: (!_initDone)
                 ? Shimmer.fromColors(
-              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-              highlightColor: AppConfig.backButtonColor,
-              child: Center(
-                child: Column(
-                  children: [
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                    CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 10,
-                        width: SizeConfig.blockSizeHorizontal * 90),
-                  ],
-                ),
-              ),
-            )
-                : Column(
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: _pickImage,
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                    color: Colors.grey, width: 2),
-                                image: _image != null
-                                    ? DecorationImage(
-                                  image: FileImage(_image!),
-                                  fit: BoxFit.cover,
-                                )
-                                    : null,
-                              ),
-                              child: _image == null
-                                  ? const Center(
-                                child: Text('Select Image'),
-                              )
-                                  : null,
-                            ),
-                            if (_image != null)
-                              Positioned(
-                                bottom: 5,
-                                right: 5,
-                                child: GestureDetector(
-                                  onTap: _pickImage,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.black54,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
+                    baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                    highlightColor: AppConfig.backButtonColor,
+                    child: Center(
                       child: Column(
                         children: [
-                          TextFormField(
-                            focusNode: namefocus,
-                            onEditingComplete: () {
-                              addressfocus.requestFocus();
-                            },
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'Name',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                _validateNotEmpty(value, 'Name'),
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          // _buildDropdownField(
-                          //   label: 'Code',
-                          //   items: cuCodeData,
-                          //   value: _selectCuCode,
-                          //   onChanged: (value) {
-                          //     setState(() {
-                          //       _selectCuCode = value;
-                          //     });
-                          //   },
-                          // ),
-                          TextFormField(
-                            style: TextStyle(color: Colors.black),
-                            enabled: false, // Disable user interaction
-                            controller: TextEditingController(
-                              text: _isUpdate
-                                  ? _customercode
-                                  : cuCodeData.isNotEmpty
-                                  ? cuCodeData
-                                  .map((data) => data.toString())
-                                  .join(
-                                  ', ') // Join elements with a comma
-                                  : '',
-                            ),
-                            decoration: InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                    color: AppConfig.colorPrimary),
-                              ),
-                              disabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                  BorderSide(color: Colors.grey)),
-                              labelText: 'Code',
-                              border: OutlineInputBorder(),
-                              // Add style for text color
-                              labelStyle: TextStyle(
-                                  color: Colors
-                                      .black), // Change label text color
-                              hintStyle: TextStyle(color: Colors.black),
-                            ),
-                          ),
-
-                          // TextFormField(
-                          //   controller: _codeController,
-                          //   decoration: const InputDecoration(
-                          //     focusedBorder: OutlineInputBorder(
-                          //         borderSide: BorderSide(
-                          //             color: AppConfig.colorPrimary)),
-                          //     labelText: 'Code',
-                          //     border: OutlineInputBorder(),
-                          //   ),
-                          //   validator: (value) =>
-                          //       _validateNotEmpty(value, 'Code'),
-                          // ),
-                          CommonWidgets.verticalSpace(2),
-                          TextFormField(
-                            focusNode: addressfocus,
-                            onEditingComplete: () {
-                              contactfocus.requestFocus();
-                            },
-                            controller: _addressController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'Address',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                _validateNotEmpty(value, 'Address'),
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          TextFormField(
-                            keyboardType: TextInputType.phone,
-                            focusNode: contactfocus,
-                            onEditingComplete: () {
-                              whatsappfocus.requestFocus();
-                            },
-                            controller: _contactNumberController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'Contact Number',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                _validateNumber(value, 'Contact Number'),
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          TextFormField(
-                            keyboardType: TextInputType.phone,
-                            focusNode: whatsappfocus,
-                            onEditingComplete: () {
-                              emailfocus.requestFocus();
-                            },
-                            controller: _whatsappNumberController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'WhatsApp Number',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) => _validateWhatsappNumber(
-                                value, 'WhatsApp Number'),
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          TextFormField(
-                            onEditingComplete: () {
-                              trnfocus.requestFocus();
-                            },
-                            focusNode: emailfocus,
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'Email',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: _validateEmail,
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          // decoration: const InputDecoration(
-                          //   focusedBorder: OutlineInputBorder(
-                          //       borderSide: BorderSide(
-                          //           color: AppConfig.colorPrimary)),
-                          //   labelText: 'Address',
-                          //   border: OutlineInputBorder(),
-                          // ),
-                          TextField(
-                            controller: _locationController,
-                            readOnly:
-                            true, // Make the text field read-only
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              hintText: _location,
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.my_location),
-                                onPressed: _getLocation,
-                              ),
-                            ),
-                            // onTap: _openMapScreen,
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          TextFormField(
-                            focusNode: trnfocus,
-                            controller: _trnController,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: AppConfig.colorPrimary)),
-                              labelText: 'TRN',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                _validateNotEmpty(value, 'TRN'),
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          _buildDropdownField(
-                            label: 'Payment Terms',
-                            items: paymentTerms,
-                            value: _selectPaymentTerms,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectPaymentTerms = value;
-                              });
-                            },
-                          ),
-
-                          (_selectPaymentTerms == "CREDIT")
-                              ? CommonWidgets.verticalSpace(2)
-                              : Container(),
-                          (_selectPaymentTerms == "CREDIT")
-                              ? TextFormField(
-                            controller: _creditLimit,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color:
-                                      AppConfig.colorPrimary)),
-                              labelText: 'Credit Limit',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) => _validateNotEmpty(
-                                value, 'Credit Limit'),
-                          )
-                              : Container(),
-                          (_selectPaymentTerms == "CREDIT")
-                              ? CommonWidgets.verticalSpace(2)
-                              : Container(),
-                          (_selectPaymentTerms == "CREDIT")
-                              ? TextFormField(
-                            controller: _creditDays,
-                            decoration: const InputDecoration(
-                              focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color:
-                                      AppConfig.colorPrimary)),
-                              labelText: 'Credit Days',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) => _validateNotEmpty(
-                                value, 'Credit Days'),
-                          )
-                              : Container(),
-                          CommonWidgets.verticalSpace(2),
-                          // _buildDropdownField(
-                          //   label: 'Route',
-                          //   items: routes,
-                          //   value: _selectedRoute,
-                          //   onChanged: (value) {
-                          //     setState(() {
-                          //       _selectedRoute = value;
-                          //     });
-                          //   },
-                          // ),
-                          CustomDropdown(
-                            items: routes,
-                            selectedValue: _selectedrouteid != null
-                                ? routes.firstWhere((element) =>
-                            element['id'] == _selectedrouteid)
-                                : null,
-                            onChanged: (selectedroute) {
-                              setState(() {
-                                _selectedrouteid = selectedroute!['id'];
-                              });
-                            },
-                            hint: 'Select Routes',
-                            label: 'Route',
-                          ),
-                          CommonWidgets.verticalSpace(2),
-                          // _buildDropdownField(
-                          //   label: 'Province',
-                          //   items: provinces,
-                          //   value: _selectedProvince,
-                          //   onChanged: ( value) {
-                          //     setState(() {
-                          //       _selectedProvince = value;
-                          //     });
-                          //   },
-                          // ),
-                          CustomDropdown(
-                            items: provinces,
-                            selectedValue: _selectedProvinceid != null
-                                ? provinces.firstWhere((element) =>
-                            element['id'] == _selectedProvinceid)
-                                : null,
-                            onChanged: (selectedProvince) {
-                              setState(() {
-                                // _selectedProvince =
-                                //     selectedProvince!['name'];
-                                _selectedProvinceid =
-                                selectedProvince!['id'];
-                              });
-                            },
-                            hint: 'Select Province',
-                            label: 'Province',
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: SizeConfig.blockSizeHorizontal * 35,
-                            height: SizeConfig.blockSizeVertical * 5,
-                            child: ElevatedButton(
-                              style: ButtonStyle(
-                                shape: WidgetStateProperty.all<
-                                    RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius:
-                                    BorderRadius.circular(20.0),
-                                  ),
-                                ),
-                                backgroundColor:
-                                const WidgetStatePropertyAll(
-                                    AppConfig.colorPrimary),
-                              ),
-                              onPressed:
-                              //     () {
-                              //   print(_selectedrouteid);
-                              // },
-                              _submitForm,
-                              child: Text(
-                                _isUpdate ? 'UPDATE' : 'CREATE',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    color: AppConfig.backgroundColor,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
-                            ),
-                          ),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
+                          CommonWidgets.loadingContainers(
+                              height: SizeConfig.blockSizeVertical * 10,
+                              width: SizeConfig.blockSizeHorizontal * 90),
                         ],
                       ),
                     ),
+                  )
+                : Column(
+                    children: [
+                      Center(
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: SizedBox(
+                              width: 150,
+                              height: 150,
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 2),
+                                      image: _image != null
+                                          ? DecorationImage(
+                                              image: FileImage(_image!),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
+                                    ),
+                                    child: _image == null
+                                        ? const Center(
+                                            child: Text('Select Image'),
+                                          )
+                                        : null,
+                                  ),
+                                  if (_image != null)
+                                    Positioned(
+                                      bottom: 5,
+                                      right: 5,
+                                      child: GestureDetector(
+                                        onTap: _pickImage,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(5),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.edit,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Form(
+                        key: _formKey,
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  focusNode: namefocus,
+                                  onEditingComplete: () {
+                                    addressfocus.requestFocus();
+                                  },
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'Name',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) =>
+                                      _validateNotEmpty(value, 'Name'),
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                // _buildDropdownField(
+                                //   label: 'Code',
+                                //   items: cuCodeData,
+                                //   value: _selectCuCode,
+                                //   onChanged: (value) {
+                                //     setState(() {
+                                //       _selectCuCode = value;
+                                //     });
+                                //   },
+                                // ),
+                                TextFormField(
+                                  style: TextStyle(color: Colors.black),
+                                  enabled: false, // Disable user interaction
+                                  controller: TextEditingController(
+                                    text: _isUpdate
+                                        ? _customercode
+                                        : cuCodeData.isNotEmpty
+                                            ? cuCodeData
+                                                .map((data) => data.toString())
+                                                .join(
+                                                    ', ') // Join elements with a comma
+                                            : '',
+                                  ),
+                                  decoration: InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: AppConfig.colorPrimary),
+                                    ),
+                                    disabledBorder: OutlineInputBorder(
+                                        borderSide:
+                                            BorderSide(color: Colors.grey)),
+                                    labelText: 'Code',
+                                    border: OutlineInputBorder(),
+                                    // Add style for text color
+                                    labelStyle: TextStyle(
+                                        color: Colors
+                                            .black), // Change label text color
+                                    hintStyle: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+
+                                // TextFormField(
+                                //   controller: _codeController,
+                                //   decoration: const InputDecoration(
+                                //     focusedBorder: OutlineInputBorder(
+                                //         borderSide: BorderSide(
+                                //             color: AppConfig.colorPrimary)),
+                                //     labelText: 'Code',
+                                //     border: OutlineInputBorder(),
+                                //   ),
+                                //   validator: (value) =>
+                                //       _validateNotEmpty(value, 'Code'),
+                                // ),
+                                CommonWidgets.verticalSpace(2),
+                                TextFormField(
+                                  focusNode: addressfocus,
+                                  onEditingComplete: () {
+                                    contactfocus.requestFocus();
+                                  },
+                                  controller: _addressController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'Address',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) =>
+                                      _validateNotEmpty(value, 'Address'),
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                TextFormField(
+                                  keyboardType: TextInputType.phone,
+                                  focusNode: contactfocus,
+                                  onEditingComplete: () {
+                                    whatsappfocus.requestFocus();
+                                  },
+                                  controller: _contactNumberController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'Contact Number',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) =>
+                                      _validateNumber(value, 'Contact Number'),
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                TextFormField(
+                                  keyboardType: TextInputType.phone,
+                                  focusNode: whatsappfocus,
+                                  onEditingComplete: () {
+                                    emailfocus.requestFocus();
+                                  },
+                                  controller: _whatsappNumberController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'WhatsApp Number',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) => _validateWhatsappNumber(
+                                      value, 'WhatsApp Number'),
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                TextFormField(
+                                  onEditingComplete: () {
+                                    trnfocus.requestFocus();
+                                  },
+                                  focusNode: emailfocus,
+                                  controller: _emailController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'Email',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: _validateEmail,
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                // decoration: const InputDecoration(
+                                //   focusedBorder: OutlineInputBorder(
+                                //       borderSide: BorderSide(
+                                //           color: AppConfig.colorPrimary)),
+                                //   labelText: 'Address',
+                                //   border: OutlineInputBorder(),
+                                // ),
+                                TextField(
+                                  controller: _locationController,
+                                  readOnly:
+                                      true, // Make the text field read-only
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    hintText: _location,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(Icons.my_location),
+                                      onPressed: _getLocation,
+                                    ),
+                                  ),
+                                  // onTap: _openMapScreen,
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                TextFormField(
+                                  focusNode: trnfocus,
+                                  controller: _trnController,
+                                  decoration: const InputDecoration(
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: AppConfig.colorPrimary)),
+                                    labelText: 'TRN',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  validator: (value) =>
+                                      _validateNotEmpty(value, 'TRN'),
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                _buildDropdownField(
+                                  label: 'Payment Terms',
+                                  items: paymentTerms,
+                                  value: _selectPaymentTerms,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectPaymentTerms = value;
+                                    });
+                                  },
+                                ),
+
+                                (_selectPaymentTerms == "CREDIT")
+                                    ? CommonWidgets.verticalSpace(2)
+                                    : Container(),
+                                (_selectPaymentTerms == "CREDIT")
+                                    ? TextFormField(
+                                        controller: _creditLimit,
+                                        decoration: const InputDecoration(
+                                          focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                  color:
+                                                      AppConfig.colorPrimary)),
+                                          labelText: 'Credit Limit',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        validator: (value) => _validateNotEmpty(
+                                            value, 'Credit Limit'),
+                                      )
+                                    : Container(),
+                                (_selectPaymentTerms == "CREDIT")
+                                    ? CommonWidgets.verticalSpace(2)
+                                    : Container(),
+                                (_selectPaymentTerms == "CREDIT")
+                                    ? TextFormField(
+                                        controller: _creditDays,
+                                        decoration: const InputDecoration(
+                                          focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                  color:
+                                                      AppConfig.colorPrimary)),
+                                          labelText: 'Credit Days',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        validator: (value) => _validateNotEmpty(
+                                            value, 'Credit Days'),
+                                      )
+                                    : Container(),
+                                CommonWidgets.verticalSpace(2),
+
+                                CustomDropdown(
+                                  items: routes,
+                                  selectedValue: _selectedrouteid != null
+                                      ? routes.firstWhere((element) =>
+                                          element['id'] == _selectedrouteid)
+                                      : null,
+                                  onChanged: (selectedroute) {
+                                    setState(() {
+                                      _selectedrouteid = selectedroute!['id'];
+                                    });
+                                  },
+                                  hint: 'Select Routes',
+                                  label: 'Route',
+                                ),
+                                CommonWidgets.verticalSpace(2),
+                                CustomDropdown(
+                                  items: provinces,
+                                  selectedValue: _selectedProvinceid != null
+                                      ? provinces.firstWhere((element) =>
+                                          element['id'] == _selectedProvinceid)
+                                      : null,
+                                  onChanged: (selectedProvince) {
+                                    setState(() {
+                                      // _selectedProvince =
+                                      //     selectedProvince!['name'];
+                                      _selectedProvinceid =
+                                          selectedProvince!['id'];
+                                    });
+                                  },
+                                  hint: 'Select Province',
+                                  label: 'Province',
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: SizeConfig.blockSizeHorizontal * 35,
+                                  height: SizeConfig.blockSizeVertical * 5,
+                                  child: ElevatedButton(
+                                    style: ButtonStyle(
+                                      shape: WidgetStateProperty.all<
+                                          RoundedRectangleBorder>(
+                                        RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20.0),
+                                        ),
+                                      ),
+                                      backgroundColor:
+                                          const WidgetStatePropertyAll(
+                                              AppConfig.colorPrimary),
+                                    ),
+                                    onPressed:
+                                        //     () {
+                                        //   print(_selectedrouteid);
+                                        // },
+                                        _submitForm,
+                                    child: Text(
+                                      _isUpdate ? 'UPDATE' : 'CREATE',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          color: AppConfig.backgroundColor,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ));
   }
@@ -634,6 +640,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     }
     return null;
   }
+
   String? _validateWhatsappNumber(String? value, String fieldName) {
     if (value != null && value.isNotEmpty) {
       final numberRegex = RegExp(r'^[0-9]+$');
@@ -645,12 +652,11 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     return null;
   }
 
-
   Widget _buildDropdownField(
       {required String label,
-        required List<String> items,
-        required String? value,
-        required void Function(String?) onChanged}) {
+      required List<String> items,
+      required String? value,
+      required void Function(String?) onChanged}) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         focusedBorder: const OutlineInputBorder(
@@ -686,7 +692,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   Future<void> _getProvince() async {
     RestDatasource api = RestDatasource();
     dynamic resJson =
-    await api.getDetails('/api/get_province/', AppState().token);
+        await api.getDetails('/api/get_province/', AppState().token);
 
     province = ProvinceDataModel.fromJson(resJson);
     if (province.data != null) {
@@ -742,7 +748,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
       'whatsapp_number': _whatsappNumberController.text,
       'email': _emailController.text,
       'location':
-      _locationController.text == '' ? _location : _locationController.text,
+          _locationController.text == '' ? _location : _locationController.text,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,
@@ -759,9 +765,9 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     // if (resJson["data"] != null) {
     if (mounted) {
       CommonWidgets.showDialogueBox(
-          context: context, title: "", msg: "Data Inserted Successfully")
+              context: context, title: "", msg: "Data Inserted Successfully")
           .then((value) =>
-          Navigator.pushReplacementNamed(context, HomeScreen.routeName));
+              Navigator.pushReplacementNamed(context, HomeScreen.routeName));
     }
     // } else {
     //   if (mounted) {
@@ -836,7 +842,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
         border: OutlineInputBorder(),
       ),
       validator: (value) =>
-      value == null ? 'Please select ${widget.label}' : null,
+          value == null ? 'Please select ${widget.label}' : null,
     );
   }
 }
