@@ -26,7 +26,7 @@ class PaymentCollectionScreen extends StatefulWidget {
   _PaymentCollectionScreenState createState() =>
       _PaymentCollectionScreenState();
 }
-
+String edamone = 'no way';
 int cuId = 0;
 String cuname = '';
 String cucode = '';
