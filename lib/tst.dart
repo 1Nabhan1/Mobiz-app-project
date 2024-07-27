@@ -26,6 +26,7 @@ class PaymentCollectionScreen extends StatefulWidget {
   _PaymentCollectionScreenState createState() =>
       _PaymentCollectionScreenState();
 }
+
 int cuId = 0;
 String cuname = '';
 String cucode = '';
@@ -476,39 +477,41 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 : Container(),
                             (dropdownvalue != "Cash")
                                 ? InkWell(
-                              onTap: () {
-                                showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text('Bank'),
-                                      content: TextField(
-                                        controller: _bankController,
-                                        keyboardType: TextInputType.name,
-                                        decoration: const InputDecoration(
-                                          hintText: "Bank",
-                                        ),
-                                      ),
-                                      actions: <Widget>[
-                                        MaterialButton(
-                                          color: AppConfig.colorPrimary,
-                                          textColor: Colors.white,
-                                          child: const Text('OK'),
-                                          onPressed: () {
-                                            setState(() {
-                                              bankData = _bankController.text;
-                                            });
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: _inputBox(status: true, value: bankData),
-                            )
+                                    onTap: () {
+                                      showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('Bank'),
+                                            content: TextField(
+                                              controller: _bankController,
+                                              keyboardType: TextInputType.name,
+                                              decoration: const InputDecoration(
+                                                hintText: "Bank",
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              MaterialButton(
+                                                color: AppConfig.colorPrimary,
+                                                textColor: Colors.white,
+                                                child: const Text('OK'),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    bankData =
+                                                        _bankController.text;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: _inputBox(
+                                        status: true, value: bankData),
+                                  )
                                 : Container(),
                           ],
                         ),
@@ -568,7 +571,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                 child: const Text('OK'),
                                                 onPressed: () {
                                                   setState(() {
-                                                    chequeData = _chequeController.text;
+                                                    chequeData =
+                                                        _chequeController.text;
                                                   });
                                                   Navigator.of(context).pop();
                                                 },
@@ -578,7 +582,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                         },
                                       );
                                     },
-                                    child: _inputBox(status: true, value: chequeData),
+                                    child: _inputBox(
+                                        status: true, value: chequeData),
                                   ),
                                 ],
                               )
@@ -726,7 +731,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'invoice_type': invoiceTypes,
       'collection_type': dropdownvalue,
       'bank': _bankController.text,
-      'cheque_no':  _chequeController.text,
+      'cheque_no': _chequeController.text,
       'cheque_date': formattedDate,
       'invoice_no': invoiceno,
       'invoice_date': invoicedate,

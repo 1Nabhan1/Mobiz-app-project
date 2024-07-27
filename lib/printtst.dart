@@ -16,7 +16,7 @@ class _PrinterTestState extends State<PrinterTest> {
   bool _connected = false;
 
   // Default Bluetooth device address
-  final String _defaultDeviceAddress = "00:13:7B:84:E9:89";
+  final String _defaultDeviceAddress = "00:13:7B:09:DC:E7";
 
   @override
   void initState() {
