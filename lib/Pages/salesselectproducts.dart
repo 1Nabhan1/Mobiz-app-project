@@ -85,16 +85,28 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       _isLoading = true;
     });
 
+    List<Product> allProducts = [];
+
     try {
-      final productData = await fetchProducts(_currentPage);
-      setState(() {
-        _products.addAll(productData.data.products.where((product) =>
-        product.units.isNotEmpty &&
-            product.units[0].stock > 0)); // Filter out products with zero stock
-        _filteredProducts = List.from(_products);
-        _currentPage++;
-        _hasMore = _currentPage <= productData.data.lastPage;
-      });
+      while (_hasMore) {
+        final productData = await fetchProducts(_currentPage);
+
+        // Filter products with non-zero stock
+        final filteredProducts = productData.data.products
+            .where((product) =>
+        product.units.isNotEmpty && product.units[0].stock > 0)
+            .toList();
+
+        allProducts.addAll(filteredProducts);
+
+        setState(() {
+          _products = allProducts;
+          _filteredProducts =
+              List.from(_products); // Update filtered products list
+          _currentPage++;
+          _hasMore = _currentPage <= productData.data.lastPage;
+        });
+      }
     } catch (e) {
       print('Error: $e');
     } finally {
@@ -109,15 +121,20 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       if (query.isEmpty) {
         _filteredProducts = _products
             .where((product) =>
-        product.units.isNotEmpty && product.units[0].stock > 0) // Filter out products with zero stock
+        product.units.isNotEmpty &&
+            product.units[0].stock >
+                0) // Filter out products with zero stock
             .toList();
       } else {
         _filteredProducts = _products
             .where((product) =>
         (product.name!.toLowerCase().contains(query.toLowerCase()) ||
-            product.code!.toLowerCase().contains(query.toLowerCase())) &&
+            product.code!
+                .toLowerCase()
+                .contains(query.toLowerCase())) &&
             product.units.isNotEmpty &&
-            product.units[0].stock > 0) // Filter out products with zero stock
+            product.units[0].stock >
+                0) // Filter out products with zero stock
             .toList();
       }
     });

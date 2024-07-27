@@ -12,7 +12,7 @@ import '../Components/commonwidgets.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
- import 'Day_closeReport.dart';
+import 'Day_closeReport.dart';
 import 'homepage.dart';
 
 class Dayclose extends StatefulWidget {
@@ -102,7 +102,8 @@ class _DaycloseState extends State<Dayclose> {
             GestureDetector(
               onTap: () {
                 Navigator.pushReplacementNamed(
-                  context, DaycloseReport.routeName,
+                  context,
+                  DaycloseReport.routeName,
                 );
               },
               child: Icon(
@@ -257,10 +258,11 @@ class _DaycloseState extends State<Dayclose> {
                     }
                   });
                   if (cashdeposit.isNotEmpty && cashHanded.isNotEmpty) {
-                    balcash = (((data['collection_cash']) +
+                    balcash = ((((data['collection_cash']) +
                         (data['last_day_balance_amount'])) -
                         (double.parse(cashdeposit) +
-                            double.parse(cashHanded)))
+                            double.parse(cashHanded))) -
+                        data['expense'])
                         .toString();
                   }
                   if (Ncheqdepo.isNotEmpty && cheqhandedovr.isNotEmpty) {
@@ -284,7 +286,10 @@ class _DaycloseState extends State<Dayclose> {
                 body: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [SizedBox(height: 10,),
+                    children: [
+                      SizedBox(
+                        height: 10,
+                      ),
                       // GestureDetector(
                       //   onLongPress: () async {
                       //     DateTime? pickedDate = await showDatePicker(
@@ -436,6 +441,10 @@ class _DaycloseState extends State<Dayclose> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text('Expense'),
+                              SizedBox(
+                                height: 10,
+                              ),
                               Text('Cash Deposited'),
                               SizedBox(
                                 height: 10,
@@ -473,6 +482,19 @@ class _DaycloseState extends State<Dayclose> {
                           ),
                           Column(
                             children: [
+                              Container(
+                                child:
+                                Center(child: Text("${data['expense']}")),
+                                width: 70,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                              SizedBox(
+                                height: 10,
+                              ),
                               GestureDetector(
                                 onTap: isdayclose == false
                                     ? null
