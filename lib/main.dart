@@ -28,6 +28,8 @@ import 'Pages/Day_closeReport.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Total_sales.dart';
+import 'Pages/VanTransferReceive.dart';
+import 'Pages/VanTransferSend.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
 import 'Pages/error_handling_screen.dart';
@@ -110,6 +112,8 @@ class MyApp extends StatelessWidget {
           SelectProductsScreenoff.routeName: (context) =>
               SelectProductsScreenoff(),
           Vanselectproducts.routeName: (context) => Vanselectproducts(),
+          VanTransferSend.routeName: (context) =>  VanTransferSend(),
+          VanStockReceive.routeName: (context) =>  VanStockReceive(),
         });
   }
 }
