@@ -1,5 +1,6 @@
 import 'dart:convert';
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:signature/signature.dart';
@@ -9,6 +10,7 @@ import '../Models/DriverDetailsModel.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'homepage_Driver.dart';
 
 class DriverDetails extends StatefulWidget {
   static const routeName = "/DriverDetails";
@@ -52,78 +54,14 @@ class _DriverDetailsState extends State<DriverDetails> {
     super.dispose();
   }
 
-  void postDataToApi() async {
-    var url = Uri.parse('${RestDatasource().BASE_URL}/customer-delivery.store');
-
-    // for (int index = 0; index < cartItems.length; index++) {
-    //   String? selectedUnitName = cartItems[index].selectedUnitName;
-    //   int selectedUnitId;
-    //   if (selectedUnitName != null) {
-    //     selectedUnitId = cartItems[index]
-    //         .units
-    //         .firstWhere((unit) => unit.name == selectedUnitName)
-    //         .unit!;
-    //   }
-    //
-    //   selectedUnitIds.add(selectedUnitId);
-    //   String? qty = qtys[index];
-    //   int quantity = qty != null ? int.parse(qty) : 1;
-    //   quantities.add(quantity);
-    //
-    //   ProductType? selectedProductType = selectedProductTypes[index];
-    //   Object productType =
-    //   selectedProductType != null ? selectedProductType.id : 1;
-    //   productTypesList.add(productType);
-    // }
-    // List<double> amountsList = amounts.entries.map((entry) {
-    //   return double.parse(entry.value);
-    // }).toList();
-
-    // int jsonAmounts = jsonEncode(amountsList);
-    var data = {
-      'customer_id':'',
-      'store_id':'${AppState().storeId}',
-      'user_id':'${AppState().userId}',
-      'invoice_no':'',
-      'goods_out_id':'',
-      'received_by':_nameController,
-      'signature':_signatureController,
-      'in_date':'',
-      'in_time':'',
-      'updated_at':'',
-      'created_at':'',
-      'id':id,
-    };
-    var body = json.encode(data);
-
-    var response = await http.post(
-      url,
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: body,
-    );
-
-    if (response.statusCode == 200) {
-      // print(_isPercentage ? '1' : '0');
-      // print('fjnvjksdnvsbjvnsjkvhSDhv');
-      // print(cartItems.map((item) => item.price).toList());
-      // print(AppState().storeId);
-      print('Post successful');
-      if (mounted) {
-        CommonWidgets.showDialogueBox(
-            context: context, title: "Alert", msg: "Created Successfully");
-      }
-      print(response.body);
-    } else {
-      print('Post failed with status: ${response.statusCode}');
-      print(response.body);
-    }
-  }
-
   final TextEditingController _nameController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      id = params!['id'];
+    }
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
@@ -162,193 +100,276 @@ class _DriverDetailsState extends State<DriverDetails> {
                 SingleChildScrollView(
                   child: Column(
                     children: data.map((item) {
-                      return Card(
-                        elevation: 1,
-                        child: Container(
-                          width: SizeConfig.blockSizeHorizontal * 100,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                            color: AppConfig.backgroundColor,
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(10),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),  // Slightly increased padding for better spacing
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Row for aligning invoiceNo and scheduleDate in a single line
-                                Row(
+                      void postDataToApi() async {
+                        var url = Uri.parse(
+                            '${RestDatasource().BASE_URL}/api/customer-delivery.store');
+                        var data = {
+                          'customer_id': id,
+                          'store_id': '${AppState().storeId}',
+                          'user_id': '${AppState().userId}',
+                          'invoice_no': item.invoiceNo ?? '',
+                          'goods_out_id': item.detail[0].goodsOutId,
+                          'received_by': _nameController.text,
+                          'signature': '',
+                        };
+                        var body = json.encode(data);
+
+                        var response = await http.post(
+                          url,
+                          headers: <String, String>{
+                            'Content-Type': 'application/json; charset=UTF-8',
+                          },
+                          body: body,
+                        );
+
+                        if (response.statusCode == 200) {
+                          print('Post successful');
+                          if (mounted) {
+                            CommonWidgets.showDialogueBox(
+                                context: context,
+                                title: "Alert",
+                                msg: "Created Successfully");
+                            Navigator.of(context)
+                                .pushReplacementNamed(HomepageDriver.routeName);
+                          }
+                          print(response.body);
+                        } else {
+                          print(
+                              'Post failed with status: ${response.statusCode}');
+                          print(response.body);
+                        }
+                      }
+
+                      return Column(
+                        children: [
+                          Card(
+                            elevation: 1,
+                            child: Container(
+                              width: SizeConfig.blockSizeHorizontal * 100,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                    color: Colors.grey.withOpacity(0.3)),
+                                color: AppConfig.backgroundColor,
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(10),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(
+                                    8.0), // Slightly increased padding for better spacing
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Tooltip(
-                                      message: item.invoiceNo,
-                                      child: SizedBox(
-                                        width: SizeConfig.blockSizeHorizontal * 70,
-                                        child: Text(
-                                          '${item.invoiceNo} | ${item.scheduleDate}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: AppConfig.textCaption3Size,
+                                    // Row for aligning invoiceNo and scheduleDate in a single line
+                                    Row(
+                                      children: [
+                                        Tooltip(
+                                          message: item.invoiceNo,
+                                          child: SizedBox(
+                                            width:
+                                                SizeConfig.blockSizeHorizontal *
+                                                    70,
+                                            child: Text(
+                                              '${item.invoiceNo} | ${item.scheduleDate}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize:
+                                                    AppConfig.textCaption3Size,
+                                              ),
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Prevents overflow issues
+                                            ),
                                           ),
-                                          overflow: TextOverflow.ellipsis,  // Prevents overflow issues
                                         ),
-                                      ),
+                                      ],
+                                    ),
+                                    const SizedBox(
+                                        height:
+                                            5.0), // Added spacing between the rows for better visual separation
+                                    // Details of the item
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          ' ${item.detail[0].name}',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                            height:
+                                                3.0), // Added spacing between text elements
+                                        Text(
+                                          'Qty: ${item.detail[0].quantity}',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 5.0), // Added spacing between the rows for better visual separation
-                                // Details of the item
-                                Column(
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(15.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Received in Good Condition',
+                                  style: TextStyle(fontSize: 15),
+                                ),
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                Row(
+                                  children: [
+                                    Text('Received By'),
+                                    SizedBox(
+                                      width: 30,
+                                    ),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          .65,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(),
+                                      ),
+                                      child: TextField(
+                                        controller: _nameController,
+                                        decoration: InputDecoration(
+                                          border: InputBorder
+                                              .none, // Removes the default underline border
+                                          contentPadding: EdgeInsets.symmetric(
+                                              vertical: 5,
+                                              horizontal:
+                                                  10), // Adjust padding as needed
+                                        ),
+                                        style: TextStyle(
+                                          fontSize:
+                                              14, // Adjust font size as needed
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      ' ${item.detail[0].name}',
-                                      style: TextStyle(
-                                        fontSize: AppConfig.textCaption3Size,
-                                      ),
+                                    Text('Signature'),
+                                    SizedBox(
+                                      width: 45,
                                     ),
-                                    const SizedBox(height: 3.0),  // Added spacing between text elements
-                                    Text(
-                                      'Qty: ${item.detail[0].quantity}',
-                                      style: TextStyle(
-                                        fontSize: AppConfig.textCaption3Size,
-                                      ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              .66,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              .17,
+                                          decoration: BoxDecoration(
+                                              border: Border.all()),
+                                          child: Signature(
+                                            controller: _signatureController,
+                                            backgroundColor:
+                                                AppConfig.backgroundColor,
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          style: ButtonStyle(
+                                            backgroundColor:
+                                                WidgetStatePropertyAll(
+                                                    AppConfig.colorPrimary),
+                                            shape: WidgetStatePropertyAll(
+                                              RoundedRectangleBorder(
+                                                borderRadius: BorderRadius
+                                                    .zero, // Removes the circular border
+                                              ),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            _signatureController.clear();
+                                          },
+                                          child: Text(
+                                            'Clear',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 50.h,
+                                        ),
+                                        Center(
+                                          child: Container(
+                                            width:
+                                                SizeConfig.blockSizeHorizontal *
+                                                    35,
+                                            height:
+                                                SizeConfig.blockSizeVertical *
+                                                    5,
+                                            child: ElevatedButton(
+                                              style: ButtonStyle(
+                                                backgroundColor:
+                                                    WidgetStatePropertyAll(
+                                                        AppConfig.colorPrimary),
+                                                shape: WidgetStatePropertyAll(
+                                                  RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius
+                                                        .zero, // Removes the circular border
+                                                  ),
+                                                ),
+                                              ),
+                                              onPressed: () async {
+                                                // if (_signatureController.isNotEmpty) {
+                                                //   final signature =
+                                                //       await _signatureController.toPngBytes();
+                                                //
+                                                // }
+                                                postDataToApi();
+                                              },
+                                              child: Text(
+                                                'SAVE',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       );
-
                     }).toList(),
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.all(15.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Received in Good Condition',
-                        style: TextStyle(fontSize: 15),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Row(
-                        children: [
-                          Text('Received By'),
-                          SizedBox(
-                            width: 30,
-                          ),
-                          Container(
-                            width: MediaQuery.of(context).size.width * .65,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              border: Border.all(),
-                            ),
-                            child: TextField(
-                              controller:_nameController ,
-                              decoration: InputDecoration(
-                                border: InputBorder.none, // Removes the default underline border
-                                contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 10), // Adjust padding as needed
-                              ),
-                              style: TextStyle(
-                                fontSize: 14, // Adjust font size as needed
-                              ),
-                            ),
-                          )
 
-                        ],
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Signature'),
-                          SizedBox(
-                            width: 45,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: MediaQuery.of(context).size.width * .66,
-                                height: MediaQuery.of(context).size.height * .17,
-                                decoration: BoxDecoration(border: Border.all()),
-                                child: Signature(
-                                  controller: _signatureController,
-                                  backgroundColor: AppConfig.backgroundColor,
-                                ),
-                              ),
-                              ElevatedButton(
-                                style: ButtonStyle(
-                                  backgroundColor: WidgetStatePropertyAll(
-                                      AppConfig.colorPrimary),
-                                  shape: WidgetStatePropertyAll(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius
-                                          .zero, // Removes the circular border
-                                    ),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  _signatureController.clear();
-                                },
-                                child: Text(
-                                  'Clear',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [],
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 20,
-                ),
-                Spacer(),
-                Center(
-                  child: Container(
-                    width: SizeConfig.blockSizeHorizontal * 35,
-                    height: SizeConfig.blockSizeVertical * 5,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor:
-                        WidgetStatePropertyAll(AppConfig.colorPrimary),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius
-                                .zero, // Removes the circular border
-                          ),
-                        ),
-                      ),
-                      onPressed: () async {
-                        if (_signatureController.isNotEmpty) {
-                          final signature =
-                          await _signatureController.toPngBytes();
-                          postDataToApi();
-                        }
-                      },
-                      child: Text(
-                        'SAVE',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 50,)
+                // SizedBox(
+                //   height: 20,
+                // ),
+                // Spacer(),
+                //
+                // SizedBox(
+                //   height: 50,
+                // )
               ],
             );
           }

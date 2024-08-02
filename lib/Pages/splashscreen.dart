@@ -9,6 +9,7 @@ import '../confg/appconfigjc.dart';
 import '../confg/sizeconfig.dart';
 import '../confg/textconfig.dart';
 import 'error_handling_screen.dart';
+import 'homepage_Driver.dart';
 
 class SplashScreen extends StatefulWidget {
   static const routeName = "/SplashScreen";
@@ -78,8 +79,16 @@ class _SplashScreenState extends State<SplashScreen> {
       appState.buildNumber = buildNumber;
 
       if (appState.loginState == 'LOGGED_IN') {
+        if (AppState().rolId == 2) {
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+          }
+        } else if (AppState().rolId == 4) {
+          Navigator.of(context).pushReplacementNamed(HomepageDriver.routeName);
+        }
         if (mounted)
-          Navigator.of(context).pushReplacementNamed(ErrorHandlingScreen.routeName);
+          Navigator.of(context)
+              .pushReplacementNamed(ErrorHandlingScreen.routeName);
       } else {
         if (mounted)
           Navigator.pushReplacementNamed(context, LoginScreen.routeName);

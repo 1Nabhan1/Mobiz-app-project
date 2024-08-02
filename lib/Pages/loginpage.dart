@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: const BoxDecoration(
                             color: AppConfig.backgroundColor,
                             borderRadius:
-                            BorderRadius.all(Radius.circular(10))),
+                                BorderRadius.all(Radius.circular(10))),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,7 +240,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Save to shared preferences
           sharedPref.save("app_state", appState);
-
           // Navigation logic based on rol_id
           if (loginResp.user!.rolId == 2) {
             // Navigate to current page (assuming it's the same login page)

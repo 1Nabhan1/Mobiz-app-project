@@ -4,8 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../Models/appstate.dart';
 import '../confg/appconfig.dart';
 import 'homepage.dart';
+import 'homepage_Driver.dart';
 
 class ErrorHandlingScreen extends StatefulWidget {
   static const routeName = "/ErrorHandlingScreen";
@@ -24,6 +26,16 @@ class _ErrorHandlingScreenState extends State<ErrorHandlingScreen> {
       Duration(seconds: 2),
       () {
         Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+        // if (AppState().routeId == 4) {
+        //   if (mounted) {
+        //     Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+        //   }
+        // } else if (AppState().routeId == 2) {
+        //   if (mounted) {
+        //     Navigator.of(context)
+        //         .pushReplacementNamed(HomepageDriver.routeName);
+        //   }
+        // }
       },
     );
   }

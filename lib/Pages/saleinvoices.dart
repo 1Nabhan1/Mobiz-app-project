@@ -60,7 +60,6 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   }
 
   void _initPrinter() async {
-
     bool? isConnected = await printer.isConnected;
     if (isConnected!) {
       setState(() {
@@ -427,65 +426,148 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     }
   }
 
+  // void _print(Invoice.InvoiceData invoice, bool isPrint) async {
+  //   if (_connected) {
+  //     String companyName = "${invoice.data!.store![0].name}";
+  //     String companyAddress = "${invoice.data!.store![0].address ?? 'N/A'}";
+  //     String companyTRN = "TRN:${invoice.data!.store![0].trn ?? 'N/A'}";
+  //     String billtype = "Tax Invoice";
+  //     String customerName =
+  //         "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
+  //     String customerEmail = "${invoice.data!.customer![0].email}";
+  //     String customerContact = "${invoice.data!.customer![0].contactNumber}";
+  //     String customerTRN = "${invoice.data!.customer![0].trn ?? ''}";
+  //     String invoiceNumber = " ${invoice.data!.invoiceNo!}";
+  //     String invoiceDate =
+  //         "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
+  //     String dueDate =
+  //         "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
+  //     String productDescription = "${invoice.data!.detail![0].name}";
+  //     String productRate =
+  //         "${invoice.data!.detail![0].mrp?.toStringAsFixed(2)}";
+  //     String productQty = "${invoice.data!.detail![0].quantity}";
+  //     String productTotal = "${invoice.data!.total?.toStringAsFixed(2)}";
+  //     String tax = "${invoice.data!.totalTax?.toStringAsFixed(2)}";
+  //     String grandTotal = "${invoice.data!.grandTotal?.toStringAsFixed(2)}";
+  //     String amountInWords =
+  //         "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY'";
+  //     String van = " ${invoice.data!.van![0].name}";
+  //     String salesman = "${invoice.data!.user![0].name}";
+  //
+  //     // Print company logo
+  //     String imageUrl =
+  //         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
+  //     String imageData = await _getImageData(imageUrl);
+  //     printer.printImage(imageData);
+  //
+  //     // Print company details
+  //     printer.printNewLine();
+  //     printer.printCustom(companyName, 3, 1);
+  //     printer.printCustom(companyAddress, 1, 1);
+  //     printer.printCustom(companyTRN, 1, 1);
+  //     printer.printCustom(billtype, 1, 1);
+  //     printer.printNewLine();
+  //     printer.printCustom(
+  //         "----------------------------------------------------------------------",
+  //         1,
+  //         0);
+  //     // Print customer details
+  //     printer.printCustom("Customer: $customerName", 1, 0);
+  //     printer.printCustom("Email: $customerEmail", 1, 0);
+  //     printer.printCustom("Contact No: $customerContact", 1, 0);
+  //     printer.printCustom("TRN: $customerTRN", 1, 0);
+  //     printer.printNewLine();
+  //
+  //     // Print invoice details
+  //     printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
+  //     printer.printCustom("Date: $invoiceDate", 1, 2);
+  //     printer.printCustom("Due Date: $dueDate", 1, 2);
+  //     printer.printNewLine();
+  //     printer.printCustom(
+  //         "----------------------------------------------------------------------",
+  //         1,
+  //         0);
+  //     // Print product details
+  //     printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
+  //     printer.printCustom(
+  //         "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
+  //         1,
+  //         0);
+  //     printer.printCustom(
+  //         "----------------------------------------------------------------------",
+  //         1,
+  //         0);
+  //     // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
+  //     // printer.printCustom(
+  //     //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
+  //     printer.printNewLine();
+  //
+  //     // Print totals
+  //     printer.printCustom("Total: $productTotal", 1, 2);
+  //     printer.printCustom("Tax: $tax", 1, 2);
+  //     printer.printCustom("Grand Total: $grandTotal", 1, 2);
+  //     printer.printNewLine();
+  //
+  //     // Print amount in words
+  //     printer.printCustom("Amount in Words: $amountInWords", 1, 0);
+  //     printer.printNewLine();
+  //
+  //     // Print van and salesman details
+  //     printer.printCustom("Van: $van", 1, 0);
+  //     printer.printCustom("Salesman: $salesman", 1, 0);
+  //     printer.printNewLine();
+  //
+  //     // Cut the paper
+  //     printer.paperCut();
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Printer not connected')),
+  //     );
+  //   }
+  // }
+
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
-      // Example data
-      // String imageUrl =
-      //     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
-      // String imageData = await _getImageData(imageUrl);
-      // printer.printImage(imageData);
-      // String name = "${invoice.data!.store![0].name}";
-      // String phoneNumber = "${invoice.data!.store![0].contactNumber}";
-      // String address = "${invoice.data!.store![0].address}";
-      //
-      // // Print image (replace with your image printing logic)
-      // // printer.printImage(imagePath);
-      //
-      // // Print name
-      // printer.printNewLine();
-      // printer.printCustom("Name: $name", 3, 1);
-      //
-      // // Print phone number
-      // printer.printNewLine();
-      // printer.printCustom("Phone Number: $phoneNumber", 3, 1);
-      //
-      // // Print gender
-      // printer.printNewLine();
-      // printer.printCustom("address: $address", 3, 1);
-      //
-      // // Cut the paper
-      // printer.paperCut();
-      String companyName = "${invoice.data!.store![0].name}";
-      String companyAddress = "${invoice.data!.store![0].address ?? 'N/A'}";
-      String companyTRN = "TRN:${invoice.data!.store![0].trn ?? 'N/A'}";
+      String companyName = invoice.data!.store![0].name ?? 'N/A';
+      String companyAddress = invoice.data!.store![0].address ?? 'N/A';
+      String companyTRN = "TRN: ${invoice.data!.store![0].trn ?? 'N/A'}";
       String billtype = "Tax Invoice";
       String customerName =
           "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
-      String customerEmail = "${invoice.data!.customer![0].email}";
-      String customerContact = "${invoice.data!.customer![0].contactNumber}";
-      String customerTRN = "${invoice.data!.customer![0].trn ?? ''}";
-      String invoiceNumber = " ${invoice.data!.invoiceNo!}";
-      String invoiceDate =
-          "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-      String dueDate =
-          "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-      String productDescription = "${invoice.data!.detail![0].name}";
+      String customerEmail = invoice.data!.customer![0].email ?? 'N/A';
+      String customerContact =
+          invoice.data!.customer![0].contactNumber ?? 'N/A';
+      String customerTRN = invoice.data!.customer![0].trn ?? '';
+      String invoiceNumber = invoice.data!.invoiceNo ?? 'N/A';
+      String invoiceDate = DateFormat('dd MMMM yyyy')
+          .format(DateTime.parse(invoice.data!.inDate!));
+      String dueDate = DateFormat('dd MMMM yyyy')
+          .format(DateTime.parse(invoice.data!.inDate!));
+      String productDescription = invoice.data!.detail![0].name ?? 'N/A';
       String productRate =
-          "${invoice.data!.detail![0].mrp?.toStringAsFixed(2)}";
-      String productQty = "${invoice.data!.detail![0].quantity}";
-      String productTotal = "${invoice.data!.total?.toStringAsFixed(2)}";
-      String tax = "${invoice.data!.totalTax?.toStringAsFixed(2)}";
-      String grandTotal = "${invoice.data!.grandTotal?.toStringAsFixed(2)}";
+          invoice.data!.detail![0].mrp?.toStringAsFixed(2) ?? '0.00';
+      String productQty = invoice.data!.detail![0].quantity?.toString() ?? '0';
+      String productTotal = invoice.data!.total?.toStringAsFixed(2) ?? '0.00';
+      String tax = invoice.data!.totalTax?.toStringAsFixed(2) ?? '0.00';
+      String grandTotal =
+          invoice.data!.grandTotal?.toStringAsFixed(2) ?? '0.00';
       String amountInWords =
-          "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY'";
-      String van = " ${invoice.data!.van![0].name}";
-      String salesman = "${invoice.data!.user![0].name}";
+          "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal?.toInt() ?? 0).toUpperCase()} ONLY";
+      String van = invoice.data!.van![0].name ?? 'N/A';
+      String salesman = invoice.data!.user![0].name ?? 'N/A';
 
-      // Print company logo
       String imageUrl =
           "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
-      String imageData = await _getImageData(imageUrl);
-      printer.printImage(imageData);
+      try {
+        String imageData = await _getImageData(imageUrl);
+        if (imageData.isNotEmpty) {
+          printer.printImage(imageData);
+        } else {
+          print("");
+        }
+      } catch (e) {
+        print("Failed to fetch image: $e");
+      }
 
       // Print company details
       printer.printNewLine();
@@ -494,40 +576,34 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom(companyTRN, 1, 1);
       printer.printCustom(billtype, 1, 1);
       printer.printNewLine();
-      printer.printCustom(
-          "-----------------------------------------------------------------",
-          1,
-          0);
-      // Print customer details
+
+      // Print horizontal line (if supported by your printer)
+      printer.printCustom("-" * 42, 1, 0);
+
+      // Print customer details in a row-like format
       printer.printCustom("Customer: $customerName", 1, 0);
       printer.printCustom("Email: $customerEmail", 1, 0);
       printer.printCustom("Contact No: $customerContact", 1, 0);
       printer.printCustom("TRN: $customerTRN", 1, 0);
       printer.printNewLine();
 
-      // Print invoice details
-      printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
-      printer.printCustom("Date: $invoiceDate", 1, 2);
-      printer.printCustom("Due Date: $dueDate", 1, 2);
+      // Print invoice details in a row-like format
+      printer.printCustom("Invoice No: $invoiceNumber", 1, 0);
+      printer.printCustom("Date: $invoiceDate", 1, 0);
+      printer.printCustom("Due Date: $dueDate", 1, 0);
       printer.printNewLine();
-      printer.printCustom(
-          "-----------------------------------------------------------------",
-          1,
-          0);
-      // Print product details
-      printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
+
+      // Print horizontal line (if supported by your printer)
+      printer.printCustom("-" * 42, 1, 0);
+
+      // Print product details as a table
+      printer.printCustom("S.No  Product  Unit  Rate  Qty  Tax  Amount", 1, 0);
       printer.printCustom(
           "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
           1,
           0);
-      printer.printCustom(
-          "-----------------------------------------------------------------",
-          1,
-          0);
-      // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
-      // printer.printCustom(
-      //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
-      printer.printNewLine();
+
+      printer.printCustom("-" * 42, 1, 0); // Another horizontal line
 
       // Print totals
       printer.printCustom("Total: $productTotal", 1, 2);
@@ -550,6 +626,21 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Printer not connected')),
       );
+    }
+  }
+
+  Future<String> _getImageData(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.bodyBytes.toString();
+      } else {
+        print("Failed to load image: ${response.statusCode}");
+        return '';
+      }
+    } catch (e) {
+      print("Error fetching image: $e");
+      return '';
     }
   }
 
@@ -860,11 +951,11 @@ Salesman: ${invoice.data!.user![0].name}
         bytes, '${invoice.data!.invoiceNo!}.pdf', isPrint);
   }
 
-  Future<String> _getImageData(String imageUrl) async {
-    http.Response response = await http.get(Uri.parse(imageUrl));
-    Uint8List bytes = response.bodyBytes;
-    return base64Encode(bytes);
-  }
+  // Future<String> _getImageData(String imageUrl) async {
+  //   http.Response response = await http.get(Uri.parse(imageUrl));
+  //   Uint8List bytes = response.bodyBytes;
+  //   return base64Encode(bytes);
+  // }
 
   Future<Uint8List> _readImageData(String? image) async {
     // print(image);
@@ -908,16 +999,16 @@ Salesman: ${invoice.data!.user![0].name}
     }
     _print(invoice, isPrint);
   }
-  // void _connectAndPrint() async {
-  //   if (_selectedDevice == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Default device not found')),
-  //     );
-  //     return;
-  //   }
-  //   if (!_connected) {
-  //     await _connect();
-  //   }
-  //   _print();
-  // }
+// void _connectAndPrint() async {
+//   if (_selectedDevice == null) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Default device not found')),
+//     );
+//     return;
+//   }
+//   if (!_connected) {
+//     await _connect();
+//   }
+//   _print();
+// }
 }

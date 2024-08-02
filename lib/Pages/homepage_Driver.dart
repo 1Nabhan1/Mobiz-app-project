@@ -114,7 +114,9 @@ class _HomepageDriverState extends State<HomepageDriver> {
                 ListTile(
                   leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),
-                  onTap: () {},
+                  onTap: () {
+                    print(AppState().rolId);
+                  },
                 ),
                 ListTile(
                   leading: Icon(Icons.call),
@@ -187,15 +189,16 @@ class _HomepageDriverState extends State<HomepageDriver> {
                         // ),
                         GestureDetector(
                             onTap: () {
-                              if (_restrict) {
-                                CommonWidgets.showDialogueBox(
-                                    context: context,
-                                    title: "Alert",
-                                    msg: "Van not allocated to this user");
-                              } else {
-                                Navigator.pushNamed(
-                                    context, CustomersDataScreen.routeName);
-                              }
+                              // if (_restrict) {
+                              //   CommonWidgets.showDialogueBox(
+                              //       context: context,
+                              //       title: "Alert",
+                              //       msg: "Van not allocated to this user");
+                              // } else {
+                              //
+                              // }
+                              Navigator.pushNamed(
+                                  context, CustomersDataScreen.routeName);
                             },
                             child: _iconButtons(
                                 icon: Icons.people, title: 'Customer')),
@@ -540,18 +543,21 @@ class _HomepageDriverState extends State<HomepageDriver> {
     UserDetailsModel userData = UserDetailsModel();
     String subUrl = "/api/get_user_detail?user_id=${AppState().userId}";
     dynamic resJson = await api.getDetails(subUrl, AppState().token);
-    if (resJson['data'] != null) {
-      userData = UserDetailsModel.fromJson(resJson);
-      AppState().vanId = userData.data![0].vanId;
-      AppState().routeId = userData.data![0].routeId;
-    } else {
-      if (mounted) {
-        _restrict = true;
-        CommonWidgets.showDialogueBox(
-            context: context,
-            title: "Alert",
-            msg: "Van not allocated to this user");
-      }
-    }
+    userData = UserDetailsModel.fromJson(resJson);
+    // AppState().vanId = userData.data![0].vanId;
+    AppState().routeId = userData.data![0].routeId;
+    // if (resJson['data'] != null) {
+    //   userData = UserDetailsModel.fromJson(resJson);
+    //   AppState().vanId = userData.data![0].vanId;
+    //   AppState().routeId = userData.data![0].routeId;
+    // } else {
+    //   if (mounted) {
+    //     _restrict = true;
+    //     CommonWidgets.showDialogueBox(
+    //         context: context,
+    //         title: "Alert",
+    //         msg: "Van not allocated to this user");
+    //   }
+    // }
   }
 }

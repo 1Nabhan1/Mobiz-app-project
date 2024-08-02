@@ -118,7 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ListTile(
                   leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),
-                  onTap: () {},
+                  onTap: () {
+                    print(AppState().routeId);
+                  },
                 ),
                 ListTile(
                   leading: Icon(Icons.call),
