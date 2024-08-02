@@ -241,16 +241,7 @@ class _VanStocksState extends State<VanStocks> {
         'item_id': cartItems.map((item) => item.id).toList(),
         'quantity': quantities,
         'unit': selectedUnitIds,
-        // 'mrp': cartItems[0].price,
-        // 'customer_id': id,
-        // 'if_vat': _ifVat == 1 ? 1 : 0,
-        // 'product_type': ['1'],
-        // 'total_tax': tax,
-        // "discount": _discountData.text,
-        // "total": total,
-        // "round_off": roundOffValue,
-        // "grand_total": roundedGrandTotal,
-        // 'remarks': _remarksText
+
       };
       // print(_remarksText);
       // print('wwwwwwwwwwwwwwwwwwwwwwwww');

@@ -25,6 +25,8 @@ import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/selectproduct.dart';
 import 'Pages/CustomeSOA.dart';
 import 'Pages/Day_closeReport.dart';
+import 'Pages/DriverDetailsPage.dart';
+import 'Pages/DriverPage.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Total_sales.dart';
@@ -40,6 +42,7 @@ import 'Pages/saleinvoices.dart';
 import 'Pages/salesselectproductorder.dart';
 import 'Pages/salesselectproductreturn.dart';
 import 'Pages/salesselectproducts.dart';
+import 'Pages/schedule_Driver.dart';
 import 'Pages/selectProductScreenOFF.dart';
 import 'Pages/van_transfer.dart';
 import 'Pages/vanstockoff.dart';
@@ -59,7 +62,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        // home: SpeechScreen(),
+        // home: SignaturePage(),
         initialRoute: SplashScreen.routeName,
         routes: {
           // '/': (context) => Home(),
@@ -114,6 +117,9 @@ class MyApp extends StatelessWidget {
           Vanselectproducts.routeName: (context) => Vanselectproducts(),
           VanTransferSend.routeName: (context) =>  VanTransferSend(),
           VanStockReceive.routeName: (context) =>  VanStockReceive(),
+          ScheduleDriver.routeName: (context) =>  ScheduleDriver(),
+          DriverPage.routeName: (context) =>  DriverPage(),
+          DriverDetails.routeName: (context) =>  DriverDetails(),
         });
   }
 }

@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -11,6 +10,7 @@ import 'package:mobizapp/Pages/customerscreen.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
 import 'package:mobizapp/Pages/productspage.dart';
 import 'package:mobizapp/Pages/receiptscreen.dart';
+import 'package:mobizapp/Pages/schedule_Driver.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/van_transfer.dart';
@@ -25,6 +25,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
+import '../selectproduct.dart';
 import 'Schedule_page.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
@@ -198,6 +199,13 @@ class _HomepageDriverState extends State<HomepageDriver> {
                             },
                             child: _iconButtons(
                                 icon: Icons.people, title: 'Customer')),
+                        GestureDetector(
+                            onTap: () {
+                                Navigator.pushNamed(
+                                    context, ScheduleDriver.routeName);
+                            },
+                            child: _iconButtons(
+                                icon: Icons.calendar_today, title: 'Schedule')),
                         // GestureDetector(
                         //   onTap: () {
                         //     if (_restrict) {

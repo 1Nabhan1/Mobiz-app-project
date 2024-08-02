@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:number_to_words/number_to_words.dart';
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:http/http.dart' as http;
@@ -40,7 +41,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   BlueThermalPrinter printer = BlueThermalPrinter.instance;
   bool _initDone = false;
   bool _noData = false;
-  final String _defaultDeviceAddress = "00:13:7B:84:E9:89";
+
   List<int> selectedItems = [];
   List<Map<String, dynamic>> items = [];
   bool _search = false;
@@ -59,6 +60,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   }
 
   void _initPrinter() async {
+
     bool? isConnected = await printer.isConnected;
     if (isConnected!) {
       setState(() {
@@ -71,9 +73,10 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   void _getBluetoothDevices() async {
     List<BluetoothDevice> devices = await printer.getBondedDevices();
     BluetoothDevice? defaultDevice;
-
+    final prefs = await SharedPreferences.getInstance();
+    final savedDeviceAddress = prefs.getString('selected_device_address');
     for (BluetoothDevice device in devices) {
-      if (device.address == _defaultDeviceAddress) {
+      if (device.address == savedDeviceAddress) {
         defaultDevice = device;
         break;
       }
@@ -456,21 +459,25 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       String companyAddress = "${invoice.data!.store![0].address ?? 'N/A'}";
       String companyTRN = "TRN:${invoice.data!.store![0].trn ?? 'N/A'}";
       String billtype = "Tax Invoice";
-      String customerName = "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
+      String customerName =
+          "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
       String customerEmail = "${invoice.data!.customer![0].email}";
       String customerContact = "${invoice.data!.customer![0].contactNumber}";
       String customerTRN = "${invoice.data!.customer![0].trn ?? ''}";
       String invoiceNumber = " ${invoice.data!.invoiceNo!}";
-      String invoiceDate = "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-      String dueDate = "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-      String productDescription =
-          "${invoice.data!.detail![0].name}";
-      String productRate = "${invoice.data!.detail![0].mrp?.toStringAsFixed(2)}";
+      String invoiceDate =
+          "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
+      String dueDate =
+          "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
+      String productDescription = "${invoice.data!.detail![0].name}";
+      String productRate =
+          "${invoice.data!.detail![0].mrp?.toStringAsFixed(2)}";
       String productQty = "${invoice.data!.detail![0].quantity}";
       String productTotal = "${invoice.data!.total?.toStringAsFixed(2)}";
       String tax = "${invoice.data!.totalTax?.toStringAsFixed(2)}";
       String grandTotal = "${invoice.data!.grandTotal?.toStringAsFixed(2)}";
-      String amountInWords = "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY'";
+      String amountInWords =
+          "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY'";
       String van = " ${invoice.data!.van![0].name}";
       String salesman = "${invoice.data!.user![0].name}";
 
@@ -488,7 +495,9 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom(billtype, 1, 1);
       printer.printNewLine();
       printer.printCustom(
-          "-----------------------------------------------------------------", 1, 0);
+          "-----------------------------------------------------------------",
+          1,
+          0);
       // Print customer details
       printer.printCustom("Customer: $customerName", 1, 0);
       printer.printCustom("Email: $customerEmail", 1, 0);
@@ -502,7 +511,9 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom("Due Date: $dueDate", 1, 2);
       printer.printNewLine();
       printer.printCustom(
-          "-----------------------------------------------------------------", 1, 0);
+          "-----------------------------------------------------------------",
+          1,
+          0);
       // Print product details
       printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
       printer.printCustom(
@@ -510,7 +521,9 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           1,
           0);
       printer.printCustom(
-          "-----------------------------------------------------------------", 1, 0);
+          "-----------------------------------------------------------------",
+          1,
+          0);
       // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
       // printer.printCustom(
       //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
@@ -533,7 +546,6 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
       // Cut the paper
       printer.paperCut();
-
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Printer not connected')),
