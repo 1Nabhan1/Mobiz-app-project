@@ -64,9 +64,9 @@ class AppState {
     storeId = json['store_id'];
     routeId = json['route_id'];
     userType = json['user_type'];
-    userType = json['rol_id'];
+    // userType = json['rol_id'];
     name = json['name'];
-    rolId = json['rolId'];
+    rolId = json['rol_id'];
     email = json['email'];
     appVersion = json['app_version'];
     buildNumber = json['build_number'];
@@ -92,7 +92,7 @@ class AppState {
     data['token'] = token;
     data['user_type'] = userType;
     data['id'] = userId;
-    data['rolId'] = rolId;
+    data['rol_id'] = rolId;
     data['name'] = name;
     data['email'] = email;
     data['store_id'] = storeId;

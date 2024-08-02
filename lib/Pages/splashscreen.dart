@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> {
     appState.buildNumber = json['build_number'];
     appState.userId = json['id'];
     appState.storeId = json['store_id'];
-    appState.routeId = json['rol_id'];
+    appState.rolId = json['rol_id'];
     appState.email = json['email'];
     appState.osType = json['os_type'];
     appState.imageUrl = json['image_url'];
@@ -79,13 +79,6 @@ class _SplashScreenState extends State<SplashScreen> {
       appState.buildNumber = buildNumber;
 
       if (appState.loginState == 'LOGGED_IN') {
-        if (AppState().rolId == 2) {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
-          }
-        } else if (AppState().rolId == 4) {
-          Navigator.of(context).pushReplacementNamed(HomepageDriver.routeName);
-        }
         if (mounted)
           Navigator.of(context)
               .pushReplacementNamed(ErrorHandlingScreen.routeName);

@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (loginResp.user != null && loginResp.authorisation != null) {
           appState.token = loginResp.authorisation!.token;
           appState.storeId = loginResp.user!.storeId;
-          appState.routeId = loginResp.user!.rolId;
+          appState.rolId = loginResp.user!.rolId;
           appState.name = loginResp.user!.name;
           appState.userId = loginResp.user!.id;
           appState.email = loginResp.user!.email;
