@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -10,6 +11,7 @@ import 'package:mobizapp/Models/appstate.dart';
 import 'package:number_to_words/number_to_words.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shimmer/shimmer.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:http/http.dart' as http;
@@ -528,6 +530,22 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
+      // Load image from assets
+      String imagePath = 'Assets/Images/logo.png';
+      try {
+        Uint8List imageData = await rootBundle
+            .load(imagePath)
+            .then((ByteData byteData) => byteData.buffer.asUint8List());
+        if (imageData.isNotEmpty) {
+          printer.printImage('Assets/Images/logo.png');
+        } else {
+          print("");
+        }
+      } catch (e) {
+        print("Failed to fetch image: $e");
+      }
+
+      // Extract company and invoice details
       String companyName = invoice.data!.store![0].name ?? 'N/A';
       String companyAddress = invoice.data!.store![0].address ?? 'N/A';
       String companyTRN = "TRN: ${invoice.data!.store![0].trn ?? 'N/A'}";
@@ -556,68 +574,87 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       String van = invoice.data!.van![0].name ?? 'N/A';
       String salesman = invoice.data!.user![0].name ?? 'N/A';
 
-      String imageUrl =
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
-      try {
-        String imageData = await _getImageData(imageUrl);
-        if (imageData.isNotEmpty) {
-          printer.printImage(imageData);
-        } else {
-          print("");
-        }
-      } catch (e) {
-        print("Failed to fetch image: $e");
-      }
-
       // Print company details
       printer.printNewLine();
-      printer.printCustom(companyName, 3, 1);
-      printer.printCustom(companyAddress, 1, 1);
-      printer.printCustom(companyTRN, 1, 1);
-      printer.printCustom(billtype, 1, 1);
+      printer.printImage('Assets/Images/logo.png');
+      printer.printCustom(companyName, 3, 1); // Centered
+      printer.printCustom(companyAddress, 1, 1); // Centered
+      printer.printCustom(companyTRN, 1, 1); // Centered
+      printer.printCustom(billtype, 1, 1); // Centered
       printer.printNewLine();
 
-      // Print horizontal line (if supported by your printer)
-      printer.printCustom("-" * 42, 1, 0);
+      // Print horizontal line
+      printer.printCustom("-" * 42, 1, 0); // Centered
 
-      // Print customer details in a row-like format
-      printer.printCustom("Customer: $customerName", 1, 0);
-      printer.printCustom("Email: $customerEmail", 1, 0);
-      printer.printCustom("Contact No: $customerContact", 1, 0);
-      printer.printCustom("TRN: $customerTRN", 1, 0);
+      // Print customer details
+      printer.printCustom("Customer: $customerName", 1, 0); // Left aligned
+      printer.printCustom("Email: $customerEmail", 1, 0); // Left aligned
+      printer.printCustom("Contact No: $customerContact", 1, 0); // Left aligned
+      printer.printCustom("TRN: $customerTRN", 1, 0); // Left aligned
       printer.printNewLine();
 
-      // Print invoice details in a row-like format
-      printer.printCustom("Invoice No: $invoiceNumber", 1, 0);
-      printer.printCustom("Date: $invoiceDate", 1, 0);
-      printer.printCustom("Due Date: $dueDate", 1, 0);
+      // Print invoice details
+      printer.printCustom("Invoice No: $invoiceNumber", 1, 0); // Left aligned
+      printer.printCustom("Date: $invoiceDate", 1, 0); // Left aligned
+      printer.printCustom("Due Date: $dueDate", 1, 0); // Left aligned
       printer.printNewLine();
 
-      // Print horizontal line (if supported by your printer)
-      printer.printCustom("-" * 42, 1, 0);
+      // Print horizontal line
+      printer.printCustom("-" * 42, 1, 0); // Centered
 
-      // Print product details as a table
-      printer.printCustom("S.No  Product  Unit  Rate  Qty  Tax  Amount", 1, 0);
-      printer.printCustom(
-          "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
-          1,
-          0);
+      // Define column widths for table
+      const int columnWidth1 = 6; // Width for serial number
+      const int columnWidth2 = 18; // Width for product description
+      const int columnWidth3 = 5; // Width for unit
+      const int columnWidth4 = 6; // Width for rate
+      const int columnWidth5 = 4; // Width for quantity
+      const int columnWidth6 = 5; // Width for tax
+      const int columnWidth7 = 8; // Width for amount
 
-      printer.printCustom("-" * 42, 1, 0); // Another horizontal line
+      // Print table headers
+      String headers =
+          "S.No  ${'Product'.padRight(columnWidth2)}Unit  Rate  Qty  Tax  Amount";
+      printer.printCustom(headers, 1, 0); // Left aligned
+
+      // Function to print product lines
+      void printProductLine(String description, int serialNo) {
+        const int maxDescriptionLength = columnWidth2;
+        final List<String> lines = [];
+
+        // Split description if it exceeds the maximum length
+        while (description.length > maxDescriptionLength) {
+          lines.add(description.substring(0, maxDescriptionLength));
+          description = description.substring(maxDescriptionLength);
+        }
+        lines.add(description); // Add remaining part
+
+        for (int i = 0; i < lines.length; i++) {
+          String line =
+              "${serialNo.toString().padLeft(columnWidth1)} ${lines[i].padRight(columnWidth2)} PCS ${productRate.padLeft(columnWidth4)} ${productQty.padLeft(columnWidth5)} ${tax.padLeft(columnWidth6)} ${productTotal.padLeft(columnWidth7)}";
+          printer.printCustom(line, 1, 0); // Left aligned
+          serialNo++; // Increment serial number
+        }
+      }
+
+      // Print product details
+      printProductLine(productDescription, 1);
+
+      printer.printCustom("-" * 42, 1, 0); // Centered
 
       // Print totals
-      printer.printCustom("Total: $productTotal", 1, 2);
-      printer.printCustom("Tax: $tax", 1, 2);
-      printer.printCustom("Grand Total: $grandTotal", 1, 2);
+      printer.printCustom("Total: $productTotal", 1, 2); // Right aligned
+      printer.printCustom("Tax: $tax", 1, 2); // Right aligned
+      printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();
 
       // Print amount in words
-      printer.printCustom("Amount in Words: $amountInWords", 1, 0);
+      printer.printCustom(
+          "Amount in Words: $amountInWords", 1, 0); // Left aligned
       printer.printNewLine();
 
       // Print van and salesman details
-      printer.printCustom("Van: $van", 1, 0);
-      printer.printCustom("Salesman: $salesman", 1, 0);
+      printer.printCustom("Van: $van", 1, 0); // Left aligned
+      printer.printCustom("Salesman: $salesman", 1, 0); // Left aligned
       printer.printNewLine();
 
       // Cut the paper
