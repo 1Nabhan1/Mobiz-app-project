@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
-import 'package:mobizapp/Pages/CustomeSOA.dart';
+// import 'package:mobizapp/Pages/CustomeSOA.dart';
 import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/customerorderdetail.dart';
 import 'package:mobizapp/Pages/customerregistration.dart';
@@ -67,7 +67,7 @@ class _DriverPageState extends State<DriverPage> {
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       name = params!['name'];
       address = params['address'];
       phone = params!['phone'];
@@ -120,7 +120,7 @@ class _DriverPageState extends State<DriverPage> {
                         image: const NetworkImage(
                             'https://www.vecteezy.com/vector-art/5337799-icon-image-not-found-vector'),
                         placeholder:
-                        const AssetImage('Assets/Images/no_image.jpg'),
+                            const AssetImage('Assets/Images/no_image.jpg'),
                         imageErrorBuilder: (context, error, stackTrace) {
                           return Image.asset('Assets/Images/no_image.jpg',
                               fit: BoxFit.fitWidth);
@@ -251,13 +251,15 @@ class _DriverPageState extends State<DriverPage> {
                 ],
               ),
               CommonWidgets.verticalSpace(2),
-
-                GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, DriverDetails.routeName,);
-                    },
-                    child: _iconButtons(
-                        icon: Icons.drive_eta_outlined, title: 'Driver Details'))
+              GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      DriverDetails.routeName,
+                    );
+                  },
+                  child: _iconButtons(
+                      icon: Icons.drive_eta_outlined, title: 'Driver Details'))
             ],
           ),
         ),

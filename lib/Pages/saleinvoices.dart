@@ -530,19 +530,16 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
-      // Load image from assets
+      // Load image from assets and convert to Base64
       String imagePath = 'Assets/Images/logo.png';
+      String? base64Image;
       try {
-        Uint8List imageData = await rootBundle
-            .load(imagePath)
-            .then((ByteData byteData) => byteData.buffer.asUint8List());
-        if (imageData.isNotEmpty) {
-          printer.printImage('Assets/Images/logo.png');
-        } else {
-          print("");
-        }
+        ByteData byteData = await rootBundle.load(imagePath);
+        Uint8List imageData = byteData.buffer.asUint8List();
+        base64Image = base64Encode(imageData);
       } catch (e) {
         print("Failed to fetch image: $e");
+        base64Image = null;
       }
 
       // Extract company and invoice details
@@ -550,8 +547,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       String companyAddress = invoice.data!.store![0].address ?? 'N/A';
       String companyTRN = "TRN: ${invoice.data!.store![0].trn ?? 'N/A'}";
       String billtype = "Tax Invoice";
-      String customerName =
-          "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
+      String customerName = "${invoice.data!.customer![0].name}";
       String customerEmail = invoice.data!.customer![0].email ?? 'N/A';
       String customerContact =
           invoice.data!.customer![0].contactNumber ?? 'N/A';
@@ -584,7 +580,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printNewLine();
 
       // Print horizontal line
-      printer.printCustom("-" * 42, 1, 0); // Centered
+      printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print customer details
       printer.printCustom("Customer: $customerName", 1, 0); // Left aligned
@@ -594,27 +590,27 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printNewLine();
 
       // Print invoice details
-      printer.printCustom("Invoice No: $invoiceNumber", 1, 0); // Left aligned
-      printer.printCustom("Date: $invoiceDate", 1, 0); // Left aligned
-      printer.printCustom("Due Date: $dueDate", 1, 0); // Left aligned
+      printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
+      printer.printCustom("Date: $invoiceDate", 1, 2);
+      printer.printCustom("Due Date: $dueDate", 1, 2);
       printer.printNewLine();
 
       // Print horizontal line
-      printer.printCustom("-" * 42, 1, 0); // Centered
+      printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Define column widths for table
       const int columnWidth1 = 6; // Width for serial number
-      const int columnWidth2 = 18; // Width for product description
+      const int columnWidth2 = 25; // Width for product description
       const int columnWidth3 = 5; // Width for unit
       const int columnWidth4 = 6; // Width for rate
       const int columnWidth5 = 4; // Width for quantity
-      const int columnWidth6 = 5; // Width for tax
-      const int columnWidth7 = 8; // Width for amount
+      const int columnWidth6 = 10; // Width for tax
+      const int columnWidth7 = 10; // Width for amount
 
       // Print table headers
       String headers =
-          "S.No  ${'Product'.padRight(columnWidth2)}Unit  Rate  Qty  Tax  Amount";
-      printer.printCustom(headers, 1, 0); // Left aligned
+          "${'S.No'.padLeft(columnWidth1)}  ${'Product'.padRight(columnWidth2)}${'Unit'.padLeft(columnWidth3)} ${'Rate'.padLeft(columnWidth4)} ${'Qty'.padLeft(columnWidth5)}  ${'Tax'.padLeft(columnWidth5)} ${'Amount'.padLeft(columnWidth5)}";
+      printer.printCustom(headers, 1, 1); // Left aligned
 
       // Function to print product lines
       void printProductLine(String description, int serialNo) {
@@ -630,8 +626,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
         for (int i = 0; i < lines.length; i++) {
           String line =
-              "${serialNo.toString().padLeft(columnWidth1)} ${lines[i].padRight(columnWidth2)} PCS ${productRate.padLeft(columnWidth4)} ${productQty.padLeft(columnWidth5)} ${tax.padLeft(columnWidth6)} ${productTotal.padLeft(columnWidth7)}";
-          printer.printCustom(line, 1, 0); // Left aligned
+              "${serialNo.toString().padLeft(columnWidth1)} ${lines[i].padRight(columnWidth2)} ${'PCS'.padLeft(columnWidth3)} ${productRate.padLeft(columnWidth4)} ${productQty.padLeft(columnWidth5)} ${tax.padLeft(columnWidth6)} ${productTotal.padLeft(columnWidth7)}";
+          printer.printCustom(line, 1, 1); // Left aligned
           serialNo++; // Increment serial number
         }
       }
@@ -639,7 +635,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       // Print product details
       printProductLine(productDescription, 1);
 
-      printer.printCustom("-" * 42, 1, 0); // Centered
+      printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print totals
       printer.printCustom("Total: $productTotal", 1, 2); // Right aligned

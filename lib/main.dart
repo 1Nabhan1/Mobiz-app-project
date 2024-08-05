@@ -115,11 +115,11 @@ class MyApp extends StatelessWidget {
           SelectProductsScreenoff.routeName: (context) =>
               SelectProductsScreenoff(),
           Vanselectproducts.routeName: (context) => Vanselectproducts(),
-          VanTransferSend.routeName: (context) =>  VanTransferSend(),
-          VanStockReceive.routeName: (context) =>  VanStockReceive(),
-          ScheduleDriver.routeName: (context) =>  ScheduleDriver(),
-          DriverPage.routeName: (context) =>  DriverPage(),
-          DriverDetails.routeName: (context) =>  DriverDetails(),
+          VanTransferSend.routeName: (context) => VanTransferSend(),
+          VanStockReceive.routeName: (context) => VanStockReceive(),
+          ScheduleDriver.routeName: (context) => ScheduleDriver(),
+          DriverPage.routeName: (context) => DriverPage(),
+          DriverDetails.routeName: (context) => DriverDetails(),
         });
   }
 }

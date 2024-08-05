@@ -1,10 +1,16 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:signature/signature.dart';
-
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:signature/signature.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/DriverDetailsModel.dart';
 import '../Utilities/rest_ds.dart';
@@ -20,6 +26,8 @@ class DriverDetails extends StatefulWidget {
   State<DriverDetails> createState() => _DriverDetailsState();
 }
 
+int? id;
+
 class _DriverDetailsState extends State<DriverDetails> {
   late Future<ApiResponse> _futureData;
 
@@ -28,7 +36,6 @@ class _DriverDetailsState extends State<DriverDetails> {
     penColor: Colors.black,
     exportBackgroundColor: Colors.white,
   );
-  int? id;
 
   @override
   void initState() {
@@ -60,7 +67,7 @@ class _DriverDetailsState extends State<DriverDetails> {
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['id'];
     }
 
@@ -86,6 +93,70 @@ class _DriverDetailsState extends State<DriverDetails> {
             return Center(child: Text('No data available'));
           } else {
             final List<Data> data = snapshot.data!.data;
+            void postDataToApi() async {
+
+              ui.Image? signatureImage = await _signatureController.toImage();
+
+              // Convert ui.Image to ByteData
+              ByteData? byteData = await signatureImage?.toByteData(
+                  format: ui.ImageByteFormat.png);
+
+              // Convert ByteData to Uint8List
+              Uint8List imageData = byteData!.buffer.asUint8List();
+
+              // Encode the image to base64
+              String base64Image = base64Encode(imageData);
+              print(base64Image);
+              var url = Uri.parse(
+                  '${RestDatasource().BASE_URL}/api/customer-delivery.store');
+              var requestData = {
+                'customer_id': id,
+                'store_id': '${AppState().storeId}',
+                'user_id': '${AppState().userId}',
+                'invoice_no': data[0].invoiceNo ?? '',
+                'goods_out_id': data[0].detail[0].goodsOutId,
+                'received_by': _nameController.text,
+                'signature': base64Image,
+              };
+              var body = json.encode(requestData);
+
+              var response = await http.post(
+                url,
+                headers: <String, String>{
+                  'Content-Type': 'application/json; charset=UTF-8',
+                },
+                body: body,
+              );
+
+              if (response.statusCode == 200) {
+                print(base64Image);
+                print('Post successful');
+                if (mounted) {
+                  await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Alert"),
+                        content: Text("Created Successfully"),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacementNamed(
+                                  HomepageDriver.routeName);
+                            },
+                            child: Text("OK"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+                print(response.body);
+              } else {
+                print('Post failed with status: ${response.statusCode}');
+                print(response.body);
+              }
+            }
 
             return SingleChildScrollView(
               child: Column(
@@ -107,46 +178,6 @@ class _DriverDetailsState extends State<DriverDetails> {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final item = data[index];
-
-                      void postDataToApi() async {
-                        var url = Uri.parse(
-                            '${RestDatasource().BASE_URL}/api/customer-delivery.store');
-                        var requestData = {
-                          'customer_id': id,
-                          'store_id': '${AppState().storeId}',
-                          'user_id': '${AppState().userId}',
-                          'invoice_no': item.invoiceNo ?? '',
-                          'goods_out_id': item.detail[0].goodsOutId,
-                          'received_by': _nameController.text,
-                          'signature': '',
-                        };
-                        var body = json.encode(requestData);
-
-                        var response = await http.post(
-                          url,
-                          headers: <String, String>{
-                            'Content-Type': 'application/json; charset=UTF-8',
-                          },
-                          body: body,
-                        );
-
-                        if (response.statusCode == 200) {
-                          print('Post successful');
-                          if (mounted) {
-                            CommonWidgets.showDialogueBox(
-                                context: context,
-                                title: "Alert",
-                                msg: "Created Successfully");
-                            Navigator.of(context)
-                                .pushReplacementNamed(HomepageDriver.routeName);
-                          }
-                          print(response.body);
-                        } else {
-                          print(
-                              'Post failed with status: ${response.statusCode}');
-                          print(response.body);
-                        }
-                      }
 
                       return Card(
                         elevation: 3,
@@ -228,7 +259,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                                           borderSide: BorderSide()),
                                       isDense: true,
                                       contentPadding:
-                                      EdgeInsets.symmetric(vertical: 10)),
+                                          EdgeInsets.symmetric(vertical: 10)),
                                   style: TextStyle(fontSize: 14),
                                 ),
                               ),
@@ -245,9 +276,9 @@ class _DriverDetailsState extends State<DriverDetails> {
                               children: [
                                 Container(
                                   width:
-                                  MediaQuery.of(context).size.width * .64,
+                                      MediaQuery.of(context).size.width * .64,
                                   height:
-                                  MediaQuery.of(context).size.height * .17,
+                                      MediaQuery.of(context).size.height * .17,
                                   decoration: BoxDecoration(
                                     border: Border.all(),
                                   ),
@@ -270,8 +301,10 @@ class _DriverDetailsState extends State<DriverDetails> {
                                     onPressed: () {
                                       _signatureController.clear();
                                     },
-                                    child: Icon(Icons.refresh,color: Colors.white,)
-                                ),
+                                    child: Icon(
+                                      Icons.refresh,
+                                      color: Colors.white,
+                                    )),
                               ],
                             ),
                           ],
@@ -279,35 +312,36 @@ class _DriverDetailsState extends State<DriverDetails> {
                       ],
                     ),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              WidgetStateProperty.all(AppConfig.colorPrimary),
+                          fixedSize: WidgetStatePropertyAll(Size(150, 20)),
+                          shape: WidgetStateProperty.all(RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          )),
+                        ),
+                        onPressed: () async {
+                          // if (_signatureController.isNotEmpty) {
+                          //   final signature = await _signatureController.toPngBytes();
+                          // }
+                          postDataToApi();
+                        },
+                        child: Text(
+                          'SAVE',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );
           }
         },
-      ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(AppConfig.colorPrimary),
-              fixedSize: WidgetStatePropertyAll(Size(150, 20)),
-              shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero,
-              )),
-            ),
-            onPressed: () async {
-              // if (_signatureController.isNotEmpty) {
-              //   final signature = await _signatureController.toPngBytes();
-              // }
-              // postDataToApi();
-            },
-            child: Text(
-              'SAVE',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
       ),
     );
   }
