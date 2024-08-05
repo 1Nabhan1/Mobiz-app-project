@@ -1,18 +1,18 @@
 import 'dart:convert';
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
-import 'package:mobizapp/Models/appstate.dart';
-import 'package:signature/signature.dart';
-import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
+import 'package:shimmer/shimmer.dart';
 import 'package:signature/signature.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
+
 import '../Components/commonwidgets.dart';
 import '../Models/DriverDetailsModel.dart';
+import '../Models/appstate.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
@@ -27,6 +27,9 @@ class DriverDetails extends StatefulWidget {
 }
 
 int? id;
+String? name;
+String? address;
+String? code;
 
 class _DriverDetailsState extends State<DriverDetails> {
   late Future<ApiResponse> _futureData;
@@ -63,12 +66,40 @@ class _DriverDetailsState extends State<DriverDetails> {
 
   final TextEditingController _nameController = TextEditingController();
 
+  Future<File> _convertUiImageToFile(ui.Image signatureImage) async {
+    // Convert ui.Image to ByteData
+    ByteData? byteData =
+        await signatureImage.toByteData(format: ui.ImageByteFormat.png);
+
+    // Check if byteData is null
+    if (byteData == null) {
+      throw Exception("Failed to convert signature to image");
+    }
+
+    // Convert ByteData to Uint8List
+    Uint8List imageData = byteData.buffer.asUint8List();
+
+    // Get temporary directory
+    final directory = await getTemporaryDirectory();
+
+    // Create a file in the temporary directory
+    final file = File('${directory.path}/signature.png');
+
+    // Write the image data to the file
+    await file.writeAsBytes(imageData);
+
+    return file;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['id'];
+      name = params['name'];
+      address = params['address'];
+      code = params['code'];
     }
 
     return Scaffold(
@@ -85,7 +116,34 @@ class _DriverDetailsState extends State<DriverDetails> {
         future: _futureData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Shimmer.fromColors(
+              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+              highlightColor: AppConfig.backButtonColor,
+              child: Center(
+                child: Column(
+                  children: [
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                  ],
+                ),
+              ),
+            );
           } else if (snapshot.hasError) {
             print('Error: ${snapshot.error}');
             return Center(child: Text('Failed to load data'));
@@ -94,43 +152,47 @@ class _DriverDetailsState extends State<DriverDetails> {
           } else {
             final List<Data> data = snapshot.data!.data;
             void postDataToApi() async {
-
               ui.Image? signatureImage = await _signatureController.toImage();
 
-              // Convert ui.Image to ByteData
-              ByteData? byteData = await signatureImage?.toByteData(
-                  format: ui.ImageByteFormat.png);
+              if (signatureImage == null) {
+                print("Failed to capture signature image");
+                return;
+              }
 
-              // Convert ByteData to Uint8List
-              Uint8List imageData = byteData!.buffer.asUint8List();
+              File signatureFile;
+              try {
+                signatureFile = await _convertUiImageToFile(signatureImage);
+              } catch (e) {
+                print(e.toString());
+                return;
+              }
 
-              // Encode the image to base64
-              String base64Image = base64Encode(imageData);
-              print(base64Image);
               var url = Uri.parse(
                   '${RestDatasource().BASE_URL}/api/customer-delivery.store');
-              var requestData = {
-                'customer_id': id,
-                'store_id': '${AppState().storeId}',
-                'user_id': '${AppState().userId}',
-                'invoice_no': data[0].invoiceNo ?? '',
-                'goods_out_id': data[0].detail[0].goodsOutId,
-                'received_by': _nameController.text,
-                'signature': base64Image,
-              };
-              var body = json.encode(requestData);
 
-              var response = await http.post(
-                url,
-                headers: <String, String>{
-                  'Content-Type': 'application/json; charset=UTF-8',
-                },
-                body: body,
+              var request = http.MultipartRequest('POST', url);
+
+              request.fields['customer_id'] = id.toString();
+              request.fields['store_id'] = '${AppState().storeId}';
+              request.fields['user_id'] = '${AppState().userId}';
+              request.fields['invoice_no'] = '${data[0].invoiceNo ?? ''}';
+              request.fields['goods_out_id'] =
+                  '${data[0].detail[0].goodsOutId}';
+              request.fields['received_by'] = _nameController.text;
+
+              request.files.add(
+                await http.MultipartFile.fromPath(
+                  'signature',
+                  signatureFile.path,
+                  contentType: MediaType('image', 'png'),
+                ),
               );
 
+              var response = await request.send();
+
               if (response.statusCode == 200) {
-                print(base64Image);
                 print('Post successful');
+                // print(response.request);
                 if (mounted) {
                   await showDialog(
                     context: context,
@@ -151,10 +213,10 @@ class _DriverDetailsState extends State<DriverDetails> {
                     },
                   );
                 }
-                print(response.body);
+                print(await response.stream.bytesToString());
               } else {
                 print('Post failed with status: ${response.statusCode}');
-                print(response.body);
+                print(await response.stream.bytesToString());
               }
             }
 
@@ -165,7 +227,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      '${data[0].customer[0].name} | ${data[0].customer[0].code} | ${data[0].customer[0].address}',
+                      '$name | $code | $address',
                       style: TextStyle(
                         fontSize: 15,
                       ),
@@ -275,36 +337,31 @@ class _DriverDetailsState extends State<DriverDetails> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * .64,
-                                  height:
-                                      MediaQuery.of(context).size.height * .17,
                                   decoration: BoxDecoration(
                                     border: Border.all(),
                                   ),
                                   child: Signature(
+                                    width:
+                                        MediaQuery.of(context).size.width * .64,
+                                    height: MediaQuery.of(context).size.height *
+                                        .17,
                                     controller: _signatureController,
                                     backgroundColor: AppConfig.backgroundColor,
                                   ),
                                 ),
                                 ElevatedButton(
-                                    style: ButtonStyle(
-                                      // fixedSize: WidgetStatePropertyAll(Size(70,0)),
-                                      backgroundColor: WidgetStateProperty.all(
-                                          AppConfig.colorPrimary),
-                                      // shape: WidgetStateProperty.all(
-                                      //     RoundedRectangleBorder(
-                                      //   borderRadius: BorderRadius.zero,
-                                      // ),
-                                      // ),
-                                    ),
-                                    onPressed: () {
-                                      _signatureController.clear();
-                                    },
-                                    child: Icon(
-                                      Icons.refresh,
-                                      color: Colors.white,
-                                    )),
+                                  style: ButtonStyle(
+                                    backgroundColor: WidgetStateProperty.all(
+                                        AppConfig.colorPrimary),
+                                  ),
+                                  onPressed: () {
+                                    _signatureController.clear();
+                                  },
+                                  child: Icon(
+                                    Icons.refresh,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -312,6 +369,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                       ],
                     ),
                   ),
+                  // SizedBox(height: 20.h,),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -319,15 +377,14 @@ class _DriverDetailsState extends State<DriverDetails> {
                         style: ButtonStyle(
                           backgroundColor:
                               WidgetStateProperty.all(AppConfig.colorPrimary),
-                          fixedSize: WidgetStatePropertyAll(Size(150, 20)),
-                          shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                          )),
+                          fixedSize: WidgetStateProperty.all(Size(150, 20)),
+                          shape: WidgetStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
+                            ),
+                          ),
                         ),
                         onPressed: () async {
-                          // if (_signatureController.isNotEmpty) {
-                          //   final signature = await _signatureController.toPngBytes();
-                          // }
                           postDataToApi();
                         },
                         child: Text(

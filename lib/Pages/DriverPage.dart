@@ -253,10 +253,12 @@ class _DriverPageState extends State<DriverPage> {
               CommonWidgets.verticalSpace(2),
               GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      DriverDetails.routeName,
-                    );
+                    Navigator.pushNamed(context, DriverDetails.routeName,
+                        arguments: {
+                          'name': name,
+                          'address': address,
+                          'code': code,
+                        });
                   },
                   child: _iconButtons(
                       icon: Icons.drive_eta_outlined, title: 'Driver Details'))
