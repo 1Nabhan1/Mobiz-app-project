@@ -41,23 +41,27 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItems = prefs.getStringList('cartItems') ?? [];
 
-    bool alreadyExists = cartItems.any((item) {
-      Map<String, dynamic> itemMap = jsonDecode(item);
-      return itemMap['id'] == product.id;
-    });
+    for (var unit in product.units) {
+      bool alreadyExists = cartItems.any((item) {
+        Map<String, dynamic> itemMap = jsonDecode(item);
+        return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
+      });
 
-    if (!alreadyExists) {
-      cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItems', cartItems);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} added')),
-      );
-    } else {
-      cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItems', cartItems);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} added')),
-      );
+      if (!alreadyExists) {
+        var productUnitMap = product.toJson();
+        productUnitMap['unitId'] = unit.id; // Add unit id to the product map
+        cartItems.add(jsonEncode(productUnitMap));
+        await prefs.setStringList('cartItems', cartItems);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${product.name} (${unit.name}) added')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '${product.name} (${unit.name}) is already in the cart')),
+        );
+      }
     }
   }
 

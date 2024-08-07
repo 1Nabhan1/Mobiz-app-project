@@ -37,29 +37,56 @@ class _SalesSelectProductsorderScreenState
   String? name;
   String? code;
   String? payment;
+  // void addToCart(Product product) async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   List<String>? cartItems = prefs.getStringList('cartItemsorder') ?? [];
+  //
+  //   // Check if the product is already in cartItems based on product ID or any unique identifier
+  //   bool alreadyExists = cartItems.any((item) {
+  //     Map<String, dynamic> itemMap = jsonDecode(item);
+  //     return itemMap['id'] ==
+  //         product.id; // Adjust 'id' to your product identifier
+  //   });
+  //
+  //   if (!alreadyExists) {
+  //     cartItems.add(jsonEncode(product.toJson()));
+  //     await prefs.setStringList('cartItemsorder', cartItems);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('${product.name} added')),
+  //     );
+  //   } else {
+  //     cartItems.add(jsonEncode(product.toJson()));
+  //     await prefs.setStringList('cartItemsorder', cartItems);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('${product.name} added')),
+  //     );
+  //   }
+  // }
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItems = prefs.getStringList('cartItemsorder') ?? [];
 
-    // Check if the product is already in cartItems based on product ID or any unique identifier
-    bool alreadyExists = cartItems.any((item) {
-      Map<String, dynamic> itemMap = jsonDecode(item);
-      return itemMap['id'] ==
-          product.id; // Adjust 'id' to your product identifier
-    });
+    for (var unit in product.units) {
+      bool alreadyExists = cartItems.any((item) {
+        Map<String, dynamic> itemMap = jsonDecode(item);
+        return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
+      });
 
-    if (!alreadyExists) {
-      cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItemsorder', cartItems);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} added')),
-      );
-    } else {
-      cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItemsorder', cartItems);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} added')),
-      );
+      if (!alreadyExists) {
+        var productUnitMap = product.toJson();
+        productUnitMap['unitId'] = unit.id; // Add unit id to the product map
+        cartItems.add(jsonEncode(productUnitMap));
+        await prefs.setStringList('cartItemsorder', cartItems);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${product.name} (${unit.name}) added')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '${product.name} (${unit.name}) is already in the cart')),
+        );
+      }
     }
   }
 
@@ -110,8 +137,8 @@ class _SalesSelectProductsorderScreenState
       } else {
         _filteredProducts = _products
             .where((product) =>
-        product.name!.toLowerCase().contains(query.toLowerCase()) ||
-            product.code!.toLowerCase().contains(query.toLowerCase()))
+                product.name!.toLowerCase().contains(query.toLowerCase()) ||
+                product.code!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });

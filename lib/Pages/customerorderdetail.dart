@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
@@ -596,6 +597,20 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                           amounts[index] ?? cartItems[index].price.toString();
                       double ttlamount =
                           double.parse(quantity) * double.parse(rate);
+                      bool isUnitNameDuplicated(String unitName) {
+                        // Get the product ID of the current item
+                        var currentProductId = cartItems[index].id;
+
+                        // Check for duplicates only within the same product ID
+                        for (var item in cartItems) {
+                          if (item.id == currentProductId &&
+                              item != cartItems[index] &&
+                              item.selectedUnitName == unitName) {
+                            return true;
+                          }
+                        }
+                        return false;
+                      }
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12.0, vertical: 2),
@@ -686,14 +701,14 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                 Row(
                                   children: [
                                     SizedBox(
-                                      width: 45,
-                                      height: 20,
+                                      width: 45.w,
+                                      height: 20.h,
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<ProductType>(
                                           alignment: Alignment.center,
                                           isExpanded: true,
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10.sp,
                                             color: AppConfig.colorPrimary,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -746,15 +761,20 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                           items: unitNames
                                               .map<DropdownMenuItem<String>>(
                                                   (String value) {
+                                                    bool isDuplicated =
+                                                    isUnitNameDuplicated(value);
                                             return DropdownMenuItem<String>(
                                               value: value,
                                               child: Center(
                                                 child: Text(
                                                   value,
                                                   style: TextStyle(
-                                                    fontSize: 12,
+                                                    fontSize: 10.sp,
                                                     color:
-                                                        AppConfig.colorPrimary,
+                                                    isDuplicated
+                                                        ? Colors.red
+                                                        : AppConfig
+                                                        .colorPrimary,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),

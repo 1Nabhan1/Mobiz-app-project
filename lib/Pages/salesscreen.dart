@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/salesselectproducts.dart';
@@ -533,6 +534,20 @@ class _SalesScreenState extends State<SalesScreen> {
                       if (unitNames.isEmpty) {
                         return SizedBox.shrink();
                       }
+                      bool isUnitNameDuplicated(String unitName) {
+                        // Get the product ID of the current item
+                        var currentProductId = cartItems[index].id;
+
+                        // Check for duplicates only within the same product ID
+                        for (var item in cartItems) {
+                          if (item.id == currentProductId &&
+                              item != cartItems[index] &&
+                              item.selectedUnitName == unitName) {
+                            return true;
+                          }
+                        }
+                        return false;
+                      }
 
                       // Ensure each item has its own selected unit name state
                       String? selectedUnitName =
@@ -632,14 +647,14 @@ class _SalesScreenState extends State<SalesScreen> {
                                 Row(
                                   children: [
                                     SizedBox(
-                                      width: 45,
-                                      height: 20,
+                                      width: 45.w,
+                                      height: 20.h,
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButton<ProductType>(
                                           alignment: Alignment.center,
                                           isExpanded: true,
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10.sp,
                                             color: AppConfig.colorPrimary,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -692,15 +707,19 @@ class _SalesScreenState extends State<SalesScreen> {
                                           items: unitNames
                                               .map<DropdownMenuItem<String>>(
                                                   (String value) {
+                                            bool isDuplicated =
+                                                isUnitNameDuplicated(value);
                                             return DropdownMenuItem<String>(
                                               value: value,
                                               child: Center(
                                                 child: Text(
                                                   value,
                                                   style: TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppConfig.colorPrimary,
+                                                    fontSize: 10.sp,
+                                                    color: isDuplicated
+                                                        ? Colors.red
+                                                        : AppConfig
+                                                            .colorPrimary,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),

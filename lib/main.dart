@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
 import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
@@ -56,70 +57,76 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
-        // home: SignaturePage(),
-        initialRoute: SplashScreen.routeName,
-        routes: {
-          // '/': (context) => Home(),
-          LoginScreen.routeName: (context) => const LoginScreen(),
-          TotalSales.routeName: (context) => const TotalSales(),
-          HomeScreen.routeName: (context) => const HomeScreen(),
-          HomepageDriver.routeName: (context) => const HomepageDriver(),
-          ProductsScreen.routeName: (context) => ProductsScreen(),
-          ErrorHandlingScreen.routeName: (context) =>
-              const ErrorHandlingScreen(),
-          VanStockRequestsScreen.routeName: (context) =>
-              const VanStockRequestsScreen(),
-          VanStocks.routeName: (context) => VanStocks(),
-          SplashScreen.routeName: (context) => const SplashScreen(),
-          SelectProductsScreen.routeName: (context) => SelectProductsScreen(),
-          CustomersDataScreen.routeName: (context) =>
-              const CustomersDataScreen(),
-          SalesScreen.routeName: (context) => SalesScreen(),
-          VanStockScreen.routeName: (context) => const VanStockScreen(),
-          SchedulePage.routeName: (context) => const SchedulePage(),
-          CustomerDetailsScreen.routeName: (context) =>
-              const CustomerDetailsScreen(),
-          SalesSelectProductsScreen.routeName: (context) =>
-              SalesSelectProductsScreen(),
-          SaleInvoiceScrreen.routeName: (context) => const SaleInvoiceScrreen(),
-          DaycloseReport.routeName: (context) => const DaycloseReport(),
-          SalesSelectProductsorderScreen.routeName: (context) =>
-              SalesSelectProductsorderScreen(),
-          Salesselectproductreturn.routeName: (context) =>
-              Salesselectproductreturn(),
-          PaymentCollectionScreen.routeName: (context) =>
-              PaymentCollectionScreen(),
-          CustomerRegistration.routeName: (context) =>
-              const CustomerRegistration(),
-          ReceiptScreen.receiptScreen: (context) => const ReceiptScreen(),
-          HomeorderScreen.routeName: (context) => HomeorderScreen(),
-          VanTransfer.routeName: (context) => VanTransfer(),
-          HomereturnScreen.routeName: (context) => HomereturnScreen(),
-          Customerorderdetail.routeName: (context) => Customerorderdetail(),
-          Customerreturndetail.routeName: (context) => Customerreturndetail(),
-          Visitspage.routeName: (context) => Visitspage(),
-          Expensespage.routeName: (context) => Expensespage(),
-          Dayclose.routeName: (context) => Dayclose(),
-          Attendance.routeName: (context) => Attendance(),
-          SOA.routeName: (context) => SOA(),
-          CustomerVisit.routeName: (context) => CustomerVisit(),
-          ExpenseAdd.routeName: (context) => ExpenseAdd(),
-          OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
-          VanStocksoff.routeName: (context) => VanStocksoff(),
-          SelectProductsScreenoff.routeName: (context) =>
-              SelectProductsScreenoff(),
-          Vanselectproducts.routeName: (context) => Vanselectproducts(),
-          VanTransferSend.routeName: (context) => VanTransferSend(),
-          VanStockReceive.routeName: (context) => VanStockReceive(),
-          ScheduleDriver.routeName: (context) => ScheduleDriver(),
-          DriverPage.routeName: (context) => DriverPage(),
-          DriverDetails.routeName: (context) => DriverDetails(),
-        });
+    return ScreenUtilInit(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
+          ),
+          // home: SignaturePage(),
+          initialRoute: SplashScreen.routeName,
+          routes: {
+            // '/': (context) => Home(),
+            LoginScreen.routeName: (context) => const LoginScreen(),
+            TotalSales.routeName: (context) => const TotalSales(),
+            HomeScreen.routeName: (context) => const HomeScreen(),
+            HomepageDriver.routeName: (context) => const HomepageDriver(),
+            ProductsScreen.routeName: (context) => ProductsScreen(),
+            ErrorHandlingScreen.routeName: (context) =>
+                const ErrorHandlingScreen(),
+            VanStockRequestsScreen.routeName: (context) =>
+                const VanStockRequestsScreen(),
+            VanStocks.routeName: (context) => VanStocks(),
+            SplashScreen.routeName: (context) => const SplashScreen(),
+            SelectProductsScreen.routeName: (context) => SelectProductsScreen(),
+            CustomersDataScreen.routeName: (context) =>
+                const CustomersDataScreen(),
+            SalesScreen.routeName: (context) => SalesScreen(),
+            VanStockScreen.routeName: (context) => const VanStockScreen(),
+            SchedulePage.routeName: (context) => const SchedulePage(),
+            CustomerDetailsScreen.routeName: (context) =>
+                const CustomerDetailsScreen(),
+            SalesSelectProductsScreen.routeName: (context) =>
+                SalesSelectProductsScreen(),
+            SaleInvoiceScrreen.routeName: (context) =>
+                const SaleInvoiceScrreen(),
+            DaycloseReport.routeName: (context) => const DaycloseReport(),
+            SalesSelectProductsorderScreen.routeName: (context) =>
+                SalesSelectProductsorderScreen(),
+            Salesselectproductreturn.routeName: (context) =>
+                Salesselectproductreturn(),
+            PaymentCollectionScreen.routeName: (context) =>
+                PaymentCollectionScreen(),
+            CustomerRegistration.routeName: (context) =>
+                const CustomerRegistration(),
+            ReceiptScreen.receiptScreen: (context) => const ReceiptScreen(),
+            HomeorderScreen.routeName: (context) => HomeorderScreen(),
+            VanTransfer.routeName: (context) => VanTransfer(),
+            HomereturnScreen.routeName: (context) => HomereturnScreen(),
+            Customerorderdetail.routeName: (context) => Customerorderdetail(),
+            Customerreturndetail.routeName: (context) => Customerreturndetail(),
+            Visitspage.routeName: (context) => Visitspage(),
+            Expensespage.routeName: (context) => Expensespage(),
+            Dayclose.routeName: (context) => Dayclose(),
+            Attendance.routeName: (context) => Attendance(),
+            SOA.routeName: (context) => SOA(),
+            CustomerVisit.routeName: (context) => CustomerVisit(),
+            ExpenseAdd.routeName: (context) => ExpenseAdd(),
+            OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
+            VanStocksoff.routeName: (context) => VanStocksoff(),
+            SelectProductsScreenoff.routeName: (context) =>
+                SelectProductsScreenoff(),
+            Vanselectproducts.routeName: (context) => Vanselectproducts(),
+            VanTransferSend.routeName: (context) => VanTransferSend(),
+            VanStockReceive.routeName: (context) => VanStockReceive(),
+            ScheduleDriver.routeName: (context) => ScheduleDriver(),
+            DriverPage.routeName: (context) => DriverPage(),
+            DriverDetails.routeName: (context) => DriverDetails(),
+          }),
+    );
   }
 }
