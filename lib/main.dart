@@ -28,13 +28,16 @@ import 'Pages/CustomeSOA.dart';
 import 'Pages/Day_closeReport.dart';
 import 'Pages/DriverDetailsPage.dart';
 import 'Pages/DriverPage.dart';
+import 'Pages/Driver_customer_detail_screen.dart';
 import 'Pages/Expense_add.dart';
+import 'Pages/Delivery_details_driver.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Total_sales.dart';
 import 'Pages/VanTransferReceive.dart';
 import 'Pages/VanTransferSend.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
+import 'Pages/driver_customer_screen.dart';
 import 'Pages/error_handling_screen.dart';
 import 'Pages/homeorder.dart';
 import 'Pages/homepage_Driver.dart';
@@ -73,7 +76,12 @@ class MyApp extends StatelessWidget {
             // '/': (context) => Home(),
             LoginScreen.routeName: (context) => const LoginScreen(),
             TotalSales.routeName: (context) => const TotalSales(),
+            driver_customer_screen.routeName: (context) =>
+                const driver_customer_screen(),
             HomeScreen.routeName: (context) => const HomeScreen(),
+            DeliveryDetailsDriver.routeName: (context) => const DeliveryDetailsDriver(),
+            Driver_customer_detail_screen.routeName: (context) =>
+                const Driver_customer_detail_screen(),
             HomepageDriver.routeName: (context) => const HomepageDriver(),
             ProductsScreen.routeName: (context) => ProductsScreen(),
             ErrorHandlingScreen.routeName: (context) =>

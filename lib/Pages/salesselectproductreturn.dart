@@ -61,33 +61,82 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
   //     );
   //   }
   // }
+
+  // void addToCart(Product product) async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
+  //
+  //   for (var unit in product.units) {
+  //     bool alreadyExists = cartItems.any((item) {
+  //       Map<String, dynamic> itemMap = jsonDecode(item);
+  //       return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
+  //     });
+  //
+  //     if (!alreadyExists) {
+  //       var productUnitMap = product.toJson();
+  //       productUnitMap['unitId'] = unit.id; // Add unit id to the product map
+  //       cartItems.add(jsonEncode(productUnitMap));
+  //       await prefs.setStringList('cartItemsreturn', cartItems);
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('${product.name} (${unit.name}) added')),
+  //       );
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //             content: Text(
+  //                 '${product.name} (${unit.name}) is already in the cart')),
+  //       );
+  //     }
+  //   }
+  // }
+
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
 
-    for (var unit in product.units) {
-      bool alreadyExists = cartItems.any((item) {
-        Map<String, dynamic> itemMap = jsonDecode(item);
-        return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
-      });
+    // Count how many instances of the product are already in the cart
+    int productCount = cartItems.fold(0, (count, item) {
+      Map<String, dynamic> itemMap = jsonDecode(item);
+      return itemMap['id'] == product.id ? count + 1 : count;
+    });
 
-      if (!alreadyExists) {
-        var productUnitMap = product.toJson();
-        productUnitMap['unitId'] = unit.id; // Add unit id to the product map
-        cartItems.add(jsonEncode(productUnitMap));
-        await prefs.setStringList('cartItemsreturn', cartItems);
+    // Restriction logic based on the number of units
+    if (product.units.length == 1) {
+      // Product has only one unit: Allow only one instance in the cart
+      if (productCount >= 1) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${product.name} (${unit.name}) added')),
+          SnackBar(content: Text('${product.name} is already in the cart')),
         );
       } else {
+        cartItems.add(jsonEncode(product.toJson()));
+        await prefs.setStringList('cartItemsreturn', cartItems);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  '${product.name} (${unit.name}) is already in the cart')),
+          SnackBar(content: Text('${product.name} added')),
         );
       }
+    } else if (product.units.length == 2) {
+      // Product has exactly two units: Allow up to two instances in the cart
+      if (productCount >= 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Only 2 ${product.name} can be added')),
+        );
+      } else {
+        cartItems.add(jsonEncode(product.toJson()));
+        await prefs.setStringList('cartItemsreturn', cartItems);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${product.name} added')),
+        );
+      }
+    } else {
+      // For products with more than two units, allow unlimited addition
+      cartItems.add(jsonEncode(product.toJson()));
+      await prefs.setStringList('cartItems', cartItems);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} added')),
+      );
     }
   }
+
   @override
   void initState() {
     super.initState();

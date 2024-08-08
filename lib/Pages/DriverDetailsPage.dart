@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
@@ -32,27 +34,57 @@ String? address;
 String? code;
 
 class _DriverDetailsState extends State<DriverDetails> {
-  late Future<ApiResponse> _futureData;
-
+  // late Future<ApiResponse> _futureData;
+  late Future<List<CustomerDelivery>> futureDeliveries;
   final SignatureController _signatureController = SignatureController(
     penStrokeWidth: 5,
     penColor: Colors.black,
     exportBackgroundColor: Colors.white,
   );
-
+  List<bool> expandedStates = [];
   @override
   void initState() {
     super.initState();
-    _futureData = fetchData();
+    futureDeliveries = fetchCustomerDeliveries();
   }
 
-  Future<ApiResponse> fetchData() async {
+  // Future<ApiResponse> fetchData() async {
+  //   final response = await http.get(Uri.parse(
+  //       '${RestDatasource().BASE_URL}/api/get_customer_delivery_by_driver?store_id=${AppState().storeId}&user_id=${AppState().userId}'));
+  //
+  //   if (response.statusCode == 200) {
+  //     final jsonResponse = json.decode(response.body);
+  //     return ApiResponse.fromJson(jsonResponse);
+  //   } else {
+  //     throw Exception('Failed to load data');
+  //   }
+  // }
+  void _toggleSelection(CustomerDelivery delivery) {
+    setState(() {
+      if (selectedDeliveries.contains(delivery)) {
+        selectedDeliveries.remove(delivery);
+      } else {
+        selectedDeliveries.add(delivery);
+      }
+    });
+  }
+
+  Future<List<CustomerDelivery>> fetchCustomerDeliveries() async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_customer_delivery_by_driver?store_id=${AppState().storeId}&user_id=${AppState().userId}'));
+        '${RestDatasource().BASE_URL}/api/get_customer_delivery_by_driver?store_id=${AppState().storeId}&user_id=${AppState().userId}&customer_id=$id'));
 
     if (response.statusCode == 200) {
+      // print(AppState().storeId);
+      // print(AppState().userId);
+      // print(id);
+
       final jsonResponse = json.decode(response.body);
-      return ApiResponse.fromJson(jsonResponse);
+      if (jsonResponse['success']) {
+        return List<CustomerDelivery>.from(jsonResponse['data']
+            .map((delivery) => CustomerDelivery.fromJson(delivery)));
+      } else {
+        throw Exception('Failed to load data');
+      }
     } else {
       throw Exception('Failed to load data');
     }
@@ -64,7 +96,9 @@ class _DriverDetailsState extends State<DriverDetails> {
     super.dispose();
   }
 
-  final TextEditingController _nameController = TextEditingController();
+  List<CustomerDelivery> selectedDeliveries = [];
+  final TextEditingController _RecieveController = TextEditingController();
+  final TextEditingController _RmarksController = TextEditingController();
 
   Future<File> _convertUiImageToFile(ui.Image signatureImage) async {
     // Convert ui.Image to ByteData
@@ -110,10 +144,9 @@ class _DriverDetailsState extends State<DriverDetails> {
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         backgroundColor: AppConfig.colorPrimary,
-        actions: [],
       ),
-      body: FutureBuilder<ApiResponse>(
-        future: _futureData,
+      body: FutureBuilder<List<CustomerDelivery>>(
+        future: futureDeliveries,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Shimmer.fromColors(
@@ -146,12 +179,13 @@ class _DriverDetailsState extends State<DriverDetails> {
             );
           } else if (snapshot.hasError) {
             print('Error: ${snapshot.error}');
-            return Center(child: Text('Failed to load data'));
-          } else if (!snapshot.hasData || snapshot.data!.data.isEmpty) {
+            return Center(child: Text('No data'));
+          } else if (snapshot.hasError) {
             return Center(child: Text('No data available'));
           } else {
-            final List<Data> data = snapshot.data!.data;
-            void postDataToApi() async {
+            // final List<Data> data = snapshot.data!.data;
+
+            Future<void> postData() async {
               ui.Image? signatureImage = await _signatureController.toImage();
 
               if (signatureImage == null) {
@@ -166,20 +200,29 @@ class _DriverDetailsState extends State<DriverDetails> {
                 print(e.toString());
                 return;
               }
+              List<String> invoiceNos = [];
+              List<int> goodsOutIds = [];
 
-              var url = Uri.parse(
+              for (var delivery in selectedDeliveries) {
+                invoiceNos.add(delivery.invoiceNo);
+                goodsOutIds.add(delivery.id);
+              }
+              final url = Uri.parse(
                   '${RestDatasource().BASE_URL}/api/customer-delivery.store');
-
-              var request = http.MultipartRequest('POST', url);
-
-              request.fields['customer_id'] = id.toString();
-              request.fields['store_id'] = '${AppState().storeId}';
-              request.fields['user_id'] = '${AppState().userId}';
-              request.fields['invoice_no'] = '${data[0].invoiceNo ?? ''}';
-              request.fields['goods_out_id'] =
-                  '${data[0].detail[0].goodsOutId}';
-              request.fields['received_by'] = _nameController.text;
-
+              final headers = {"Content-Type": "application/json"};
+              final body = jsonEncode({
+                "customer_id": id,
+                "store_id": AppState().storeId.toString(),
+                "user_id": AppState().userId.toString(),
+                "invoice_no": invoiceNos,
+                "goods_out_id": goodsOutIds,
+                "recieved_by": _RecieveController.text,
+                "remarks": _RmarksController.text
+              });
+              var request = http.MultipartRequest(
+                  'POST',
+                  Uri.parse(
+                      '${RestDatasource().BASE_URL}/api/customer-delivery.store'));
               request.files.add(
                 await http.MultipartFile.fromPath(
                   'signature',
@@ -187,12 +230,10 @@ class _DriverDetailsState extends State<DriverDetails> {
                   contentType: MediaType('image', 'png'),
                 ),
               );
-
-              var response = await request.send();
+              final response =
+                  await http.post(url, headers: headers, body: body);
 
               if (response.statusCode == 200) {
-                print('Post successful');
-                // print(response.request);
                 if (mounted) {
                   await showDialog(
                     context: context,
@@ -213,13 +254,18 @@ class _DriverDetailsState extends State<DriverDetails> {
                     },
                   );
                 }
-                print(await response.stream.bytesToString());
+                print('Data posted successfully!');
+                print('Response body: ${response.body}');
               } else {
-                print('Post failed with status: ${response.statusCode}');
-                print(await response.stream.bytesToString());
+                print(
+                    'Failed to post data. Status code: ${response.statusCode}');
+                print('Response body: ${response.body}');
               }
             }
 
+            if (expandedStates.isEmpty) {
+              expandedStates = List<bool>.filled(snapshot.data!.length, false);
+            }
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,69 +279,133 @@ class _DriverDetailsState extends State<DriverDetails> {
                       ),
                     ),
                   ),
-                  ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    shrinkWrap: true,
-                    physics: BouncingScrollPhysics(),
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final item = data[index];
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      physics: BouncingScrollPhysics(),
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final delivery = snapshot.data![index];
 
-                      return Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppConfig.backgroundColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Tooltip(
-                                  message: item.invoiceNo,
-                                  child: Text(
-                                    '${item.invoiceNo} | ${item.scheduleDate}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: AppConfig.textCaption3Size,
-                                      color: Colors.black87,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(height: 8.0),
-                                Column(
+                        final isSelected =
+                            selectedDeliveries.contains(delivery);
+                        return GestureDetector(
+                          onTap: () => _toggleSelection(delivery),
+                          child: Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.green.shade300
+                                    : AppConfig.backgroundColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '${item.detail[0].name}',
-                                      style: TextStyle(
-                                        fontSize: AppConfig.textCaption3Size,
-                                        color: Colors.black54,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Tooltip(
+                                          message: delivery.invoiceNo,
+                                          child: Text(
+                                            '${delivery.invoiceNo}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                              color: Colors.black87,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Spacer(),
+                                        IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                expandedStates[index] =
+                                                    !expandedStates[index];
+                                              });
+                                            },
+                                            icon: Icon(
+                                                Icons.arrow_drop_down_circle))
+                                      ],
                                     ),
-                                    const SizedBox(height: 4.0),
-                                    Text(
-                                      'Qty: ${item.detail[0].quantity}',
-                                      style: TextStyle(
-                                        fontSize: AppConfig.textCaption3Size,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
+                                    // const SizedBox(height: 8.0),
+                                    // Column(
+                                    //   crossAxisAlignment:
+                                    //       CrossAxisAlignment.start,
+                                    //   children: [
+                                    //     Text(
+                                    //       '${delivery.details[0].name}',
+                                    //       style: TextStyle(
+                                    //         fontSize:
+                                    //             AppConfig.textCaption3Size,
+                                    //         color: Colors.black54,
+                                    //       ),
+                                    //     ),
+                                    //     const SizedBox(height: 4.0),
+                                    //     Text(
+                                    //       'Qty: ${delivery.details[0].quantity}',
+                                    //       style: TextStyle(
+                                    //         fontSize:
+                                    //             AppConfig.textCaption3Size,
+                                    //         color: Colors.black54,
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
+                                    Visibility(
+                                        visible: expandedStates[index],
+                                        child: Container(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children:
+                                                delivery.details.map((Details) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Prd: ${Details.name}',
+                                                    style: TextStyle(
+                                                      fontSize: AppConfig
+                                                          .textCaption3Size,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Qty: ${Details.quantity}',
+                                                    style: TextStyle(
+                                                      fontSize: AppConfig
+                                                          .textCaption3Size,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                                  Divider(
+                                                    color: Colors.grey.shade300,
+                                                  )
+                                                ],
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ))
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -306,70 +416,148 @@ class _DriverDetailsState extends State<DriverDetails> {
                           'Received in Good Condition',
                           style: TextStyle(fontSize: 15),
                         ),
-                        Row(
-                          children: [
-                            Text('Received By'),
-                            SizedBox(width: 30),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextField(
-                                  textAlign: TextAlign.center,
-                                  controller: _nameController,
-                                  decoration: InputDecoration(
-                                      border: OutlineInputBorder(
-                                          borderSide: BorderSide()),
-                                      isDense: true,
-                                      contentPadding:
-                                          EdgeInsets.symmetric(vertical: 10)),
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                          ],
+                        SizedBox(
+                          height: 10.h,
                         ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Signature'),
-                            SizedBox(width: 53),
-                            Column(
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            // textAlign: TextAlign.center,
+                            controller: _RecieveController,
+                            decoration: InputDecoration(
+                              filled: true, fillColor: Colors.white,
+                              labelText: 'Recieved By',
+                              labelStyle: TextStyle(fontSize: 14),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                              isDense: true,
+                              // contentPadding:
+                              //     EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            // style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            // textAlign: TextAlign.center,
+                            controller: _RmarksController,
+                            decoration: InputDecoration(
+                              filled: true, fillColor: Colors.white,
+                              labelText: 'Remarks If Any',
+                              labelStyle: TextStyle(fontSize: 14),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                              isDense: true,
+                              // contentPadding:
+                              //     EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            // style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                        // Row(
+                        //   children: [
+                        //     Text('Received By'),
+                        //     SizedBox(width: 30),
+                        //     Expanded(
+                        //       child: Padding(
+                        //         padding: const EdgeInsets.all(8.0),
+                        //         child: TextField(
+                        //           textAlign: TextAlign.center,
+                        //           controller: _nameController,
+                        //           decoration: InputDecoration(
+                        //               border: OutlineInputBorder(
+                        //                   borderSide: BorderSide()),
+                        //               isDense: true,
+                        //               contentPadding:
+                        //                   EdgeInsets.symmetric(vertical: 10)),
+                        //           style: TextStyle(fontSize: 14),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            color: Colors.white,
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(),
-                                  ),
-                                  child: Signature(
-                                    width:
-                                        MediaQuery.of(context).size.width * .64,
-                                    height: MediaQuery.of(context).size.height *
-                                        .17,
-                                    controller: _signatureController,
-                                    backgroundColor: AppConfig.backgroundColor,
-                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text('Signature'),
                                 ),
-                                ElevatedButton(
-                                  style: ButtonStyle(
-                                    backgroundColor: WidgetStateProperty.all(
-                                        AppConfig.colorPrimary),
-                                  ),
-                                  onPressed: () {
-                                    _signatureController.clear();
-                                  },
-                                  child: Icon(
-                                    Icons.refresh,
-                                    color: Colors.white,
-                                  ),
+                                Signature(
+                                  width: double.infinity,
+                                  height: 200,
+                                  controller: _signatureController,
+                                  backgroundColor: AppConfig.backgroundColor,
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
+                        // Row(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     Text('Signature'),
+                        //     SizedBox(width: 53),
+                        //     Column(
+                        //       crossAxisAlignment: CrossAxisAlignment.start,
+                        //       children: [
+                        //         Container(
+                        //           decoration: BoxDecoration(
+                        //             border: Border.all(),
+                        //           ),
+                        //           child: Signature(
+                        //             width:
+                        //                 MediaQuery.of(context).size.width * .64,
+                        //             height: MediaQuery.of(context).size.height *
+                        //                 .17,
+                        //             controller: _signatureController,
+                        //             backgroundColor: AppConfig.backgroundColor,
+                        //           ),
+                        //         ),
+                        //         ElevatedButton(
+                        //           style: ButtonStyle(
+                        //             backgroundColor: WidgetStateProperty.all(
+                        //                 AppConfig.colorPrimary),
+                        //           ),
+                        //           onPressed: () {
+                        //             _signatureController.clear();
+                        //           },
+                        //           child: Icon(
+                        //             Icons.refresh,
+                        //             color: Colors.white,
+                        //           ),
+                        //         ),
+                        //       ],
+                        //     ),
+                        //   ],
+                        // ),
                       ],
                     ),
                   ),
                   // SizedBox(height: 20.h,),
+                  GestureDetector(
+                    onTap: () {
+                      _signatureController.clear();
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Icon(
+                          Icons.refresh,
+                          color: AppConfig.colorPrimary,
+                          size: 40.sp,
+                        ),
+                        SizedBox(
+                          width: 20.w,
+                        )
+                      ],
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -385,7 +573,8 @@ class _DriverDetailsState extends State<DriverDetails> {
                           ),
                         ),
                         onPressed: () async {
-                          postDataToApi();
+                          postData();
+                          // print(AppState().routeId);
                         },
                         child: Text(
                           'SAVE',

@@ -1,795 +1,781 @@
-// import 'dart:convert';
-//
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import 'package:mobizapp/Components/commonwidgets.dart';
-// import 'package:mobizapp/Models/appstate.dart';
-// import 'package:mobizapp/Utilities/rest_ds.dart';
-// import 'package:mobizapp/confg/sizeconfig.dart';
-// import 'package:shimmer/shimmer.dart';
-//
-// import '../Models/paymentcollectionclass.dart';
-// import '../confg/appconfig.dart';
-//
-// class PaymentCollectionScreen extends StatefulWidget {
-//   static const routeName = "/PaymentCollection";
-//   const PaymentCollectionScreen({super.key});
-//
-//   @override
-//   State<PaymentCollectionScreen> createState() =>
-//       _PaymentCollectionScreenState();
-// }
-//
-// class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
-//   int cuId = 0;
-//   bool _initDone = false;
-//   bool _noData = false;
-//   PaymentCollectionData paymentData = PaymentCollectionData();
-//   num outStandingAmt = 0;
-//   num allocatedAmt = 0;
-//   num balanceAmt = 0;
-//   num paidAmt = 0;
-//   bool tapEnabled = true;
-//   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-//   String dropdownvalue = 'Cash';
-//   String _errorMessage = '';
-//   // List of items in our dropdown menu
-//   var items = ['Cash', 'Cheque'];
-//
-//   List<num> _payments = [];
-//   List<int> _godsId = [];
-//   List<bool> _expand = [];
-//
-//   final TextEditingController _paidAmt = TextEditingController();
-//   final TextEditingController _bank = TextEditingController();
-//   final TextEditingController _cheqNo = TextEditingController();
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     if (ModalRoute.of(context)!.settings.arguments != null) {
-//       final Map<String, dynamic>? params =
-//           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-//       cuId = params!['customer'];
-//     }
-//     if (!_initDone) {
-//       _getPaymentDetails().then((value) => _getOutStanding());
-//     }
-//     return Scaffold(
-//       appBar: AppBar(
-//         backgroundColor: AppConfig.colorPrimary,
-//         foregroundColor: AppConfig.backgroundColor,
-//         title: const Text('Payment Collection'),
-//       ),
-//       body: SingleChildScrollView(
-//         child: Padding(
-//           padding: const EdgeInsets.all(18.0),
-//           child: (_noData && _initDone)
-//               ? Center(child: const Text('No Data'))
-//               : (!_noData && _initDone)
-//                   ? SizedBox(
-//                       height: SizeConfig.safeBlockVertical! * 87,
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           Text(
-//                             '${paymentData.data![0].customer![0].code} | ${paymentData.data![0].customer![0].name} | Bill to Bill',
-//                             style: const TextStyle(
-//                                 color: AppConfig.buttonDeactiveColor),
-//                           ),
-//                           CommonWidgets.verticalSpace(2),
-//                           Row(
-//                             children: [
-//                               const Text(
-//                                 'Total outstanding',
-//                                 style: TextStyle(
-//                                     color: AppConfig.buttonDeactiveColor),
-//                               ),
-//                               CommonWidgets.horizontalSpace(1),
-//                               _inputBox(
-//                                   status: false, value: "$outStandingAmt"),
-//                               const Spacer(),
-//                               const Text(
-//                                 'Paid Amount',
-//                                 style: TextStyle(
-//                                     color: AppConfig.buttonDeactiveColor),
-//                               ),
-//                               CommonWidgets.horizontalSpace(1),
-//                               InkWell(
-//                                   onTap: () {
-//                                     balanceAmt = 0;
-//                                     paidAmt = 0;
-//                                     allocatedAmt = 0;
-//                                     _payments = List.generate(
-//                                         paymentData.data!.length, (_) => 0);
-//                                     _godsId = List.generate(
-//                                         paymentData.data!.length, (_) => 0);
-//
-//                                     showDialog(
-//                                         barrierDismissible: false,
-//                                         context: context,
-//                                         builder: (context) {
-//                                           return AlertDialog(
-//                                             title: const Text('Paid Amount'),
-//                                             content: TextField(
-//                                               onChanged: (value) async {},
-//                                               keyboardType:
-//                                                   TextInputType.number,
-//                                               controller: _paidAmt,
-//                                               decoration: const InputDecoration(
-//                                                   hintText: "Paid Amount"),
-//                                             ),
-//                                             actions: <Widget>[
-//                                               MaterialButton(
-//                                                 color: AppConfig.colorPrimary,
-//                                                 textColor: Colors.white,
-//                                                 child: const Text('OK'),
-//                                                 onPressed: () {
-//                                                   balanceAmt =
-//                                                       num.parse(_paidAmt.text);
-//                                                   paidAmt =
-//                                                       num.parse(_paidAmt.text);
-//                                                   tappedIndices.clear();
-//                                                   Navigator.of(context).pop();
-//                                                 },
-//                                               ),
-//                                             ],
-//                                           );
-//                                         }).then((value) => setState(() {}));
-//                                   },
-//                                   child: _inputBox(
-//                                       status: true,
-//                                       value: (_paidAmt.text.isEmpty)
-//                                           ? '0'
-//                                           : _paidAmt.text)),
-//                             ],
-//                           ),
-//                           CommonWidgets.verticalSpace(1),
-//                           Row(
-//                             children: [
-//                               const Text(
-//                                 'Allocated Amount',
-//                                 style: TextStyle(
-//                                     color: AppConfig.buttonDeactiveColor),
-//                               ),
-//                               CommonWidgets.horizontalSpace(1),
-//                               _inputBox(status: false, value: "$allocatedAmt"),
-//                               const Spacer(),
-//                               const Text(
-//                                 'Balance Amount',
-//                                 style: TextStyle(
-//                                     color: AppConfig.buttonDeactiveColor),
-//                               ),
-//                               CommonWidgets.horizontalSpace(1),
-//                               _inputBox(status: false, value: "$balanceAmt"),
-//                             ],
-//                           ),
-//                           CommonWidgets.verticalSpace(2),
-//                           SizedBox(
-//                             height: SizeConfig.blockSizeVertical * 55,
-//                             child: ListView.separated(
-//                               separatorBuilder: (context, index) {
-//                                 return CommonWidgets.verticalSpace(1);
-//                               },
-//                               itemCount: paymentData.data!.length,
-//                               shrinkWrap: true,
-//                               itemBuilder: (context, index) => _paymentData(
-//                                   index: index,
-//                                   title:
-//                                       '${DateFormat('dd MMMM yyyy').format(DateTime.parse(paymentData.data![index].inDate!))} | ${paymentData.data![index].invoiceNo}',
-//                                   balance:
-//                                       (paymentData.data![index].grandTotal! -
-//                                           paymentData.data![index].receipt!),
-//                                   paid: paymentData.data![index].receipt ?? 0,
-//                                   amount:
-//                                       paymentData.data![index].grandTotal ?? 0,
-//                                   id: paymentData.data![index].id!,
-//                                   collection:
-//                                       paymentData.data![index].collection),
-//                             ),
-//                           ),
-//                           // const Spacer(),
-//                           Container(
-//                             decoration: BoxDecoration(
-//                                 borderRadius:
-//                                     const BorderRadius.all(Radius.circular(5)),
-//                                 border: Border.all(
-//                                     color: AppConfig.buttonDeactiveColor)),
-//                             width: SizeConfig.screenWidth,
-//                             child: Padding(
-//                                 padding: const EdgeInsets.all(8.0),
-//                                 child: Column(
-//                                   children: [
-//                                     Row(
-//                                       mainAxisAlignment:
-//                                           MainAxisAlignment.center,
-//                                       children: [
-//                                         const Text(
-//                                           'Collection Type',
-//                                           style: TextStyle(
-//                                               color: AppConfig
-//                                                   .buttonDeactiveColor),
-//                                         ),
-//                                         CommonWidgets.horizontalSpace(1),
-//                                         Container(
-//                                           decoration: BoxDecoration(
-//                                               borderRadius:
-//                                                   BorderRadius.circular(5),
-//                                               border: Border.all(
-//                                                 color: AppConfig
-//                                                     .buttonDeactiveColor,
-//                                               )),
-//                                           constraints: BoxConstraints(
-//                                             minWidth:
-//                                                 SizeConfig.blockSizeHorizontal *
-//                                                     13,
-//                                           ),
-//                                           height:
-//                                               SizeConfig.blockSizeVertical * 3,
-//                                           child: DropdownButton(
-//                                             // Initial Value
-//                                             value: dropdownvalue,
-//                                             icon: const SizedBox(),
-//                                             underline: const SizedBox(),
-//                                             // Array list of items
-//                                             items: items.map((String items) {
-//                                               return DropdownMenuItem(
-//                                                 value: items,
-//                                                 child: Text(items),
-//                                               );
-//                                             }).toList(),
-//                                             // After selecting the desired option,it will
-//                                             // change button value to selected value
-//                                             onChanged: (String? newValue) {
-//                                               setState(() {
-//                                                 dropdownvalue = newValue!;
-//                                               });
-//                                             },
-//                                           ),
-//                                         ),
-//                                         // _inputBox(
-//                                         //     status: true, value: "Cheque"),
-//                                         (dropdownvalue != "Cash")
-//                                             ? const Spacer()
-//                                             : Container(),
-//                                         (dropdownvalue != "Cash")
-//                                             ? const Text(
-//                                                 'Bank',
-//                                                 style: TextStyle(
-//                                                     color: AppConfig
-//                                                         .buttonDeactiveColor),
-//                                               )
-//                                             : Container(),
-//                                         (dropdownvalue != "Cash")
-//                                             ? CommonWidgets.horizontalSpace(1)
-//                                             : Container(),
-//                                         (dropdownvalue != "Cash")
-//                                             ? InkWell(
-//                                                 onTap: () {
-//                                                   showDialog(
-//                                                           barrierDismissible: false,
-//                                                           context: context,
-//                                                           builder: (context) {
-//                                                             return AlertDialog(
-//                                                               title: const Text(
-//                                                                   'Bank'),
-//                                                               content:
-//                                                                   TextField(
-//                                                                 onChanged:
-//                                                                     (value) async {},
-//                                                                 keyboardType:
-//                                                                     TextInputType
-//                                                                         .name,
-//                                                                 controller:
-//                                                                     _bank,
-//                                                                 decoration:
-//                                                                     const InputDecoration(
-//                                                                         hintText:
-//                                                                             "Bank"),
-//                                                               ),
-//                                                               actions: <Widget>[
-//                                                                 MaterialButton(
-//                                                                   color: AppConfig
-//                                                                       .colorPrimary,
-//                                                                   textColor:
-//                                                                       Colors
-//                                                                           .white,
-//                                                                   child:
-//                                                                       const Text(
-//                                                                           'OK'),
-//                                                                   onPressed:
-//                                                                       () {
-//                                                                     Navigator.of(
-//                                                                             context)
-//                                                                         .pop();
-//                                                                   },
-//                                                                 ),
-//                                                               ],
-//                                                             );
-//                                                           })
-//                                                       .then((value) =>
-//                                                           setState(() {}));
-//                                                 },
-//                                                 child: _inputBox(
-//                                                     status: true,
-//                                                     value: (_bank.text.isEmpty)
-//                                                         ? ''
-//                                                         : _bank.text),
-//                                               )
-//                                             : Container(),
-//                                       ],
-//                                     ),
-//                                     CommonWidgets.verticalSpace(1),
-//                                     (dropdownvalue != "Cash")
-//                                         ? Row(
-//                                             children: [
-//                                               const Text(
-//                                                 'Cheque Date',
-//                                                 style: TextStyle(
-//                                                     color: AppConfig
-//                                                         .buttonDeactiveColor),
-//                                               ),
-//                                               CommonWidgets.horizontalSpace(1),
-//                                               InkWell(
-//                                                 onTap: () async {
-//                                                   DateTime? pickedDate =
-//                                                       await showDatePicker(
-//                                                           context: context,
-//                                                           initialDate:
-//                                                               DateTime.now(),
-//                                                           firstDate:
-//                                                               DateTime(1950),
-//                                                           //DateTime.now() - not to allow to choose before today.
-//                                                           lastDate:
-//                                                               DateTime(2100));
-//
-//                                                   if (pickedDate != null) {
-//                                                     formattedDate =
-//                                                         DateFormat('yyyy-MM-dd')
-//                                                             .format(pickedDate);
-//                                                   } else {}
-//                                                 },
-//                                                 child: _inputBox(
-//                                                     status: true,
-//                                                     value: "$formattedDate"),
-//                                               ),
-//                                               const Spacer(),
-//                                               const Text(
-//                                                 'Cheque No',
-//                                                 style: TextStyle(
-//                                                     color: AppConfig
-//                                                         .buttonDeactiveColor),
-//                                               ),
-//                                               CommonWidgets.horizontalSpace(1),
-//                                               InkWell(
-//                                                 onTap: () {
-//                                                   showDialog(
-//                                                           barrierDismissible: false,
-//                                                           context: context,
-//                                                           builder: (context) {
-//                                                             return AlertDialog(
-//                                                               title: const Text(
-//                                                                   'Cheque No'),
-//                                                               content:
-//                                                                   TextField(
-//                                                                 onChanged:
-//                                                                     (value) async {},
-//                                                                 keyboardType:
-//                                                                     TextInputType
-//                                                                         .name,
-//                                                                 controller:
-//                                                                     _cheqNo,
-//                                                                 decoration:
-//                                                                     const InputDecoration(
-//                                                                         hintText:
-//                                                                             "Cheque No"),
-//                                                               ),
-//                                                               actions: <Widget>[
-//                                                                 MaterialButton(
-//                                                                   color: AppConfig
-//                                                                       .colorPrimary,
-//                                                                   textColor:
-//                                                                       Colors
-//                                                                           .white,
-//                                                                   child:
-//                                                                       const Text(
-//                                                                           'OK'),
-//                                                                   onPressed:
-//                                                                       () {
-//                                                                     Navigator.of(
-//                                                                             context)
-//                                                                         .pop();
-//                                                                   },
-//                                                                 ),
-//                                                               ],
-//                                                             );
-//                                                           })
-//                                                       .then((value) =>
-//                                                           setState(() {}));
-//                                                 },
-//                                                 child: _inputBox(
-//                                                     status: true,
-//                                                     value:
-//                                                         (_cheqNo.text.isEmpty)
-//                                                             ? ""
-//                                                             : _cheqNo.text),
-//                                               ),
-//                                             ],
-//                                           )
-//                                         : Container(),
-//                                   ],
-//                                 )),
-//                           ),
-//                           CommonWidgets.verticalSpace(2),
-//                           Center(
-//                             child: SizedBox(
-//                               width: SizeConfig.blockSizeHorizontal * 25,
-//                               height: SizeConfig.blockSizeVertical * 3,
-//                               child: ElevatedButton(
-//                                 style: ButtonStyle(
-//                                     shape: WidgetStateProperty.all<
-//                                         RoundedRectangleBorder>(
-//                                       RoundedRectangleBorder(
-//                                         borderRadius:
-//                                             BorderRadius.circular(5.0),
-//                                       ),
-//                                     ),
-//                                     backgroundColor: WidgetStatePropertyAll(
-//                                         (_paidAmt.text.isNotEmpty &&
-//                                                 allocatedAmt ==
-//                                                     num.parse(_paidAmt.text))
-//                                             ? AppConfig.colorPrimary
-//                                             : Colors.grey)
-//                                     // : const MaterialStatePropertyAll(
-//                                     //     AppConfig.buttonDeactiveColor),
-//                                     ),
-//                                 onPressed: () {
-//                                   if (allocatedAmt ==
-//                                       num.parse(_paidAmt.text)) {
-//                                     _postData();
-//                                   }
-//                                 },
-//                                 child: Text(
-//                                   'SAVE',
-//                                   style: TextStyle(
-//                                       fontSize: AppConfig.textCaption3Size,
-//                                       color: AppConfig.backgroundColor,
-//                                       fontWeight: AppConfig.headLineWeight),
-//                                 ),
-//                               ),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     )
-//                   :
-//                   // Center(child: Text('No data found'))
-//                   Shimmer.fromColors(
-//                       baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-//                       highlightColor: AppConfig.backButtonColor,
-//                       child: Center(
-//                         child: Column(
-//                           children: [
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                             CommonWidgets.loadingContainers(
-//                                 height: SizeConfig.blockSizeVertical * 10,
-//                                 width: SizeConfig.blockSizeHorizontal * 90),
-//                           ],
-//                         ),
-//                       ),
-//                     ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Widget _inputBox({required String value, required bool status}) {
-//     return Container(
-//       decoration: BoxDecoration(
-//           borderRadius: BorderRadius.circular(5),
-//           border: Border.all(
-//             color: AppConfig.buttonDeactiveColor,
-//           )),
-//       constraints: BoxConstraints(
-//         minWidth: SizeConfig.blockSizeHorizontal * 13,
-//         minHeight: SizeConfig.blockSizeVertical * 3,
-//       ),
-//       child: Center(
-//           child: Text(
-//         '$value',
-//         style: TextStyle(
-//             color:
-//                 (status) ? AppConfig.textBlack : AppConfig.buttonDeactiveColor),
-//       )),
-//     );
-//   }
-//
-//   void _showInputDialog(BuildContext context, int index) {
-//     TextEditingController _textFieldController =
-//         TextEditingController(text: _payments[index].toString());
-//
-//     showDialog(
-//       context: context,
-//       builder: (BuildContext context) {
-//         return AlertDialog(
-//           title: Text('Enter value'),
-//           content: TextField(
-//             keyboardType: TextInputType.number,
-//             controller: _textFieldController,
-//             decoration: InputDecoration(
-//               hintText: "Enter your value here",
-//             ),
-//           ),
-//           actions: <Widget>[
-//             MaterialButton(
-//               color: AppConfig.colorPrimary,
-//               textColor: Colors.white,
-//               child: Text('OK'),
-//               onPressed: () {
-//                 num enteredValue = num.tryParse(_textFieldController.text) ?? 0;
-//                 num maxAllowedValue = paymentData.data![index].grandTotal ?? 0;
-//                 if (enteredValue > maxAllowedValue) {
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     SnackBar(
-//                       content:
-//                           Text('Entered value cannot exceed $maxAllowedValue'),
-//                     ),
-//                   );
-//                 } else {
-//                   setState(() {
-//                     _payments[index] = enteredValue;
-//                   });
-//                   Navigator.of(context).pop();
-//                 }
-//               },
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-//
-//   Set<int> tappedIndices = Set();
-//   void handleTap(int index, num amount, int id) {
-//     if (paidAmt > 0) {
-//       if (amount <= paidAmt) {
-//         _payments[index] = amount;
-//         paidAmt = paidAmt - amount;
-//         allocatedAmt = allocatedAmt + _payments[index];
-//         _godsId[index] = id;
-//       } else {
-//         _payments[index] = paidAmt;
-//         paidAmt = paidAmt - _payments[index];
-//         allocatedAmt = allocatedAmt + _payments[index];
-//         _godsId[index] = id;
-//       }
-//       balanceAmt = num.parse(_paidAmt.text) - allocatedAmt;
-//       setState(() {});
-//     }
-//   }
-//
-//   Widget _paymentData(
-//       {required int index,
-//       required String title,
-//       required num amount,
-//       required num balance,
-//       required num paid,
-//       required int id,
-//       required List<Collection>? collection}) {
-//     var pipe = const Text('|');
-//     return
-//         // tappedIndices.contains(index)
-//         //     ? null
-//         //     : () {
-//         //         handleTap(index, amount, id);
-//         //         tappedIndices.add(index);
-//         //       },
-//         Card(
-//       shape: const RoundedRectangleBorder(
-//           borderRadius: BorderRadius.all(Radius.circular(5))),
-//       elevation: 3,
-//       child: Container(
-//         decoration: BoxDecoration(
-//           borderRadius: const BorderRadius.all(Radius.circular(5)),
-//           border:
-//               Border.all(color: AppConfig.buttonDeactiveColor.withOpacity(0.3)),
-//           color: AppConfig.backgroundColor,
-//         ),
-//         width: SizeConfig.screenWidth,
-//         child: Padding(
-//           padding: const EdgeInsets.all(8.0),
-//           child: SizedBox(
-//             width: SizeConfig.blockSizeHorizontal * 90,
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Row(
-//                   children: [
-//                     Text(title),
-//                     const Spacer(),
-//                     GestureDetector(
-//                         onTap: tappedIndices.contains(index)
-//                             ? () {
-//                                 _showInputDialog(context, index);
-//                               }
-//                             : () {
-//                                 handleTap(index, amount, id);
-//                                 tappedIndices.add(index);
-//                                 _showInputDialog(context, index);
-//                               },
-//                         // handleTap(index, amount, id);
-//
-//                         child: _inputBox(
-//                           value: "${_payments[index]}",
-//                           status: true,
-//                         )),
-//                   ],
-//                 ),
-//                 CommonWidgets.verticalSpace(1),
-//                 InkWell(
-//                   onTap: () => setState(() {
-//                     _expand[index] = !_expand[index];
-//                   }),
-//                   child: Row(
-//                     children: [
-//                       Text(
-//                         'Amount $amount',
-//                         style: const TextStyle(
-//                             color: AppConfig.buttonDeactiveColor),
-//                       ),
-//                       CommonWidgets.horizontalSpace(1),
-//                       pipe,
-//                       CommonWidgets.horizontalSpace(1),
-//                       Text(
-//                         'Paid $paid',
-//                         style: const TextStyle(
-//                             color: AppConfig.buttonDeactiveColor),
-//                       ),
-//                       CommonWidgets.horizontalSpace(1),
-//                       pipe,
-//                       CommonWidgets.horizontalSpace(1),
-//                       Text(
-//                         'Balance $balance',
-//                         style: const TextStyle(
-//                             color: AppConfig.buttonDeactiveColor),
-//                       ),
-//                       const Spacer(),
-//                       const Icon(Icons.keyboard_arrow_down),
-//                     ],
-//                   ),
-//                 ),
-//                 (_expand[index]) ? const Divider() : Container(),
-//                 (_expand[index])
-//                     ? (collection != null)
-//                         ? ListView.builder(
-//                             physics: NeverScrollableScrollPhysics(),
-//                             // separatorBuilder: (context, index) {
-//                             //   return CommonWidgets.verticalSpace(0.0);
-//                             // },
-//                             itemCount: collection.length,
-//                             shrinkWrap: true,
-//                             itemBuilder: (context, j) => Column(
-//                                   crossAxisAlignment: CrossAxisAlignment.start,
-//                                   children: [
-//                                     (collection[j].collectionType != null)
-//                                         ? (collection[j]
-//                                                     .collectionType!
-//                                                     .toLowerCase() ==
-//                                                 "cheque")
-//                                             ? Text(
-//                                                 '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType} |  ${collection[j].bank}')
-//                                             // ${collection[index].chequeNo} |  ${collection[index].bank} |  ${collection[index].chequeDate}
-//                                             : Text(
-//                                                 '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} | ${collection[index].collectionType ?? ''} ')
-//                                         : Text(
-//                                             '${DateFormat('dd MMMM yyyy').format(DateTime.parse(collection[j].inDate!))} | ${collection[j].voucherNo} | ${collection[j].amount} '),
-//                                     CommonWidgets.verticalSpace(2),
-//                                   ],
-//                                 ))
-//                         : Container()
-//                     : Container(),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   Future<void> _getPaymentDetails() async {
-//     try {
-//       RestDatasource api = RestDatasource();
-//       dynamic response = await api.getDetails(
-//           '/api/get_sales_pending_collection?customer_id=$cuId',
-//           AppState().token);
-//
-//       if (response != null && response['data'] != null) {
-//         paymentData = PaymentCollectionData.fromJson(response);
-//         _payments = List.generate(paymentData.data!.length, (_) => 0);
-//         _godsId = List.generate(paymentData.data!.length, (_) => 0);
-//         _expand = List.generate(paymentData.data!.length, (_) => false);
-//       } else {
-//         setState(() {
-//           _noData = true;
-//         });
-//       }
-//     } catch (e) {
-//       setState(() {
-//         _errorMessage = 'Failed to fetch payment details: $e';
-//       });
-//     } finally {
-//       setState(() {
-//         _initDone = true;
-//       });
-//     }
-//   }
-//
-//   Future<void> _getOutStanding() async {
-//     RestDatasource api = RestDatasource();
-//     dynamic response = await api.getDetails(
-//         '/api/get_sales_pending_outstanding?customer_id=$cuId',
-//         AppState().token);
-//
-//     if (response['status'] == "success") {
-//       outStandingAmt = response['result']['data'];
-//     } else {
-//       outStandingAmt = 0;
-//     }
-//     setState(() {
-//       _initDone = true;
-//     });
-//   }
-//
-//   Future _postData() async {
-//     List tempPayments = _payments;
-//     List temgoodId = _godsId;
-//     tempPayments.removeWhere((element) => element == 0);
-//     temgoodId.removeWhere((element) => element == 0);
-//     RestDatasource api = RestDatasource();
-//     String subUrl = '/api/collection.post';
-//     Map<String, dynamic> bodyJson = {
-//       'van_id': AppState().vanId,
-//       'store_id': AppState().storeId,
-//       'user_id': AppState().userId,
-//       'goods_out_id': temgoodId,
-//       'amount': tempPayments,
-//       'customer_id': cuId,
-//       'collection_type': dropdownvalue,
-//       'bank': _bank.text,
-//       'cheque_no': _cheqNo.text,
-//       'cheque_date': formattedDate
-//       // dropdownvalue,
-//       // if (dropdownvalue == "Cheque") "cheque_no": _cheqNo.text,
-//       // if (dropdownvalue == "Cheque")
-//       //   "bank":
-//       //       // 'canara',
-//       //       _bank.text,
-//       // if (dropdownvalue == "Cheque") "cheque_date": formattedDate,
-//     };
-// // print(dropdownvalue);
-// // print('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
-//     debugPrint('Body Data $bodyJson');
-//     dynamic resJson =
-//         await api.sendData(subUrl, AppState().token, jsonEncode(bodyJson));
-//     if (resJson['data'] != null) {
-//       if (mounted) {
-//         CommonWidgets.showDialogueBox(
-//                 context: context, title: "Alert", msg: "Updated Successfully")
-//             .then((_) => Navigator.of(context).pop());
-//       }
-//     }
-//   }
-// }
+import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:mobizapp/Pages/CustomeSOA.dart';
+import 'package:shimmer/shimmer.dart';
+import '../Components/commonwidgets.dart';
+
+import '../Models/appstate.dart';
+import '../Models/paymentcollectionclass.dart';
+import '../Utilities/rest_ds.dart';
+import '../confg/appconfig.dart';
+import '../confg/sizeconfig.dart';
+
+class PaymentCollectionScreen extends StatefulWidget {
+  static const routeName = "/PaymentCollection";
+  // final String? id;
+  // final String? code;
+  // final String? name;
+  PaymentCollectionScreen({
+    Key? key,
+  }) : super(key: key);
+  @override
+  _PaymentCollectionScreenState createState() =>
+      _PaymentCollectionScreenState();
+}
+
+int cuId = 0;
+String cuname = '';
+String cucode = '';
+String cupay = '';
+String cuoutstand = '';
+
+class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
+  List<Invoice> invoices = [];
+
+  String dropdownvalue = 'Cash';
+  var items = ['Cash', 'cheque'];
+  late Future<ApiResponse> futureInvoices;
+  List<bool> expandedStates = [];
+  TextEditingController _paidAmt = TextEditingController();
+  String PaidAmt = '';
+  String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  TextEditingController _bankController = TextEditingController();
+  String bankData = '';
+  TextEditingController _chequeController = TextEditingController();
+  String chequeData = '';
+  List<String> enteredValues = [];
+  List<String> invoiceTypes = [];
+  List<String> invoiceno = [];
+  List<String> invoicedate = [];
+  List<int> goodsTypes = [];
+  List<int> invoiceid = [];
+
+  String formatDate(String date) {
+    DateTime parsedDate = DateTime.parse(date);
+    return DateFormat('dd MMMM yyyy').format(parsedDate);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    futureInvoices = fetchInvoices();
+  }
+
+  double getAllocatedAmount() {
+    return enteredValues.asMap().entries.map((entry) {
+      int index = entry.key;
+      String value = entry.value;
+      if (value.isNotEmpty) {
+        double amount = double.parse(value);
+        String invoiceType = invoices[index].invoiceType.toLowerCase();
+        if (invoiceType == "sales") {
+          return amount;
+        } else if (invoiceType == "salesreturn" ||
+            invoiceType == "payment_voucher") {
+          return -amount;
+        }
+      }
+      return 0.0;
+    }).fold(0.0, (sum, amount) => sum + amount);
+  }
+
+  double getBalanceAmount() {
+    double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
+
+    double allocatedAmount = enteredValues.asMap().entries.map((entry) {
+      int index = entry.key;
+      String value = entry.value;
+      if (value.isNotEmpty) {
+        double amount = double.parse(value);
+        String invoiceType = invoices[index].invoiceType.toLowerCase();
+        if (invoiceType == "sales") {
+          return -amount;
+        } else if (invoiceType == "salesreturn" ||
+            invoiceType == "payment_voucher") {
+          return amount;
+        }
+      }
+      return 0.0;
+    }).fold(0.0, (sum, amount) => sum + amount);
+
+    return paidAmount + allocatedAmount;
+  }
+
+  void updateBalanceAndAllocatedAmounts() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      cuId = params!['customer'];
+      cucode = params!['code'];
+      cuname = params!['name'];
+      cupay = params!['paymentTerms'];
+      cuoutstand = params!['outstandamt'];
+    }
+
+    PaidAmt = _paidAmt.text;
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppConfig.colorPrimary,
+        foregroundColor: AppConfig.backgroundColor,
+        title: const Text('Payment Collection'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${cucode ?? ''} | ${cuname ?? ''} | ${cupay ?? ''}',
+                    style:
+                    const TextStyle(color: AppConfig.buttonDeactiveColor),
+                  ),
+                  CommonWidgets.verticalSpace(2),
+                  Row(
+                    children: [
+                      const Text(
+                        'Total outstanding',
+                        style: TextStyle(color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      _inputBox(
+                          status: false,
+                          value: "${cuoutstand == '[]' ? '' : cuoutstand}"),
+                      // ${_data == '[]' ? '' : _data}
+                      const Spacer(),
+                      const Text(
+                        'Paid Amount',
+                        style: TextStyle(color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      InkWell(
+                        onTap: () {
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('Paid Amount'),
+                                  content: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        PaidAmt = value;
+                                        updateBalanceAndAllocatedAmounts();
+                                      });
+                                    },
+                                    keyboardType: TextInputType.number,
+                                    controller: _paidAmt,
+                                    decoration: const InputDecoration(
+                                        hintText: "Paid Amount"),
+                                  ),
+                                  actions: <Widget>[
+                                    MaterialButton(
+                                      color: AppConfig.colorPrimary,
+                                      textColor: Colors.white,
+                                      child: const Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          updateBalanceAndAllocatedAmounts();
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }).then((value) => setState(() {}));
+                        },
+                        child: _inputBox(status: true, value: (PaidAmt ?? '')),
+                      ),
+                    ],
+                  ),
+                  CommonWidgets.verticalSpace(1),
+                  Row(
+                    children: [
+                      const Text(
+                        'Allocated Amount',
+                        style: TextStyle(color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      _inputBox(
+                          status: false,
+                          value: getAllocatedAmount().toString()),
+                      const Spacer(),
+                      const Text(
+                        'Balance Amount',
+                        style: TextStyle(color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      _inputBox(
+                          status: false, value: getBalanceAmount().toString()),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: MediaQuery.of(context).size.height * .5,
+              width: double.infinity,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    FutureBuilder<ApiResponse>(
+                      future: futureInvoices,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                            baseColor:
+                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                      SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                      SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                      SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                      SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                      SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.data.isEmpty) {
+                          return Center(child: Text('No invoices found'));
+                        } else {
+                          // Initialize the expanded states
+                          if (expandedStates.isEmpty) {
+                            expandedStates = List<bool>.filled(
+                                snapshot.data!.data.length, false);
+                          }
+                          if (enteredValues.length !=
+                              snapshot.data!.data.length) {
+                            enteredValues =
+                                List.filled(snapshot.data!.data.length, '');
+                          }
+                          return ListView.builder(
+                            scrollDirection: Axis.vertical,
+                            physics: BouncingScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: snapshot.data!.data.length,
+                            itemBuilder: (context, index) {
+                              // Inside the itemBuilder
+
+                              final invoice = snapshot.data!.data[index];
+                              // if (invoiceTypes.contains(invoice.invoiceType)) {
+                              invoiceTypes.clear();
+                              goodsTypes.clear();
+                              invoiceno.clear();
+                              invoicedate.clear();
+                              invoiceid.clear();
+
+                              // Add the data to the lists
+                              snapshot.data!.data.forEach((invoice) {
+                                invoiceTypes.add(invoice.invoiceType);
+                                goodsTypes.add(invoice.master_id);
+                                invoiceno.add(invoice.invoiceNo);
+                                invoicedate.add(invoice.invoiceDate);
+                                invoiceid.add(invoice.id);
+                              });
+                              // }
+                              return Padding(
+                                padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
+                                child: Card(
+                                  color: AppConfig.backgroundColor,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              expandedStates[index] =
+                                              !expandedStates[index];
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                        "${formatDate(invoice.invoiceDate)} | ${invoice.invoiceNo} | ${invoice.invoiceType}"),
+                                                    InkWell(
+                                                      onTap: () {
+                                                        _showDialog(context,
+                                                            index, invoice);
+                                                      },
+                                                      child: _inputBox(
+                                                          status: false,
+                                                          value: enteredValues[
+                                                          index]),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 8.0),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        'Amount: ${invoice.amount} | Paid: ${invoice.paid} | Balance: ${invoice.amount - invoice.paid}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .grey.shade600),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Visibility(
+                                          visible: expandedStates[index],
+                                          child: Container(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                              children: [
+                                                Column(
+                                                  children: invoice.collection
+                                                      .map((collection) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 18.0,
+                                                          vertical: 10),
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                              '${formatDate(collection.inDate)} | ${collection.voucherNo} | ${collection.amount} | ${collection.collectionType}')
+                                                        ],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(5)),
+                    border: Border.all(color: AppConfig.buttonDeactiveColor)),
+                width: SizeConfig.screenWidth,
+                child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Collection Type',
+                              style: TextStyle(
+                                  color: AppConfig.buttonDeactiveColor),
+                            ),
+                            CommonWidgets.horizontalSpace(1),
+                            Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color: AppConfig.buttonDeactiveColor,
+                                  )),
+                              constraints: BoxConstraints(
+                                minWidth: SizeConfig.blockSizeHorizontal * 13,
+                              ),
+                              height: SizeConfig.blockSizeVertical * 4,
+                              child: DropdownButton(
+                                alignment: Alignment.center,
+                                value: dropdownvalue,
+                                icon: const SizedBox(),
+                                underline: const SizedBox(),
+                                items: items.map((String items) {
+                                  return DropdownMenuItem(
+                                    value: items,
+                                    child: Text(items),
+                                  );
+                                }).toList(),
+                                // After selecting the desired option,it will
+                                // change button value to selected value
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    dropdownvalue = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+                            // _inputBox(
+                            //     status: true, value: "Cheque"),
+                            (dropdownvalue != "Cash")
+                                ? const Spacer()
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? const Text(
+                              'Bank',
+                              style: TextStyle(
+                                  color: AppConfig.buttonDeactiveColor),
+                            )
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? CommonWidgets.horizontalSpace(1)
+                                : Container(),
+                            (dropdownvalue != "Cash")
+                                ? InkWell(
+                              onTap: () {
+                                showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Bank'),
+                                      content: TextField(
+                                        controller: _bankController,
+                                        keyboardType: TextInputType.name,
+                                        decoration: const InputDecoration(
+                                          hintText: "Bank",
+                                        ),
+                                      ),
+                                      actions: <Widget>[
+                                        MaterialButton(
+                                          color: AppConfig.colorPrimary,
+                                          textColor: Colors.white,
+                                          child: const Text('OK'),
+                                          onPressed: () {
+                                            setState(() {
+                                              bankData =
+                                                  _bankController.text;
+                                            });
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: _inputBox(
+                                  status: true, value: bankData),
+                            )
+                                : Container(),
+                          ],
+                        ),
+                        CommonWidgets.verticalSpace(1),
+                        (dropdownvalue != "Cash")
+                            ? Row(
+                          children: [
+                            const Text(
+                              'Cheque Date',
+                              style: TextStyle(
+                                  color: AppConfig.buttonDeactiveColor),
+                            ),
+                            CommonWidgets.horizontalSpace(1),
+                            InkWell(
+                              onTap: () async {
+                                DateTime? pickedDate =
+                                await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(1950),
+                                    lastDate: DateTime(2100));
+
+                                if (pickedDate != null) {
+                                  formattedDate = DateFormat('dd-MM-yyyy')
+                                      .format(pickedDate);
+                                } else {}
+                              },
+                              child: _inputBox(
+                                  status: true, value: "$formattedDate"),
+                            ),
+                            const Spacer(),
+                            const Text(
+                              'Cheque No',
+                              style: TextStyle(
+                                  color: AppConfig.buttonDeactiveColor),
+                            ),
+                            CommonWidgets.horizontalSpace(1),
+                            InkWell(
+                              onTap: () {
+                                showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Cheque No'),
+                                      content: TextField(
+                                        controller: _chequeController,
+                                        keyboardType: TextInputType.name,
+                                        decoration: const InputDecoration(
+                                          hintText: "Cheque No",
+                                        ),
+                                      ),
+                                      actions: <Widget>[
+                                        MaterialButton(
+                                          color: AppConfig.colorPrimary,
+                                          textColor: Colors.white,
+                                          child: const Text('OK'),
+                                          onPressed: () {
+                                            setState(() {
+                                              chequeData =
+                                                  _chequeController.text;
+                                            });
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: _inputBox(
+                                  status: true, value: chequeData),
+                            ),
+                          ],
+                        )
+                            : Container(),
+                      ],
+                    )),
+              ),
+            ),
+            CommonWidgets.verticalSpace(1),
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConfig.colorPrimary, // Background color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3), // Rectangle shape
+                  ),
+                ),
+                onPressed: () {
+                  postCollectionData();
+                },
+                child: Text("Save", style: TextStyle(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDialog(BuildContext context, int index, Invoice invoice) {
+    double invoiceBalance = invoice.amount - invoice.paid;
+
+    TextEditingController _amountController = TextEditingController(
+      text: invoiceBalance.toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Amount'),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            controller: _amountController,
+            onChanged: (value) {
+              setState(() {
+                if (invoice.invoiceType.toLowerCase() == 'sales') {
+                  // Subtract entered amount from balance if invoice type is 'sales'
+                  enteredValues[index] = value;
+                } else {
+                  // Add entered amount to balance if invoice type is not 'sales'
+                  double currentBalance = double.parse(value) +
+                      double.parse(PaidAmt) -
+                      getAllocatedAmount();
+                  enteredValues[index] = currentBalance.toString();
+                }
+              });
+            },
+            decoration: InputDecoration(hintText: "Enter amount"),
+          ),
+          actions: <Widget>[
+            MaterialButton(
+              color: AppConfig.colorPrimary,
+              textColor: Colors.white,
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  enteredValues[index] = _amountController.text;
+                  updateBalanceAndAllocatedAmounts();
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _inputBox({
+    required String value,
+    required bool status,
+  }) {
+    return Container(
+      // padding: EdgeInsets.symmetric(horizontal: 30),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(
+          color: AppConfig.buttonDeactiveColor,
+        ),
+      ),
+      constraints: BoxConstraints(
+        minWidth: SizeConfig.blockSizeHorizontal * 13,
+        minHeight: SizeConfig.blockSizeVertical * 3,
+      ),
+      child: Text(
+        textAlign: TextAlign.center,
+        value,
+        style: TextStyle(
+          color: status ? AppConfig.textBlack : AppConfig.buttonDeactiveColor,
+        ),
+      ),
+    );
+  }
+
+  Future<ApiResponse> fetchInvoices() async {
+    final String url =
+        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // print('llllllllllllllllllllllllll');
+      // print(id);
+      ApiResponse apiResponse = ApiResponse.fromJson(jsonDecode(response.body));
+      invoices = apiResponse.data;
+      // Initialize enteredValues list with the length of fetched invoices
+      enteredValues = List.filled(invoices.length, '');
+      return apiResponse;
+    } else {
+      throw Exception('Failed to load invoices');
+    }
+  }
+
+  Future<void> postCollectionData() async {
+    final url = '${RestDatasource().BASE_URL}/api/collection.post';
+    List<Map<String, dynamic>> collectionDetails = [];
+    for (int i = 0; i < invoices.length; i++) {
+      if (enteredValues[i].isNotEmpty) {
+        collectionDetails.add({
+          'InvoiceId': invoices[i].invoiceNo,
+          'Amount': double.parse(enteredValues[i]),
+        });
+      }
+    }
+    List<double> processedValues = enteredValues.map((value) {
+      return value.isEmpty ? 0.0 : double.parse(value);
+    }).toList();
+    final body = {
+      'van_id': AppState().vanId,
+      'store_id': AppState().storeId,
+      'user_id': AppState().userId,
+      'goods_out_id': goodsTypes,
+      'amount': processedValues,
+      'customer_id': cuId,
+      'invoice_type': invoiceTypes,
+      'collection_type': dropdownvalue,
+      'bank': _bankController.text,
+      'cheque_no': _chequeController.text,
+      'cheque_date': formattedDate,
+      'invoice_no': invoiceno,
+      'invoice_date': invoicedate,
+      'invoice_id': invoiceid
+    };
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      print(processedValues);
+      print('dddddddddddddddd');
+      // Handle success response
+      print('Data posted successfully');
+      if (mounted) {
+        CommonWidgets.showDialogueBox(
+            context: context, title: "Alert", msg: "Transaction Successful")
+            .then(
+              (value) {
+            Navigator.pop(context);
+          },
+        );
+      }
+    } else {
+      // Handle error response
+      print('Failed to post data: ${response.statusCode}');
+    }
+  }
+}
+
+class ApiResponse {
+  final List<Invoice> data;
+
+  ApiResponse({required this.data});
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      data: List<Invoice>.from(
+          json['data'].map((item) => Invoice.fromJson(item))),
+    );
+  }
+}

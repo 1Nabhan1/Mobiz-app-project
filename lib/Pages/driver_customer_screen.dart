@@ -1,161 +1,154 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:horizontal_week_calendar/horizontal_week_calendar.dart';
-import 'package:intl/intl.dart';
+import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Models/customerdetails.dart';
+import 'package:mobizapp/Pages/customerdetailscreen.dart';
+import 'package:mobizapp/Pages/customerregistration.dart';
+import 'package:mobizapp/Pages/salesscreen.dart';
+import 'package:mobizapp/Utilities/rest_ds.dart';
+import 'package:mobizapp/confg/appconfig.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../Components/commonwidgets.dart';
-import '../Models/appstate.dart';
-import '../Models/customerdetails.dart';
-import '../Utilities/rest_ds.dart';
-import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
-import 'DriverPage.dart';
+import 'Driver_customer_detail_screen.dart';
 import 'Mapscreen.dart';
-import 'customerdetailscreen.dart';
 
-class ScheduleDriver extends StatefulWidget {
-  static const routeName = "/ScheduleDriver";
-
-  const ScheduleDriver({super.key});
+class driver_customer_screen extends StatefulWidget {
+  static const routeName = "/driver_customer_screen";
+  const driver_customer_screen({super.key});
 
   @override
-  State<ScheduleDriver> createState() => _ScheduleDriverState();
+  State<driver_customer_screen> createState() => _driver_customer_screenState();
 }
 
-class _ScheduleDriverState extends State<ScheduleDriver> {
-  var selectedDate = DateTime.now();
+class _driver_customer_screenState extends State<driver_customer_screen> {
   CustomerData customer = CustomerData();
   bool _initDone = false;
   bool _nodata = false;
-
+  List<Data> filteredCustomers = [];
+  String searchQuery = '';
+  bool _isSearching = false;
   @override
   void initState() {
     super.initState();
     getCustomerDetails();
+    requestLocationPermission();
+  }
+
+  Future<void> requestLocationPermission() async {
+    var status = await Permission.location.status;
+    if (status.isDenied) {
+      if (await Permission.location.request().isGranted) {
+        getCustomerDetails();
+      } else {
+        Fluttertoast.showToast(
+          msg: "Location permission is required to use this feature.",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    } else {
+      getCustomerDetails();
+    }
+  }
+
+  void _searchCustomer(String query) {
+    final filteredList = customer.data!.where((customer) {
+      final customerName = customer.name?.toLowerCase() ?? '';
+      final searchLower = query.toLowerCase();
+      return customerName.contains(searchLower);
+    }).toList();
+
+    setState(() {
+      searchQuery = query;
+      filteredCustomers = filteredList;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
-        ),
         backgroundColor: AppConfig.colorPrimary,
-        title: Text(
-          'Schedule',
-          style: TextStyle(color: AppConfig.backgroundColor),
-        ),
+        iconTheme: const IconThemeData(color: AppConfig.backButtonColor),
+        title: _isSearching
+            ? TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: TextStyle(color: Colors.white),
+                  border: InputBorder.none,
+                ),
+                onChanged: (query) {
+                  _searchCustomer(query);
+                },
+                style: const TextStyle(color: Colors.white),
+              )
+            : const Text(
+                'Shops',
+                style: TextStyle(color: AppConfig.backButtonColor),
+              ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedDate = DateTime.now();
-                getCustomerDetails();
-              });
-            },
-            child: Icon(
-              Icons.refresh,
+          _isSearching
+              ? IconButton(
+                  icon: const Icon(Icons.cancel),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = false;
+                      searchQuery = '';
+                      filteredCustomers = customer.data!;
+                    });
+                  },
+                )
+              : IconButton(
+                  icon: const Icon(Icons.search, size: 30),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = true;
+                    });
+                  },
+                ),
+          IconButton(
+            icon: Icon(
+              Icons.add,
+              size: 30,
               color: AppConfig.backgroundColor,
             ),
+            onPressed: () {
+              Navigator.pushNamed(context, CustomerRegistration.routeName);
+            },
           ),
-          SizedBox(
-            width: 10,
-          )
+          CommonWidgets.horizontalSpace(3),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            SizedBox(
-              height: 10,
-            ),
-            GestureDetector(
-              onLongPress: () async {
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2023, 12, 31),
-                  lastDate: DateTime(2028, 1, 31),
-                  builder: (context, child) {
-                    return Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(
-                          primary:
-                              AppConfig.colorPrimary, // header background color
-                          onPrimary: Colors.white, // header text color
-                          onSurface: AppConfig.colorPrimary, // body text color
-                        ),
-                        textButtonTheme: TextButtonThemeData(
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                Colors.deepPurple, // button text color
-                          ),
-                        ),
-                      ),
-                      child: child!,
-                    );
-                  },
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    selectedDate = pickedDate;
-                    getCustomerDetails();
-                  });
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8.0,
-                ),
-                child: HorizontalWeekCalendar(
-                  key:
-                      ValueKey(selectedDate), // Use ValueKey to trigger rebuild
-                  minDate: DateTime(2023, 12, 31),
-                  maxDate: DateTime(2028, 1, 31),
-                  initialDate: selectedDate,
-                  onDateChange: (date) {
-                    setState(() {
-                      selectedDate = date;
-                      getCustomerDetails();
-                    });
-                  },
-                  showTopNavbar: false,
-                  monthFormat: "MMMM yyyy",
-                  showNavigationButtons: true,
-                  weekStartFrom: WeekStartFrom.Monday,
-                  borderRadius: BorderRadius.circular(7),
-                  activeBackgroundColor: AppConfig.colorPrimary,
-                  activeTextColor: Colors.white,
-                  inactiveBackgroundColor: Colors.deepPurple.withOpacity(.3),
-                  inactiveTextColor: Colors.white,
-                  disabledTextColor: Colors.grey,
-                  disabledBackgroundColor: Colors.grey.withOpacity(.3),
-                  activeNavigatorColor: Colors.deepPurple,
-                  inactiveNavigatorColor: Colors.grey,
-                  monthColor: AppConfig.colorPrimary,
-                ),
-              ),
-            ),
             (_initDone && !_nodata)
                 ? SizedBox(
                     height: SizeConfig.blockSizeVertical * 78,
                     child: ListView.separated(
                       separatorBuilder: (BuildContext context, int index) =>
                           CommonWidgets.verticalSpace(1),
-                      itemCount: customer.data!.length!,
+                      itemCount: (searchQuery.isEmpty
+                              ? customer.data!
+                              : filteredCustomers)
+                          .length,
                       shrinkWrap: true,
-                      itemBuilder: (context, index) =>
-                          _customersCard(customer.data![index]),
+                      itemBuilder: (context, index) => _customersCard(
+                          searchQuery.isEmpty
+                              ? customer.data![index]
+                              : filteredCustomers[index]),
                     ),
                   )
                 : (_nodata && _initDone)
@@ -203,28 +196,6 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
   }
 
   Widget _customersCard(Data data) {
-    void _openGoogleMaps(String data) async {
-      if (data.isEmpty) {
-        Fluttertoast.showToast(
-          msg: "Location are not available",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-        return;
-      }
-      final String googleMapsUrl =
-          'https://www.google.com/maps/dir/?api=1&destination=$data';
-      if (await canLaunch(googleMapsUrl)) {
-        await launch(googleMapsUrl);
-      } else {
-        throw 'Could not launch $googleMapsUrl';
-      }
-    }
-
     void _openMapScreen() async {
       String coordinates = data.location ?? '';
 
@@ -256,7 +227,8 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
 
     return InkWell(
       onTap: () {
-        Navigator.of(context).pushNamed(DriverPage.routeName, arguments: {
+        Navigator.of(context)
+            .pushNamed(Driver_customer_detail_screen.routeName, arguments: {
           'name': data.name!,
           'address': data.address,
           'phone': data.contactNumber,
@@ -332,33 +304,18 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                         ),
                         const Spacer(),
                         GestureDetector(
-                          onTap: () {
-                            _openGoogleMaps(data.location ?? '');
-                            // print('gggggggggggggggggggggggggggggg');
-                            // print(AppState().userId);
-                          },
-                          // _openMapScreen,
+                          onTap: _openMapScreen,
                           child: Image.asset(
                             'Assets/Images/vecteezy_google-maps-icon_16716478.png',
                             fit: BoxFit.cover,
                             height: 30,
                           ),
-                        ),
+                        )
                       ]),
                     ),
-                    SizedBox(
-                      width: SizeConfig.blockSizeHorizontal * 72,
-                      child: Row(
-                        children: [
-                          Text(
-                            'Contact:${data.contactNumber}',
-                            style:
-                                TextStyle(fontSize: AppConfig.textCaption3Size),
-                          ),
-                          Spacer(),
-                          Text(data.visit ?? '')
-                        ],
-                      ),
+                    Text(
+                      'Contact:${data.contactNumber}',
+                      style: TextStyle(fontSize: AppConfig.textCaption3Size),
                     ),
                   ],
                 ),
@@ -374,15 +331,16 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
     RestDatasource api = RestDatasource();
 
     dynamic resJson = await api.getDetails(
-        '/api/get_scheduled_delivery_customer_by_driver_with_date?store_id=${AppState().storeId}&user_id=${AppState().userId}&date=${DateFormat('yyyy-MM-dd').format(selectedDate)}',
+        '/api/get_customer?store_id=${AppState().storeId}&route_id=${AppState().routeId}',
         AppState().token);
     print('Cust $resJson');
     if (resJson['data'] != null && resJson['data'].length > 0) {
       customer = CustomerData.fromJson(resJson);
 
       setState(() {
+        customer = CustomerData.fromJson(resJson);
+        filteredCustomers = customer.data!;
         _initDone = true;
-        _nodata = false;
       });
     } else {
       setState(() {

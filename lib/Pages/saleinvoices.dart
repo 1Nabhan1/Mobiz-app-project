@@ -557,11 +557,6 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           .format(DateTime.parse(invoice.data!.inDate!));
       String dueDate = DateFormat('dd MMMM yyyy')
           .format(DateTime.parse(invoice.data!.inDate!));
-      String productDescription = invoice.data!.detail![0].name ?? 'N/A';
-      String productRate =
-          invoice.data!.detail![0].mrp?.toStringAsFixed(2) ?? '0.00';
-      String productQty = invoice.data!.detail![0].quantity?.toString() ?? '0';
-      String productTotal = invoice.data!.total?.toStringAsFixed(2) ?? '0.00';
       String tax = invoice.data!.totalTax?.toStringAsFixed(2) ?? '0.00';
       String grandTotal =
           invoice.data!.grandTotal?.toStringAsFixed(2) ?? '0.00';
@@ -613,7 +608,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom(headers, 1, 1); // Left aligned
 
       // Function to print product lines
-      void printProductLine(String description, int serialNo) {
+      void printProductLine(String description, String rate, String qty,
+          String total, int serialNo) {
         const int maxDescriptionLength = columnWidth2;
         final List<String> lines = [];
 
@@ -626,19 +622,31 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
         for (int i = 0; i < lines.length; i++) {
           String line =
-              "${serialNo.toString().padLeft(columnWidth1)} ${lines[i].padRight(columnWidth2)} ${'PCS'.padLeft(columnWidth3)} ${productRate.padLeft(columnWidth4)} ${productQty.padLeft(columnWidth5)} ${tax.padLeft(columnWidth6)} ${productTotal.padLeft(columnWidth7)}";
+              "${serialNo.toString().padLeft(columnWidth1)} ${lines[i].padRight(columnWidth2)} ${'PCS'.padLeft(columnWidth3)} ${rate.padLeft(columnWidth4)} ${qty.padLeft(columnWidth5)} ${tax.padLeft(columnWidth6)} ${total.padLeft(columnWidth7)}";
           printer.printCustom(line, 1, 1); // Left aligned
           serialNo++; // Increment serial number
         }
       }
 
-      // Print product details
-      printProductLine(productDescription, 1);
+      // Print all product details
+      for (int i = 0; i < invoice.data!.detail!.length; i++) {
+        String productDescription = invoice.data!.detail![i].name ?? 'N/A';
+        String productRate =
+            invoice.data!.detail![i].mrp?.toStringAsFixed(2) ?? '0.00';
+        String productQty =
+            invoice.data!.detail![i].quantity?.toString() ?? '0';
+        String productTotal =
+            (invoice.data!.detail![i].mrp! * invoice.data!.detail![i].quantity!)
+                .toStringAsFixed(2);
+
+        printProductLine(
+            productDescription, productRate, productQty, productTotal, i + 1);
+      }
 
       printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print totals
-      printer.printCustom("Total: $productTotal", 1, 2); // Right aligned
+      printer.printCustom("Total: $grandTotal", 1, 2); // Right aligned
       printer.printCustom("Tax: $tax", 1, 2); // Right aligned
       printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();

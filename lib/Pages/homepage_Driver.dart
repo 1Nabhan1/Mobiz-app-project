@@ -26,7 +26,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
+import 'Delivery_details_driver.dart';
 import 'Schedule_page.dart';
+import 'driver_customer_screen.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
 import 'offLoadRequest.dart';
@@ -198,17 +200,27 @@ class _HomepageDriverState extends State<HomepageDriver> {
                               //
                               // }
                               Navigator.pushNamed(
-                                  context, CustomersDataScreen.routeName);
+                                  context, driver_customer_screen.routeName);
                             },
                             child: _iconButtons(
                                 icon: Icons.people, title: 'Customer')),
                         GestureDetector(
                             onTap: () {
-                                Navigator.pushNamed(
-                                    context, ScheduleDriver.routeName);
+                              Navigator.pushNamed(
+                                  context, ScheduleDriver.routeName);
                             },
                             child: _iconButtons(
                                 icon: Icons.calendar_today, title: 'Schedule')),
+                        InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                DeliveryDetailsDriver.routeName,
+                              );
+                            },
+                            child: _iconButtons(
+                                icon: Icons.insert_drive_file_rounded,
+                                title: 'Delivery')),
                         // GestureDetector(
                         //   onTap: () {
                         //     if (_restrict) {
