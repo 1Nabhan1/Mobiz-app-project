@@ -563,7 +563,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       String grandTotal =
           invoice.data!.grandTotal?.toStringAsFixed(2) ?? '0.00';
       String amountInWords =
-          "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal?.toInt() ?? 0).toUpperCase()} ONLY";
+          "Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal?.toInt() ?? 0).toUpperCase()} ONLY";
       String van = invoice.data!.van![0].name ?? 'N/A';
       String salesman = invoice.data!.user![0].name ?? 'N/A';
 
