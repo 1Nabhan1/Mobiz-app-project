@@ -29,6 +29,7 @@ import 'Pages/Day_closeReport.dart';
 import 'Pages/DriverDetailsPage.dart';
 import 'Pages/DriverPage.dart';
 import 'Pages/Driver_customer_detail_screen.dart';
+import 'Pages/Driver_paymentCollection.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Delivery_details_driver.dart';
 import 'Pages/Schedule_page.dart';
@@ -70,16 +71,19 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
           ),
-          // home: SignaturePage(),
+          // home: ProductListScreen(),
           initialRoute: SplashScreen.routeName,
           routes: {
             // '/': (context) => Home(),
             LoginScreen.routeName: (context) => const LoginScreen(),
+            Driver_PaymentCollectionScreen.routeName: (context) =>
+                Driver_PaymentCollectionScreen(),
             TotalSales.routeName: (context) => const TotalSales(),
             driver_customer_screen.routeName: (context) =>
                 const driver_customer_screen(),
             HomeScreen.routeName: (context) => const HomeScreen(),
-            DeliveryDetailsDriver.routeName: (context) => const DeliveryDetailsDriver(),
+            DeliveryDetailsDriver.routeName: (context) =>
+                const DeliveryDetailsDriver(),
             Driver_customer_detail_screen.routeName: (context) =>
                 const Driver_customer_detail_screen(),
             HomepageDriver.routeName: (context) => const HomepageDriver(),

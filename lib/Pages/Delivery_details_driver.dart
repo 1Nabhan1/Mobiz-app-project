@@ -20,33 +20,44 @@ class DeliveryDetailsDriver extends StatefulWidget {
   State<DeliveryDetailsDriver> createState() => _DeliveryDetailsDriverState();
 }
 
-class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver> {
+class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
+    with SingleTickerProviderStateMixin {
   List<bool> isSelected = [true, false, false];
-  void _onContainerTap(int index) {
-    setState(() {
-      for (int i = 0; i < isSelected.length; i++) {
-        if (i == index) {
-          isSelected[i] = true;
-        } else {
-          isSelected[i] = false;
-        }
-      }
-      futureDeliveries = fetchDeliverstatus(txt[index].toLowerCase());
-    });
-  }
+  // void _onContainerTap(int index) {
+  //   setState(() {
+  //     for (int i = 0; i < isSelected.length; i++) {
+  //       if (i == index) {
+  //         isSelected[i] = true;
+  //       } else {
+  //         isSelected[i] = false;
+  //       }
+  //     }
+  //     futureDeliveries = fetchDeliverstatus(txt[index].toLowerCase());
+  //   });
+  // }
+
+  late TabController _tabController;
 
   List<bool> expandedStates = [];
+  List<bool> expandedStates1 = [];
+  List<bool> expandedStates2 = [];
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    futureDeliveries = fetchDeliverstatus(txt[0].toLowerCase());
+    _tabController = TabController(length: 4, vsync: this);
+    futurePending = fetchDeliverstatusPending();
+    futureDelivered = fetchDeliverstatusDelivered();
+    futureAll = fetchDeliverstatusAll();
   }
 
-  late Future<List<CustomerDelivery>> futureDeliveries;
-  Future<List<CustomerDelivery>> fetchDeliverstatus(String status) async {
+  late Future<List<CustomerDelivery>> futurePending;
+  late Future<List<CustomerDelivery>> futureDelivered;
+  late Future<List<CustomerDelivery>> futureAll;
+
+  Future<List<CustomerDelivery>> fetchDeliverstatusPending() async {
     final String uri =
-        'http://68.183.92.8:3699/api/get_scheduled_delivery_by_driver_$status?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+        '${RestDatasource().BASE_URL}/api/get_scheduled_delivery_by_driver_pending?store_id=${AppState().storeId}&user_id=${AppState().userId}';
     final response = await http.get(Uri.parse(uri));
     print(uri);
     if (response.statusCode == 200) {
@@ -70,6 +81,68 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver> {
     } else {
       throw Exception('Failed to load data');
     }
+  }
+
+  Future<List<CustomerDelivery>> fetchDeliverstatusDelivered() async {
+    final String uri =
+        '${RestDatasource().BASE_URL}/api/get_scheduled_delivery_by_driver_delivered?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+    final response = await http.get(Uri.parse(uri));
+    print(uri);
+    if (response.statusCode == 200) {
+      // print(AppState().storeId);
+      // print(AppState().userId);
+
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['success']) {
+        final deliveries = List<CustomerDelivery>.from(jsonResponse['data']
+            .map((delivery) => CustomerDelivery.fromJson(delivery)));
+
+        // Reset expandedStates to match the length of the new deliveries
+        setState(() {
+          expandedStates1 = List<bool>.filled(deliveries.length, false);
+        });
+
+        return deliveries;
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+  Future<List<CustomerDelivery>> fetchDeliverstatusAll() async {
+    final String uri =
+        '${RestDatasource().BASE_URL}/api/get_scheduled_delivery_by_driver_all?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+    final response = await http.get(Uri.parse(uri));
+    print(uri);
+    if (response.statusCode == 200) {
+      // print(AppState().storeId);
+      // print(AppState().userId);
+
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['success']) {
+        final deliveries = List<CustomerDelivery>.from(jsonResponse['data']
+            .map((delivery) => CustomerDelivery.fromJson(delivery)));
+
+        // Reset expandedStates to match the length of the new deliveries
+        setState(() {
+          expandedStates2 = List<bool>.filled(deliveries.length, false);
+        });
+
+        return deliveries;
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _tabController.dispose();
   }
 
   late String name;
@@ -118,205 +191,572 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver> {
       ),
       body: Column(
         children: [
+          TabBar(
+            labelStyle: TextStyle(
+                color: AppConfig.backgroundColor, fontWeight: FontWeight.bold),
+            padding: EdgeInsets.all(8),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            splashBorderRadius: BorderRadius.circular(10),
+            indicator: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppConfig.colorPrimary,
+            ),
+            controller: _tabController,
+            tabs: [
+              Tab(text: 'Loading\nPending'),
+              Tab(text: 'Delivery\nPending'),
+              Tab(text: 'Delivered'),
+              Tab(text: 'All'),
+            ],
+          ),
           SizedBox(
             height: 10.h,
           ),
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(3, (index) {
-                return GestureDetector(
-                  onTap: () => _onContainerTap(index),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: isSelected[index]
-                            ? AppConfig.colorPrimary
-                            : AppConfig.backgroundColor,
-                        border: Border.all(
-                            color: AppConfig.colorPrimary, width: 1.w)),
-                    width: 100.w,
-                    height: 30.h,
-                    child: Center(
-                        child: Text(
-                      txt[index],
-                      style: TextStyle(
-                          color: isSelected[index]
-                              ? AppConfig.backgroundColor
-                              : AppConfig.colorPrimary,
-                          fontWeight: FontWeight.bold),
-                    )),
-                  ),
-                );
-              })),
-          FutureBuilder<List<CustomerDelivery>>(
-              future: futureDeliveries,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Shimmer.fromColors(
-                    baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                    highlightColor: AppConfig.backButtonColor,
-                    child: Center(
-                      child: Column(
-                        children: [
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                          CommonWidgets.loadingContainers(
-                              height: SizeConfig.blockSizeVertical * 10,
-                              width: SizeConfig.blockSizeHorizontal * 90),
-                        ],
-                      ),
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  print('Error: ${snapshot.error}');
-                  return Center(child: Text('No data'));
-                } else {
-                  if (expandedStates.isEmpty) {
-                    expandedStates =
-                        List<bool>.filled(snapshot.data!.length, false);
-                  }
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SingleChildScrollView(
-                        child: ListView.builder(
-                          scrollDirection: Axis.vertical,
-                          shrinkWrap: true,
-                          physics: BouncingScrollPhysics(),
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            final delivery = snapshot.data![index];
-                            // final isSelected =
-                            // selectedDeliveries.contains(delivery);
-                            return Card(
-                              elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+          // Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+          //     children: List.generate(3, (index) {
+          //       return GestureDetector(
+          //         onTap: () => _onContainerTap(index),
+          //         child: Container(
+          //           decoration: BoxDecoration(
+          //               color: isSelected[index]
+          //                   ? AppConfig.colorPrimary
+          //                   : AppConfig.backgroundColor,
+          //               border: Border.all(
+          //                   color: AppConfig.colorPrimary, width: 1.w)),
+          //           width: 100.w,
+          //           height: 30.h,
+          //           child: Center(
+          //               child: Text(
+          //             txt[index],
+          //             style: TextStyle(
+          //                 color: isSelected[index]
+          //                     ? AppConfig.backgroundColor
+          //                     : AppConfig.colorPrimary,
+          //                 fontWeight: FontWeight.bold),
+          //           )),
+          //         ),
+          //       );
+          //     })),
+          Expanded(
+              child: TabBarView(controller: _tabController, children: [
+            Container(
+              child: Center(
+                child: Text('No data'),
+              ),
+            ),
+            Container(
+              child: Column(
+                children: [
+                  FutureBuilder<List<CustomerDelivery>>(
+                      future: futurePending,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                            baseColor:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                ],
                               ),
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppConfig.backgroundColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Tooltip(
-                                            message: delivery.invoiceNo,
-                                            child: Text(
-                                              '${delivery.invoiceNo}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize:
-                                                    AppConfig.textCaption3Size,
-                                                color: Colors.black87,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Spacer(),
-                                          IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  expandedStates[index] =
-                                                      !expandedStates[index];
-                                                });
-                                              },
-                                              icon: Icon(
-                                                  Icons.arrow_drop_down_circle))
-                                        ],
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          print('Error: ${snapshot.error}');
+                          return Center(child: Text('No data'));
+                        } else {
+                          if (expandedStates.isEmpty) {
+                            expandedStates =
+                                List<bool>.filled(snapshot.data!.length, false);
+                          }
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SingleChildScrollView(
+                                child: ListView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    final delivery = snapshot.data![index];
+                                    // final isSelected =
+                                    // selectedDeliveries.contains(delivery);
+                                    return Card(
+                                      elevation: 3,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      // const SizedBox(height: 8.0),
-                                      // Column(
-                                      //   crossAxisAlignment:
-                                      //       CrossAxisAlignment.start,
-                                      //   children: [
-                                      //     Text(
-                                      //       '${delivery.details[0].name}',
-                                      //       style: TextStyle(
-                                      //         fontSize:
-                                      //             AppConfig.textCaption3Size,
-                                      //         color: Colors.black54,
-                                      //       ),
-                                      //     ),
-                                      //     const SizedBox(height: 4.0),
-                                      //     Text(
-                                      //       'Qty: ${delivery.details[0].quantity}',
-                                      //       style: TextStyle(
-                                      //         fontSize:
-                                      //             AppConfig.textCaption3Size,
-                                      //         color: Colors.black54,
-                                      //       ),
-                                      //     ),
-                                      //   ],
-                                      // ),
-                                      Visibility(
-                                          visible: expandedStates[index],
-                                          child: Container(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: delivery.details
-                                                  .map((Details) {
-                                                return Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Prd: ${Details.name}',
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: AppConfig.backgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Tooltip(
+                                                    message: delivery.invoiceNo,
+                                                    child: Text(
+                                                      '${delivery.invoiceNo}',
                                                       style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         fontSize: AppConfig
                                                             .textCaption3Size,
-                                                        color: Colors.black54,
+                                                        color: Colors.black87,
                                                       ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                    Text(
-                                                      'Qty: ${Details.quantity}',
-                                                      style: TextStyle(
-                                                        fontSize: AppConfig
-                                                            .textCaption3Size,
-                                                        color: Colors.black54,
-                                                      ),
+                                                  ),
+                                                  Spacer(),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          expandedStates[
+                                                                  index] =
+                                                              !expandedStates[
+                                                                  index];
+                                                        });
+                                                      },
+                                                      icon: Icon(Icons
+                                                          .arrow_drop_down_circle))
+                                                ],
+                                              ),
+                                              Visibility(
+                                                  visible:
+                                                      expandedStates[index],
+                                                  child: Container(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: delivery.details
+                                                          .map((Details) {
+                                                        return Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              'Prd: ${Details.name}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Qty: ${Details.quantity}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Divider(
+                                                              color: Colors.grey
+                                                                  .shade300,
+                                                            )
+                                                          ],
+                                                        );
+                                                      }).toList(),
                                                     ),
-                                                    Divider(
-                                                      color:
-                                                          Colors.grey.shade300,
-                                                    )
-                                                  ],
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ))
-                                    ],
-                                  ),
+                                                  ))
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                }
-              })
+                            ),
+                          );
+                        }
+                      })
+                ],
+              ),
+            ),
+            Container(
+              child: Column(
+                children: [
+                  FutureBuilder<List<CustomerDelivery>>(
+                      future: futureDelivered,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                            baseColor:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          print('Error: ${snapshot.error}');
+                          return Center(child: Text('No data'));
+                        } else {
+                          if (expandedStates1.isEmpty) {
+                            expandedStates1 =
+                                List<bool>.filled(snapshot.data!.length, false);
+                          }
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SingleChildScrollView(
+                                child: ListView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    final delivery = snapshot.data![index];
+                                    // final isSelected =
+                                    // selectedDeliveries.contains(delivery);
+                                    return Card(
+                                      elevation: 3,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: AppConfig.backgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Tooltip(
+                                                    message: delivery.invoiceNo,
+                                                    child: Text(
+                                                      '${delivery.invoiceNo}',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                        color: Colors.black87,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Spacer(),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          expandedStates1[
+                                                                  index] =
+                                                              !expandedStates1[
+                                                                  index];
+                                                        });
+                                                      },
+                                                      icon: Icon(Icons
+                                                          .arrow_drop_down_circle))
+                                                ],
+                                              ),
+                                              Visibility(
+                                                  visible:
+                                                      expandedStates1[index],
+                                                  child: Container(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: delivery.details
+                                                          .map((Details) {
+                                                        return Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              'Prd: ${Details.name}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Qty: ${Details.quantity}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Divider(
+                                                              color: Colors.grey
+                                                                  .shade300,
+                                                            )
+                                                          ],
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ))
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      })
+                ],
+              ),
+            ),
+            Container(
+              child: Column(
+                children: [
+                  FutureBuilder<List<CustomerDelivery>>(
+                      future: futureAll,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                            baseColor:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          print('Error: ${snapshot.error}');
+                          return Center(child: Text('No data'));
+                        } else {
+                          if (expandedStates2.isEmpty) {
+                            expandedStates2 =
+                                List<bool>.filled(snapshot.data!.length, false);
+                          }
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SingleChildScrollView(
+                                child: ListView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    final delivery = snapshot.data![index];
+                                    // final isSelected =
+                                    // selectedDeliveries.contains(delivery);
+                                    return Card(
+                                      elevation: 3,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: AppConfig.backgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Tooltip(
+                                                    message: delivery.invoiceNo,
+                                                    child: Text(
+                                                      '${delivery.invoiceNo}',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                        color: Colors.black87,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Spacer(),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          expandedStates2[
+                                                                  index] =
+                                                              !expandedStates2[
+                                                                  index];
+                                                        });
+                                                      },
+                                                      icon: Icon(Icons
+                                                          .arrow_drop_down_circle))
+                                                ],
+                                              ),
+                                              Visibility(
+                                                  visible:
+                                                      expandedStates2[index],
+                                                  child: Container(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: delivery.details
+                                                          .map((Details) {
+                                                        return Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              'Prd: ${Details.name}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              'Qty: ${Details.quantity}',
+                                                              style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                            ),
+                                                            Divider(
+                                                              color: Colors.grey
+                                                                  .shade300,
+                                                            )
+                                                          ],
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ))
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      })
+                ],
+              ),
+            ),
+          ]))
         ],
       ),
     );

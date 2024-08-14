@@ -607,15 +607,15 @@ class _VanStockScreenState extends State<VanStockScreen>
         ));
   }
 
-  Widget _buildListItem(Product product) {
-    // Implement the widget to build the list item for each product
-    return ListTile(
-      title: Text(product.name ?? ''),
-      subtitle: Text('Code: ${product.code}'),
-      trailing: Text(
-          'Stock: ${product.units.isNotEmpty ? product.units[0].stock.toString() : '0'}'),
-    );
-  }
+  // Widget _buildListItem(Product product) {
+  //   // Implement the widget to build the list item for each product
+  //   return ListTile(
+  //     title: Text(product.name ?? ''),
+  //     subtitle: Text('Code: ${product.code}'),
+  //     trailing: Text(
+  //         'Stock: ${product.units.isNotEmpty ? product.units[0].stock.toString() : '0'}'),
+  //   );
+  // }
 
   Future<ProductDataModel> _getProducts(int page) async {
     final response = await http.get(Uri.parse(

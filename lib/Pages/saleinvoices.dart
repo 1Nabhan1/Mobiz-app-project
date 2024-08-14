@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:image/image.dart' as img;
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/cupertino.dart';
@@ -293,7 +294,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                     ),
                     const Spacer(),
                     InkWell(
-                      onTap: () => _getInvoiceData(data.id!, false),
+                      onTap: () => _getInvoiceDataprint(data.id!, false),
                       child: const Icon(
                         Icons.print,
                         color: Colors.blue,
@@ -530,21 +531,6 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
-      // Load image from assets and convert to Base64
-      String imagePath = 'Assets/Images/logo.png';
-      String? base64Image;
-
-      try {
-        ByteData byteData = await rootBundle.load(imagePath);
-        Uint8List imageData = byteData.buffer.asUint8List();
-        base64Image = base64Encode(imageData);
-      } catch (e) {
-        base64Image = null;
-        printer.printCustom("Error loading image: $e", 1, 0); // Left aligned
-        print("Failed to fetch image: $e");
-      }
-
-      // Extract company and invoice details
       String companyName = invoice.data!.store![0].name ?? 'N/A';
       String companyAddress = invoice.data!.store![0].address ?? 'N/A';
       String companyTRN = "TRN: ${invoice.data!.store![0].trn ?? 'N/A'}";
@@ -569,7 +555,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
       void printAlignedText(String leftText, String rightText) {
         const int maxLineLength =
-            65; // Adjust the maximum line length as per your printer's character limit
+            68; // Adjust the maximum line length as per your printer's character limit
         int leftTextLength = leftText.length;
         int rightTextLength = rightText.length;
 
@@ -581,16 +567,28 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
             '$leftText$spaces$rightText', 1, 0); // Print with left-aligned text
       }
 
-      // Print company details
-      printer.printNewLine();
-      if (base64Image != null) {
-        try {
-          printer.printImage(base64Image);
-        } catch (e) {
-          printer.printCustom("Error printing image: $e", 1, 0); // Left aligned
-          print("Failed to print image: $e");
+      String logoUrl =
+          'http://68.183.92.8:3697/uploads/store/${invoice.data!.store![0].logo}';
+      if (logoUrl.isNotEmpty) {
+        final response = await http.get(Uri.parse(logoUrl));
+        if (response.statusCode == 200) {
+          Uint8List imageBytes = response.bodyBytes;
+
+          // Decode image and convert to monochrome bitmap if needed
+          img.Image originalImage = img.decodeImage(imageBytes)!;
+          img.Image monoLogo = img.grayscale(originalImage);
+
+          // Encode the image to the required format (e.g., PNG)
+          Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
+
+          // Print the logo image
+          printer.printImageBytes(logoBytes);
+        } else {
+          print('Failed to load image: ${response.statusCode}');
         }
       }
+      // Print company details
+      printer.printNewLine();
       printer.printCustom(companyName, 3, 1); // Centered
       printer.printCustom(companyAddress, 1, 1); // Centered
       printer.printCustom(companyTRN, 1, 1); // Centered
@@ -598,11 +596,12 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printNewLine();
 
       // Print horizontal line
-      printer.printCustom("-" * 70, 1, 1); // Centered
+      printer.printCustom("-" * 72, 1, 1); // Centered
 
       // Print customer details
-      printAlignedText("Customer: $customerName", "Invoice No: $invoiceNumber");
-      printAlignedText("Email: $customerEmail", "Date: $invoiceDate");
+      printAlignedText(
+          "Customer: $customerName", "Invoice No: $invoiceNumber      ");
+      printAlignedText("Email: $customerEmail", "Date: $invoiceDate    ");
       printAlignedText("Contact No: $customerContact", "Due Date: $dueDate");
       printAlignedText("TRN: $customerTRN", " ");
       printer.printNewLine();
@@ -612,22 +611,22 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
       // Define column widths for table
       const int columnWidth1 = 5; // S.No
-      const int columnWidth2 = 20; // Product Description
-      const int columnWidth3 = 8; // Unit
-      const int columnWidth4 = 10; // Rate
-      const int columnWidth5 = 6; // Qty
-      const int columnWidth6 = 10; // Tax
-      const int columnWidth7 = 12; // Amount
+      const int columnWidth2 = 30; // Product Description
+      const int columnWidth3 = 5; // Unit
+      const int columnWidth4 = 8; // Rate
+      const int columnWidth5 = 4; // Qty
+      const int columnWidth6 = 4; // Tax
+      const int columnWidth7 = 8; // Amount
 
       // Print table headers
       String headers = "${'S.No'.padRight(columnWidth1)}"
-          "${'Product'.padRight(columnWidth2)}"
-          "${'Unit'.padRight(columnWidth3)}"
-          "${'Rate'.padLeft(columnWidth4)}"
-          "${'Qty'.padLeft(columnWidth5)}"
-          "${'Tax'.padLeft(columnWidth6)}"
-          "${'Amount'.padLeft(columnWidth7)}";
-      printer.printCustom(headers, 1, 1); // Left aligned
+          " ${'Product'.padRight(columnWidth2)}"
+          " ${'Unit'.padRight(columnWidth3)}"
+          "${'Rate'.padRight(columnWidth4)}"
+          "${'Qty'.padRight(columnWidth5)}"
+          "${'Tax'.padRight(columnWidth6)}"
+          " ${'Amount'.padLeft(columnWidth7)}";
+      printer.printCustom(headers, 1, 0); // Left aligned
 
       // Function to split text into lines of a given width
       List<String> splitText(String text, int width) {
@@ -664,10 +663,10 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
             // For the first line, include all columns
             line = "${(i + 1).toString().padRight(columnWidth1)}"
                 "${descriptionLines[j].padRight(columnWidth2)}"
-                "${productUnit.padRight(columnWidth3)}"
-                "${productRate.padLeft(columnWidth4)}"
-                "${productQty.padLeft(columnWidth5)}"
-                "${productTax.padLeft(columnWidth6)}"
+                "  ${productUnit.padRight(columnWidth3)}"
+                "${productRate.padRight(columnWidth4)}"
+                "${productQty.padRight(columnWidth5)}"
+                "${productTax.padRight(columnWidth6)}"
                 "${productTotal.padLeft(columnWidth7)}";
           } else {
             // For subsequent lines, only include the description, leaving other columns blank
@@ -679,7 +678,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                 "${''.padRight(columnWidth6)}"
                 "${''.padRight(columnWidth7)}";
           }
-          printer.printCustom(line, 1, 1); // Left aligned
+          printer.printCustom(line, 1, 0); // Left aligned
         }
       }
       printer.printCustom("-" * 70, 1, 1); // Centered
@@ -692,7 +691,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom("Tax: $tax", 1, 2); // Right aligned
       printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();
-      printer.printCustom(amountInWords, 1, 1); // Centered
+      printer.printCustom(amountInWords, 1, 0); // Centered
 
       // Cut the paper
       printer.paperCut();
@@ -1061,6 +1060,28 @@ Salesman: ${invoice.data!.user![0].name}
     if (response['data'] != null) {
       invoice = Invoice.InvoiceData.fromJson(response);
       _createPdf(invoice, isPrint);
+    }
+    // if (_selectedDevice == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Default device not found')),
+    //   );
+    //   return;
+    // }
+    // if (!_connected) {
+    //   await _connect();
+    // }
+    // _print(invoice, isPrint);
+  }
+
+  Future<void> _getInvoiceDataprint(int id, bool isPrint) async {
+    Invoice.InvoiceData invoice = Invoice.InvoiceData();
+    RestDatasource api = RestDatasource();
+    dynamic response =
+        await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
+
+    if (response['data'] != null) {
+      invoice = Invoice.InvoiceData.fromJson(response);
+      // _createPdf(invoice, isPrint);
     }
     if (_selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -12,15 +12,16 @@ import '../Models/sales_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import '../tst.dart';
 
-class SalesScreen extends StatefulWidget {
-  static const routeName = "/ScalesScreen";
+class SalesScreen1 extends StatefulWidget {
+  static const routeName = "/ScalesScreen1";
 
   @override
-  _SalesScreenState createState() => _SalesScreenState();
+  _SalesScreen1State createState() => _SalesScreen1State();
 }
 
-class _SalesScreenState extends State<SalesScreen> {
+class _SalesScreen1State extends State<SalesScreen1> {
   List<Product> cartItems = [];
   bool _search = false;
   // List<String?> selectedUnitNames = [];
@@ -373,8 +374,8 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: SizedBox(
-          width: SizeConfig.blockSizeHorizontal * 35,
-          height: SizeConfig.blockSizeVertical * 5,
+          width: 100.w,
+          height: 30.h,
           child: ElevatedButton(
             style: ButtonStyle(
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -440,6 +441,11 @@ class _SalesScreenState extends State<SalesScreen> {
             CommonWidgets.horizontalSpace(1),
             GestureDetector(
               onTap: () {
+                // Navigator.push(
+                //     context,
+                //     MaterialPageRoute(
+                //       builder: (context) => SalesSelectProductsScreen(),
+                //     ));
                 Navigator.pushReplacementNamed(
                     context, SalesSelectProductsScreen.routeName,
                     arguments: {'customerId': id, 'name': name}).then((value) {
@@ -589,8 +595,8 @@ class _SalesScreenState extends State<SalesScreen> {
                         double ttlamount =
                             double.parse(quantity) * double.parse(rate);
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12.0, vertical: 2),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 4.0.w, vertical: 2.h),
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -962,22 +968,17 @@ class _SalesScreenState extends State<SalesScreen> {
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
+                                              Text(' | '),
+                                              Text(
+                                                'Amt: ${ttlamount}',
+                                                style: TextStyle(
+                                                    color: Colors.grey),
+                                              ),
                                             ],
                                           )),
                                       // Text(' | '),
                                     ],
                                   ),
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 5.w,
-                                      ),
-                                      Text(
-                                        'Amt: ${ttlamount}',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ],
-                                  )
                                 ],
                               ),
                             ),

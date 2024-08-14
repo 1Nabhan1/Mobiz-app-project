@@ -392,8 +392,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: SizedBox(
-          width: SizeConfig.blockSizeHorizontal * 35,
-          height: SizeConfig.blockSizeVertical * 5,
+          width: 100.w,
+          height: 30.h,
           child: ElevatedButton(
             style: ButtonStyle(
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -1003,20 +1003,13 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                               ),
                                             ],
                                           )),
-                                      // Text(' | '),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 5.w,
-                                      ),
+                                      Text(' | '),
                                       Text(
                                         'Amt: ${ttlamount}',
                                         style: TextStyle(color: Colors.grey),
                                       )
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),

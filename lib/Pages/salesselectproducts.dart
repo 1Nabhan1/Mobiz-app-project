@@ -15,15 +15,15 @@ import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 
-class SalesSelectProductsScreen extends StatefulWidget {
-  static const routeName = "/SalesSelectProductsScreen";
+class SalesSelectProductsScreen1 extends StatefulWidget {
+  static const routeName = "/SalesSelectProductsScreen1";
 
   @override
-  _SalesSelectProductsScreenState createState() =>
-      _SalesSelectProductsScreenState();
+  _SalesSelectProductsScreen1State createState() =>
+      _SalesSelectProductsScreen1State();
 }
 
-class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
+class _SalesSelectProductsScreen1State extends State<SalesSelectProductsScreen1> {
   final ScrollController _scrollController = ScrollController();
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
@@ -36,34 +36,6 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   String? name;
   String? code;
   String? payment;
-
-  // void addToCart(Product product) async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   List<String>? cartItems = prefs.getStringList('cartItems') ?? [];
-  //
-  //   for (var unit in product.units) {
-  //     bool alreadyExists = cartItems.any((item) {
-  //       Map<String, dynamic> itemMap = jsonDecode(item);
-  //       return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
-  //     });
-  //
-  //     if (!alreadyExists) {
-  //       var productUnitMap = product.toJson();
-  //       productUnitMap['unitId'] = unit.id; // Add unit id to the product map
-  //       cartItems.add(jsonEncode(productUnitMap));
-  //       await prefs.setStringList('cartItems', cartItems);
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('${product.name} (${unit.name}) added')),
-  //       );
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text(
-  //                 '${product.name} (${unit.name}) is already in the cart')),
-  //       );
-  //     }
-  //   }
-  // }
 
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -413,7 +385,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   Future<ProductDataModel> fetchProducts(int page) async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_and_sales?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$page'));
+        '${RestDatasource().BASE_URL}/api/get_van_stock?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$page'));
 
     if (response.statusCode == 200) {
       return ProductDataModel.fromJson(json.decode(response.body));

@@ -414,8 +414,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: SizedBox(
-          width: SizeConfig.blockSizeHorizontal * 35,
-          height: SizeConfig.blockSizeVertical * 5,
+          width: 100.w,
+          height: 30.h,
           child: ElevatedButton(
             style: ButtonStyle(
               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -507,8 +507,11 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
               )
             : Column(
                 children: [
+                  SizedBox(
+                    height: 5.h,
+                  ),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: EdgeInsets.symmetric(horizontal: 8.0.w),
                     child: Row(
                       children: [
                         Text(
@@ -589,7 +592,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: EdgeInsets.only(left: 8.0.w),
                     child: Row(
                       children: [
                         Text('Schedule Date'),
@@ -622,7 +625,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                     ),
                   ),
                   SizedBox(
-                    height: SizeConfig.blockSizeVertical * 58,
+                    height: MediaQuery.of(context).size.height * .515,
                     child: ListView.builder(
                       physics: BouncingScrollPhysics(),
                       shrinkWrap: true,
@@ -663,8 +666,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                         }
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12.0, vertical: 2),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 4.0.w, vertical: 2.h),
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -856,50 +859,6 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                                     newValue);
                                               });
                                             },
-                                            // onChanged: (String? newValue) {
-                                            //   setState(() {
-                                            //     cartItems[index]
-                                            //         .selectedUnitName = newValue;
-                                            //
-                                            //     // Find the selected unit and update the rate
-                                            //     for (var unit
-                                            //         in cartItems[index].units) {
-                                            //       if (unit.name == newValue) {
-                                            //         // Perform validation based on stock
-                                            //         if (unit.stock >=
-                                            //             int.parse(
-                                            //                 qtys[index] ?? '1')) {
-                                            //           // Stock is sufficient
-                                            //           amounts[index] =
-                                            //               unit.price.toString();
-                                            //         } else {
-                                            //           // Stock is insufficient, handle this scenario (e.g., show error message)
-                                            //           // For now, setting rate to default or handle as per your app logic
-                                            //           amounts[index] =
-                                            //               cartItems[index]
-                                            //                   .price
-                                            //                   .toString();
-                                            //           // You can show a snackbar or dialog here indicating insufficient stock
-                                            //           ScaffoldMessenger.of(
-                                            //                   context)
-                                            //               .showSnackBar(SnackBar(
-                                            //             content: Text(
-                                            //                 'Insufficient stock for ${unit.name}'),
-                                            //             duration:
-                                            //                 Duration(seconds: 2),
-                                            //           ));
-                                            //         }
-                                            //         saveToSharedPreferences(
-                                            //             'amountorder$index',
-                                            //             amounts[index]);
-                                            //         break;
-                                            //       }
-                                            //     }
-                                            //     saveToSharedPreferences(
-                                            //         'unitNameorder$index',
-                                            //         newValue);
-                                            //   });
-                                            // },
                                             icon: SizedBox.shrink(),
                                           ),
                                         ),
@@ -934,53 +893,6 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                                     textColor: Colors.white,
                                                     child: Text('OK'),
                                                     onPressed: () {
-                                                      // Validate quantity against selected unit stock
-                                                      // var selectedUnit =
-                                                      //     cartItems[index]
-                                                      //         .units
-                                                      //         .firstWhere(
-                                                      //           (unit) =>
-                                                      //               unit.name ==
-                                                      //               selectedUnitName,
-                                                      //           // orElse: () => null,
-                                                      //         );
-                                                      //
-                                                      // if (selectedUnit != null) {
-                                                      //   int enteredQuantity =
-                                                      //       int.tryParse(
-                                                      //               qtys[index] ??
-                                                      //                   '1') ??
-                                                      //           0;
-                                                      //   if (enteredQuantity >
-                                                      //       selectedUnit.stock) {
-                                                      //     // Quantity entered exceeds available stock
-                                                      //     ScaffoldMessenger.of(
-                                                      //             context)
-                                                      //         .showSnackBar(
-                                                      //             SnackBar(
-                                                      //       content: Text(
-                                                      //         'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
-                                                      //       ),
-                                                      //       duration: Duration(
-                                                      //           seconds: 2),
-                                                      //     ));
-                                                      //     // Reset quantity to available stock or handle as per your app logic
-                                                      //     setState(() {
-                                                      //       qtys[index] =
-                                                      //           selectedUnit.stock
-                                                      //               .toString();
-                                                      //       saveToSharedPreferences(
-                                                      //           'qtyorder$index',
-                                                      //           qtys[index]);
-                                                      //     });
-                                                      //   } else {
-                                                      //     Navigator.pop(
-                                                      //         context); // Close dialog if validation passed
-                                                      //   }
-                                                      // } else {
-                                                      //   Navigator.pop(
-                                                      //       context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
-                                                      // }
                                                       quantity = qtysctrl.text;
                                                       Navigator.pop(context);
                                                     },
@@ -1060,20 +972,13 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                               ),
                                             ],
                                           )),
-                                      // Text(' | '),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 5.w,
-                                      ),
+                                      Text(' | '),
                                       Text(
                                         'Amt: ${ttlamount}',
                                         style: TextStyle(color: Colors.grey),
                                       )
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),

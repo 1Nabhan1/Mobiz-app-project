@@ -213,3 +213,25 @@ class ProductType {
     );
   }
 }
+class Products {
+  final int id;
+  final String code;
+  final String name;
+  final String proImage;
+
+  Products({
+    required this.id,
+    required this.code,
+    required this.name,
+    required this.proImage,
+  });
+
+  factory Products.fromJson(Map<String, dynamic> json) {
+    return Products(
+      id: json['id'],
+      code: json['code'],
+      name: json['name'],
+      proImage: json['pro_image'],
+    );
+  }
+}

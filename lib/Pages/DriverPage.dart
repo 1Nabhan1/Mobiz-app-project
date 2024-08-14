@@ -17,6 +17,7 @@ import 'package:mobizapp/tst.dart';
 import '../Utilities/rest_ds.dart';
 import '../sales_screen.dart';
 import 'DriverDetailsPage.dart';
+import 'Driver_paymentCollection.dart';
 import 'Total_sales.dart';
 import 'customerreturndetails.dart';
 
@@ -251,17 +252,46 @@ class _DriverPageState extends State<DriverPage> {
                 ],
               ),
               CommonWidgets.verticalSpace(2),
-              GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, DriverDetails.routeName,
-                        arguments: {
-                          'name': name,
-                          'address': address,
-                          'code': code,
-                        });
-                  },
-                  child: _iconButtons(
-                      icon: Icons.drive_eta_outlined, title: 'Driver Details'))
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, DriverDetails.routeName,
+                            arguments: {
+                              'name': name,
+                              'address': address,
+                              'code': code,
+                            });
+                      },
+                      child: _iconButtons(
+                          icon: Icons.drive_eta_outlined, title: 'Delivery')),
+                  InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(
+                            context, Driver_PaymentCollectionScreen.routeName,
+                            arguments: {
+                              'customer': id,
+                              'name': name,
+                              'code': code,
+                              'paymentTerms': paymentTerms,
+                              'outstandamt': _data
+                            });
+
+                        // Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //       builder: (context) => PaymentCollectionScreen(
+                        //         id: 'customer',
+                        //         code: 'code',
+                        //         name: 'name',
+                        //       ),
+                        //     ));
+                      },
+                      child: _iconButtons(
+                          icon: Icons.payments, title: 'Payment Collection'))
+                ],
+              ),
             ],
           ),
         ),

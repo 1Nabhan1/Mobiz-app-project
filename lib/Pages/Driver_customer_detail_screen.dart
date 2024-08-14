@@ -12,13 +12,10 @@ import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
-import 'package:mobizapp/tst.dart';
+
 
 import '../Utilities/rest_ds.dart';
-import '../sales_screen.dart';
-import 'Delivery_details_driver.dart';
-import 'Total_sales.dart';
-import 'customerreturndetails.dart';
+
 
 class Driver_customer_detail_screen extends StatefulWidget {
   static const routeName = "/Driver_customer_detail_screen";
