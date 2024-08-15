@@ -237,7 +237,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
       if (ModalRoute.of(context)!.settings.arguments != null) {
         final Map<String, dynamic>? params =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+            ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
         name = params!['name'];
       }
 
@@ -268,18 +268,19 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                       lastsale == null || lastsale.isEmpty
                           ? Text('No last records found')
                           : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Last Sale:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text('Date: ${lastsale['date']}'),
-                          Text('Unit: ${lastsale['unit']}'),
-                          Text('Price: ${lastsale['price']}'),
-                        ],
-                      ),
-                      if (units != null && units.any((unit) => unit != null)) ...[
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Last Sale:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text('Date: ${lastsale['date']}'),
+                                Text('Unit: ${lastsale['unit']}'),
+                                Text('Price: ${lastsale['price']}'),
+                              ],
+                            ),
+                      if (units != null &&
+                          units.any((unit) => unit != null)) ...[
                         SizedBox(height: 10),
                         Text(
                           'Product Type',
@@ -289,7 +290,8 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           decoration: InputDecoration(
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
-                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            border:
+                                OutlineInputBorder(borderSide: BorderSide.none),
                             filled: true,
                             fillColor: Colors.grey.shade300,
                           ),
@@ -317,11 +319,13 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           decoration: InputDecoration(
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
-                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            border:
+                                OutlineInputBorder(borderSide: BorderSide.none),
                             filled: true,
                             fillColor: Colors.grey.shade300,
                           ),
-                          items: units.where((unit) => unit != null).map((unit) {
+                          items:
+                              units.where((unit) => unit != null).map((unit) {
                             return DropdownMenuItem<String>(
                               value: unit['id'].toString(),
                               child: Text(unit['name']),
@@ -331,7 +335,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                             setDialogState(() {
                               selectedUnitId = value;
                               selectedUnit = units.firstWhere(
-                                      (unit) => unit['id'].toString() == value,
+                                  (unit) => unit['id'].toString() == value,
                                   orElse: () => null);
                             });
                           },
@@ -344,7 +348,10 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           Text('Stock: ${selectedUnit!['stock']}'),
                         ],
                         SizedBox(height: 10),
-                        Text('Quantity',style: TextStyle(fontWeight: FontWeight.bold),),
+                        Text(
+                          'Quantity',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
@@ -354,13 +361,16 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Qty',
-                              border:
-                              OutlineInputBorder(borderSide: BorderSide.none),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
                               filled: true,
                               fillColor: Colors.grey.shade300),
                         ),
                         SizedBox(height: 10),
-                        Text('Amount',style: TextStyle(fontWeight: FontWeight.bold),),
+                        Text(
+                          'Amount',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
@@ -370,8 +380,8 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Amt',
-                              border:
-                              OutlineInputBorder(borderSide: BorderSide.none),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
                               filled: true,
                               fillColor: Colors.grey.shade300),
                         ),
@@ -396,13 +406,13 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                       onPressed: () async {
                         final prefs = await SharedPreferences.getInstance();
                         List<String>? selectedProducts =
-                        prefs.getStringList('selected_products');
+                            prefs.getStringList('selected_products');
                         selectedProducts ??= [];
-                        final serialNumber = DateTime.now()
-                            .millisecondsSinceEpoch
-                            .toString() +
-                            '-' +
-                            (1000 + (DateTime.now().microsecond % 9000)).toString();
+                        final serialNumber =
+                            DateTime.now().millisecondsSinceEpoch.toString() +
+                                '-' +
+                                (1000 + (DateTime.now().microsecond % 9000))
+                                    .toString();
                         final selectedProduct = {
                           'serial_number': serialNumber,
                           'id': product.id,
@@ -411,8 +421,8 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           'pro_image': product.proImage,
                           'type_id': selectedProductTypeId,
                           'type_name': productTypes.firstWhere((type) =>
-                          type['id'].toString() == selectedProductTypeId)[
-                          'name'],
+                              type['id'].toString() ==
+                              selectedProductTypeId)['name'],
                           'unit_id': selectedUnitId,
                           'unit_name': selectedUnit?['name'],
                           'quantity': quantity ?? '',
@@ -443,5 +453,4 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       );
     }
   }
-
 }
