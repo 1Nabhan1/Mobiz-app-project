@@ -18,6 +18,7 @@ class SalesSelectProductsScreen extends StatefulWidget {
   _SalesSelectProductsScreenState createState() =>
       _SalesSelectProductsScreenState();
 }
+
 // String? name;
 class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   List<Products> products = [];
@@ -66,7 +67,6 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
@@ -216,7 +216,6 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   }
 
   void showProductDetailsDialog(BuildContext context, Products product) async {
-
     final response = await http.get(Uri.parse(
         'http://68.183.92.8:3699/api/get_product_with_units_by_products?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product.id}'));
     final typeResponse = await http
@@ -227,224 +226,222 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       final units = data['data'] as List?;
       final lastsale = data['lastsale'];
       final typeData = jsonDecode(typeResponse.body);
+      final productTypes = typeData['data'] as List;
+
       String? selectedUnitId;
       String? selectedProductTypeId;
       String? quantity;
       String? amount;
       Map<String, dynamic>? selectedUnit;
-      final productTypes = typeData['data'] as List;
       String? name;
+
       if (ModalRoute.of(context)!.settings.arguments != null) {
         final Map<String, dynamic>? params =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-        // id = params!['customerId'];
         name = params!['name'];
       }
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(product.name!),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Image.network(
-                    '${RestDatasource().Product_URL}/uploads/product/${product.proImage}',
-                    height: 100,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset('Assets/Images/no_image.jpg',
-                          height: 100);
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: Text(product.name!),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Image.network(
+                        '${RestDatasource().Product_URL}/uploads/product/${product.proImage}',
+                        height: 100,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset('Assets/Images/no_image.jpg',
+                              height: 100);
+                        },
+                      ),
+                      SizedBox(height: 10),
+                      Text('Code: ${product.code}'),
+                      Text('Name: ${product.name}'),
+                      SizedBox(height: 10),
+                      lastsale == null || lastsale.isEmpty
+                          ? Text('No last records found')
+                          : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Last Sale:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text('Date: ${lastsale['date']}'),
+                          Text('Unit: ${lastsale['unit']}'),
+                          Text('Price: ${lastsale['price']}'),
+                        ],
+                      ),
+                      if (units != null && units.any((unit) => unit != null)) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          'Product Type',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                          ),
+                          items: productTypes.map((type) {
+                            return DropdownMenuItem<String>(
+                              value: type['id'].toString(),
+                              child: Text(type['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedProductTypeId = value;
+                              selectedUnit = null; // Reset selected unit
+                            });
+                          },
+                          value: selectedProductTypeId,
+                          hint: Text('Select Product Type'),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Unit',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                          ),
+                          items: units.where((unit) => unit != null).map((unit) {
+                            return DropdownMenuItem<String>(
+                              value: unit['id'].toString(),
+                              child: Text(unit['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedUnitId = value;
+                              selectedUnit = units.firstWhere(
+                                      (unit) => unit['id'].toString() == value,
+                                  orElse: () => null);
+                            });
+                          },
+                          value: selectedUnitId,
+                          hint: Text('Select Unit'),
+                        ),
+                        SizedBox(height: 10),
+                        if (selectedUnit != null) ...[
+                          Text('Price: ${selectedUnit!['price']}'),
+                          Text('Stock: ${selectedUnit!['stock']}'),
+                        ],
+                        SizedBox(height: 10),
+                        Text('Quantity',style: TextStyle(fontWeight: FontWeight.bold),),
+                        TextFormField(
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            quantity = value;
+                          },
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.h, horizontal: 10.w),
+                              hintText: 'Qty',
+                              border:
+                              OutlineInputBorder(borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.grey.shade300),
+                        ),
+                        SizedBox(height: 10),
+                        Text('Amount',style: TextStyle(fontWeight: FontWeight.bold),),
+                        TextFormField(
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            amount = value;
+                          },
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.h, horizontal: 10.w),
+                              hintText: 'Amt',
+                              border:
+                              OutlineInputBorder(borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.grey.shade300),
+                        ),
+                        SizedBox(height: 10),
+                      ] else ...[
+                        Text('No units available for this product.'),
+                      ],
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text('Close'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
                     },
                   ),
-                  SizedBox(height: 10),
-                  Text('Code: ${product.code}'),
-                  Text('Name: ${product.name}'),
-                  SizedBox(height: 10),
-                  lastsale == null || lastsale.isEmpty
-                      ? Text('No last records found')
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Last Sale:',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text('Date: ${lastsale['date']}'),
-                            Text('Unit: ${lastsale['unit']}'),
-                            Text('Price: ${lastsale['price']}'),
-                          ],
-                        ),
                   if (units != null && units.any((unit) => unit != null)) ...[
-                    SizedBox(height: 10),
-                    Text(
-                      'Product Type',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 2.h, horizontal: 10.w),
-                        border: OutlineInputBorder(borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: Colors.grey.shade300,
-                      ),
-                      items: productTypes.map((type) {
-                        return DropdownMenuItem<String>(
-                          value: type['id'].toString(),
-                          child: Text(type['name']),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedProductTypeId = value;
-                        });
-                      },
-                      value: selectedProductTypeId,
-                      hint: Text('Select Product Type'),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Unit',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 2.h, horizontal: 10.w),
-                        border: OutlineInputBorder(borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: Colors.grey.shade300,
-                      ),
-                      items: units.where((unit) => unit != null).map((unit) {
-                        return DropdownMenuItem<String>(
-                          value: unit['id'].toString(),
-                          child: Text(unit['name']),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedUnitId = value;
-                          selectedUnit = units.firstWhere(
-                              (unit) => unit['id'].toString() == value);
-                        });
-                      },
-                      value: selectedUnitId,
-                      hint: Text('Select Unit'),
-                    ),
-                    SizedBox(height: 10),
-                    if (selectedUnit != null) ...[
-                      Text('Price: ${selectedUnit!['price']}'),
-                      Text('Stock: ${selectedUnit!['stock']}'),
-                    ],
-                    Text('Quantity'),
-                    TextFormField(
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        quantity = value;
-                      },
-                      decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 2.h, horizontal: 10.w),
-                          hintText: 'Qty',
-                          border:
-                              OutlineInputBorder(borderSide: BorderSide.none),
-                          filled: true,
-                          fillColor: Colors.grey.shade300),
-                    ),
-                    SizedBox(height: 10),
-                    Text('Amount'),
-                    TextFormField(
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        amount = value;
-                      },
-                      decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 2.h, horizontal: 10.w),
-                          hintText: 'Amt',
-                          border:
-                              OutlineInputBorder(borderSide: BorderSide.none),
-                          filled: true,
-                          fillColor: Colors.grey.shade300),
-                    ),
-                    SizedBox(height: 10),
-                  ] else ...[
-                    Text('No units available for this product.'),
-                  ],
-                  SizedBox(height: 10),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Close'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              if (units != null && units.any((unit) => unit != null)) ...[
-                TextButton(
-                  child: Text('Save'),
-                  onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    // Retrieve the existing list of selected products
-                    List<String>? selectedProducts =
+                    TextButton(
+                      child: Text('Save'),
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        List<String>? selectedProducts =
                         prefs.getStringList('selected_products');
-                    selectedProducts ??= [];
-                    final serialNumber = DateTime.now()
+                        selectedProducts ??= [];
+                        final serialNumber = DateTime.now()
                             .millisecondsSinceEpoch
                             .toString() +
-                        '-' +
-                        (1000 + (DateTime.now().microsecond % 9000)).toString();
-                    // Create a new entry for the selected product
-                    final selectedProduct = {
-                      'serial_number': serialNumber,
-                      'id': product.id,
-                      'code': product.code,
-                      'name': product.name,
-                      'pro_image': product.proImage,
-                      'type_id': selectedProductTypeId, // Save product type ID
-                      'type_name': productTypes.firstWhere((type) =>
-                              type['id'].toString() == selectedProductTypeId)[
-                          'name'], // Save product type name
-                      'unit_id': selectedUnitId, // Save unit ID
-                      'unit_name': selectedUnit?['name'], // Save unit name
-                      'quantity': quantity ?? '',
-                      'amount': amount ?? '',
-                    };
-
-                    // Add the new product to the list
-                    selectedProducts.add(jsonEncode(selectedProduct));
-
-                    // Save the updated list to SharedPreferences
-                    await prefs.setStringList(
-                        'selected_products', selectedProducts);
-                    Navigator.pop(context);
-                    Navigator.pushReplacementNamed(
-                        context, SalesScreen.routeName,
-                        arguments: {
-                          // 'customerId': id,
-                          'name': name,
-                          // 'code': code,
-                          // 'paymentTerms': payment
-                        }).then((value) {
-
-                      // _initDone = false;
-                      // _getTypes();
-                    });
-                    print(name);
-                    print('sjfksdnjkdbfvjksdnjknjkvsnvj');
-                  },
-                ),
-              ] else ...[
-                SizedBox.shrink(),
-              ],
-            ],
+                            '-' +
+                            (1000 + (DateTime.now().microsecond % 9000)).toString();
+                        final selectedProduct = {
+                          'serial_number': serialNumber,
+                          'id': product.id,
+                          'code': product.code,
+                          'name': product.name,
+                          'pro_image': product.proImage,
+                          'type_id': selectedProductTypeId,
+                          'type_name': productTypes.firstWhere((type) =>
+                          type['id'].toString() == selectedProductTypeId)[
+                          'name'],
+                          'unit_id': selectedUnitId,
+                          'unit_name': selectedUnit?['name'],
+                          'quantity': quantity ?? '',
+                          'amount': amount ?? '',
+                        };
+                        selectedProducts.add(jsonEncode(selectedProduct));
+                        await prefs.setStringList(
+                            'selected_products', selectedProducts);
+                        Navigator.pop(context);
+                        Navigator.pushReplacementNamed(
+                            context, SalesScreen.routeName,
+                            arguments: {
+                              'name': name,
+                            }).then((value) {
+                          // _initDone = false;
+                          // _getTypes();
+                        });
+                      },
+                    ),
+                  ] else ...[
+                    SizedBox.shrink(),
+                  ],
+                ],
+              );
+            },
           );
         },
       );
     }
   }
+
 }

@@ -779,7 +779,12 @@ class _SalesScreenState extends State<SalesScreen> {
                           hint: Text('Select Unit'),
                         ),
                         SizedBox(height: 10),
-                        Text('Quantity'),
+                        if (selectedUnit != null) ...[
+                          Text('Price: ${selectedUnit!['price']}'),
+                          Text('Stock: ${selectedUnit!['stock']}'),
+                        ],
+                        SizedBox(height: 10),
+                        Text('Quantity',style: TextStyle(fontWeight: FontWeight.bold),),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           initialValue: quantity,
@@ -796,7 +801,7 @@ class _SalesScreenState extends State<SalesScreen> {
                               fillColor: Colors.grey.shade300),
                         ),
                         SizedBox(height: 10),
-                        Text('Amount'),
+                        Text('Amount',style: TextStyle(fontWeight: FontWeight.bold),),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           initialValue: amount,
