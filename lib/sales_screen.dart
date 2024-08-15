@@ -76,33 +76,33 @@ class _SalesScreenState extends State<SalesScreen> {
     }
     return tax;
   }
-Map<String,dynamic> CalculatedValue(){
-  double taxamt = calculateTax();
-  roundoff = _roundoff.text;
-  double rundff = double.tryParse(roundoff) ?? 0;
-  String discountValue = _discountData.text.trim();
-  double discountAmount = double.tryParse(discountValue) ?? 0;
-  double totalTax = 5;
-  double discountinpercent = (totalAmount * discountAmount) / 100;
-  double nettotal = totalAmount - discountinpercent;
-  double taxamtperc = (nettotal * totalTax) / 100;
-  double grandTotal = _ifVat == 1
-      ? _isPercentage
-      ? totalAmount -
-      ((totalAmount * discountAmount) / 100) +
-      taxamtperc
-      : (totalAmount - discountAmount) + taxamt
-      : _isPercentage
-      ? totalAmount - (totalAmount * discountAmount) / 100
-      : totalAmount - discountAmount;
-  num roundedGrandTotal1 =
-  roundoff == '' ? customRound(grandTotal) : grandTotal + rundff;
-  double roundOffValue = roundedGrandTotal1 - grandTotal;
-  return{
-    'rounded': roundedGrandTotal1,
-    'roundOffValue': roundOffValue,
-  };
-}
+
+  Map<String, dynamic> CalculatedValue() {
+    double taxamt = calculateTax();
+    roundoff = _roundoff.text;
+    double rundff = double.tryParse(roundoff) ?? 0;
+    String discountValue = _discountData.text.trim();
+    double discountAmount = double.tryParse(discountValue) ?? 0;
+    double totalTax = 5;
+    double discountinpercent = (totalAmount * discountAmount) / 100;
+    double nettotal = totalAmount - discountinpercent;
+    double taxamtperc = (nettotal * totalTax) / 100;
+    double grandTotal = _ifVat == 1
+        ? _isPercentage
+            ? totalAmount - ((totalAmount * discountAmount) / 100) + taxamtperc
+            : (totalAmount - discountAmount) + taxamt
+        : _isPercentage
+            ? totalAmount - (totalAmount * discountAmount) / 100
+            : totalAmount - discountAmount;
+    num roundedGrandTotal1 =
+        roundoff == '' ? customRound(grandTotal) : grandTotal + rundff;
+    double roundOffValue = roundedGrandTotal1 - grandTotal;
+    return {
+      'rounded': roundedGrandTotal1,
+      'roundOffValue': roundOffValue,
+    };
+  }
+
   Future<void> _loadSavedProducts() async {
     final prefs = await SharedPreferences.getInstance();
     final List<String>? savedProductsStringList =
@@ -168,12 +168,14 @@ Map<String,dynamic> CalculatedValue(){
       return value.floor();
     }
   }
+
   Future<void> _onBackPressed() async {
     clearCart();
     // Your custom function logic here
     print('Back button pressed');
     // You can also show a dialog, navigate to another page, etc.
   }
+
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> grandTotalMap = CalculatedValue();
@@ -387,7 +389,8 @@ Map<String,dynamic> CalculatedValue(){
 
                         final total = quantity * amount;
                         return InkWell(
-                          onTap: () => showProductDetailsDialog(context, product),
+                          onTap: () =>
+                              showProductDetailsDialog(context, product),
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -405,31 +408,32 @@ Map<String,dynamic> CalculatedValue(){
                               child: Column(
                                 children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 60,
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: FadeInImage(
-                                            image: NetworkImage(
-                                              '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
-                                            ),
-                                            placeholder: const AssetImage(
-                                                'Assets/Images/no_image.jpg'),
-                                            imageErrorBuilder:
-                                                (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'Assets/Images/no_image.jpg',
-                                                fit: BoxFit.fitWidth,
-                                              );
-                                            },
-                                            fit: BoxFit.fitWidth,
-                                          ),
-                                        ),
-                                      ),
-                                      CommonWidgets.horizontalSpace(1),
+                                      // SizedBox(
+                                      //   width: 50,
+                                      //   height: 60,
+                                      //   child: ClipRRect(
+                                      //     borderRadius: BorderRadius.circular(10),
+                                      //     child: FadeInImage(
+                                      //       image: NetworkImage(
+                                      //         '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
+                                      //       ),
+                                      //       placeholder: const AssetImage(
+                                      //           'Assets/Images/no_image.jpg'),
+                                      //       imageErrorBuilder:
+                                      //           (context, error, stackTrace) {
+                                      //         return Image.asset(
+                                      //           'Assets/Images/no_image.jpg',
+                                      //           fit: BoxFit.fitWidth,
+                                      //         );
+                                      //       },
+                                      //       fit: BoxFit.fitWidth,
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // CommonWidgets.horizontalSpace(1),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
@@ -438,9 +442,9 @@ Map<String,dynamic> CalculatedValue(){
                                             Text(
                                               '${product['code']} | ${product['name'].toString().toUpperCase()}',
                                               style: TextStyle(
-                                                fontSize:
-                                                    AppConfig.textCaption3Size,
-                                              ),
+                                                  fontSize: AppConfig
+                                                      .textCaption3Size,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
@@ -460,6 +464,7 @@ Map<String,dynamic> CalculatedValue(){
                                       ),
                                     ],
                                   ),
+                                  SizedBox(height: 5.h),
                                   Row(
                                     children: [
                                       Text(product['type_name']),
@@ -544,8 +549,8 @@ Map<String,dynamic> CalculatedValue(){
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                       color: AppConfig.buttonDeactiveColor),
-                                  borderRadius:
-                                      const BorderRadius.all(Radius.circular(5)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(5)),
                                 ),
                                 child: Center(
                                   child: Text(
@@ -671,7 +676,7 @@ Map<String,dynamic> CalculatedValue(){
                             ),
                           ],
                         ),
-                        Text('Total: $totalAmount'),
+                        Text('Total: ${totalAmount.toStringAsFixed(2)}'),
                         Text('Tax: ${tax.toStringAsFixed(2)}'),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -713,9 +718,7 @@ Map<String,dynamic> CalculatedValue(){
                                           Radius.circular(5))),
                                   child: Center(
                                     child: Text(''
-                                        '${roundoff == '' ?
-                                            roundOffValue.toStringAsFixed(2)
-                                           : roundoff}'),
+                                        '${roundoff == '' ? roundOffValue.toStringAsFixed(2) : roundoff}'),
                                   )),
                             ),
                           ],
@@ -767,47 +770,54 @@ Map<String,dynamic> CalculatedValue(){
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
-                title: Text(product['name']),
+                title: Text('${product['code']} | ${product['name']}'),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      Image.network(
-                        '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
-                        height: 100,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset('Assets/Images/no_image.jpg',
-                              height: 100);
-                        },
-                      ),
-                      SizedBox(height: 10),
-                      Text('Code: ${product['code']}'),
-                      Text('Name: ${product['name']}'),
-                      SizedBox(height: 10),
-                      lastsale == null || lastsale.isEmpty
-                          ? Text('No last records found')
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Last Sale:',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Image.network(
+                            '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
+                            height: 100,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset('Assets/Images/no_image.jpg',
+                                  height: 100);
+                            },
+                          ),
+                          lastsale == null || lastsale.isEmpty
+                              ? Text('No last records found')
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Last Sale:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Text('Date: ${lastsale['date']}'),
+                                    Text('Unit: ${lastsale['unit']}'),
+                                    Text('Price: ${lastsale['price']}'),
+                                  ],
                                 ),
-                                Text('Date: ${lastsale['date']}'),
-                                Text('Unit: ${lastsale['unit']}'),
-                                Text('Price: ${lastsale['price']}'),
-                              ],
-                            ),
-                      if (units != null &&
-                          units.any((unit) => unit != null)) ...[
-                        SizedBox(height: 10),
+                        ],
+                      ),
+                      SizedBox(height: 5.h),
+                      if (selectedUnit != null) ...[
                         Text(
-                          'Product Type',
+                          'Available Qty: ${selectedUnit!['stock']}',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
+                      ],
+                      if (units != null &&
+                          units.any((unit) => unit != null)) ...[
+                        SizedBox(height: 10.h),
                         DropdownButtonFormField<String>(
                           decoration: InputDecoration(
+                            labelText: 'Product Type',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
                             border:
@@ -829,13 +839,11 @@ Map<String,dynamic> CalculatedValue(){
                           value: selectedProductTypeId,
                           hint: Text('Select Product Type'),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Unit',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         DropdownButtonFormField<String>(
                           decoration: InputDecoration(
+                            labelText: 'Unit',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
                             border:
@@ -861,16 +869,7 @@ Map<String,dynamic> CalculatedValue(){
                           value: selectedUnitId,
                           hint: Text('Select Unit'),
                         ),
-                        SizedBox(height: 10),
-                        if (selectedUnit != null) ...[
-                          Text('Price: ${selectedUnit!['price']}'),
-                          Text('Stock: ${selectedUnit!['stock']}'),
-                        ],
-                        SizedBox(height: 10),
-                        Text(
-                          'Quantity',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           initialValue: quantity,
@@ -878,6 +877,9 @@ Map<String,dynamic> CalculatedValue(){
                             quantity = value;
                           },
                           decoration: InputDecoration(
+                              labelText: 'Quantity',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Qty',
@@ -886,11 +888,7 @@ Map<String,dynamic> CalculatedValue(){
                               filled: true,
                               fillColor: Colors.grey.shade300),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Amount',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         TextFormField(
                           keyboardType: TextInputType.number,
                           initialValue: amount,
@@ -898,6 +896,9 @@ Map<String,dynamic> CalculatedValue(){
                             amount = value;
                           },
                           decoration: InputDecoration(
+                              labelText: 'Amount',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Amt',
@@ -916,14 +917,28 @@ Map<String,dynamic> CalculatedValue(){
                 ),
                 actions: <Widget>[
                   TextButton(
-                    child: Text('Close'),
+                    style: TextButton.styleFrom(
+                        backgroundColor: AppConfig.colorPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
                   ),
                   if (units != null && units.any((unit) => unit != null)) ...[
                     TextButton(
-                      child: Text('Save'),
+                      style: TextButton.styleFrom(
+                          backgroundColor: AppConfig.colorPrimary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.r))),
+                      child: Text(
+                        'Save',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onPressed: () async {
                         if (selectedUnitId != null &&
                             selectedProductTypeId != null &&

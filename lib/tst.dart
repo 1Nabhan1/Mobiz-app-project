@@ -234,7 +234,16 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       String? amount;
       Map<String, dynamic>? selectedUnit;
       String? name;
+      if (productTypes.isNotEmpty) {
+        selectedProductTypeId = productTypes[0]['id'].toString();
+      }
 
+      final amountController = TextEditingController();
+      if (units != null && units.isNotEmpty) {
+        selectedUnitId = units[0]['id'].toString();
+        selectedUnit = units[0];
+        amountController.text = selectedUnit?['price']?.toString() ?? '';
+      }
       if (ModalRoute.of(context)!.settings.arguments != null) {
         final Map<String, dynamic>? params =
             ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
@@ -247,47 +256,54 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
-                title: Text(product.name!),
+                title: Text('${product.code} | ${product.name!}'),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      Image.network(
-                        '${RestDatasource().Product_URL}/uploads/product/${product.proImage}',
-                        height: 100,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset('Assets/Images/no_image.jpg',
-                              height: 100);
-                        },
-                      ),
-                      SizedBox(height: 10),
-                      Text('Code: ${product.code}'),
-                      Text('Name: ${product.name}'),
-                      SizedBox(height: 10),
-                      lastsale == null || lastsale.isEmpty
-                          ? Text('No last records found')
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Last Sale:',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Image.network(
+                            '${RestDatasource().Product_URL}/uploads/product/${product.proImage}',
+                            height: 100,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset('Assets/Images/no_image.jpg',
+                                  height: 100);
+                            },
+                          ),
+                          lastsale == null || lastsale.isEmpty
+                              ? Text('No last records found')
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Last Sale:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Text('Date: ${lastsale['date']}'),
+                                    Text('Unit: ${lastsale['unit']}'),
+                                    Text('Price: ${lastsale['price']}'),
+                                  ],
                                 ),
-                                Text('Date: ${lastsale['date']}'),
-                                Text('Unit: ${lastsale['unit']}'),
-                                Text('Price: ${lastsale['price']}'),
-                              ],
-                            ),
-                      if (units != null &&
-                          units.any((unit) => unit != null)) ...[
-                        SizedBox(height: 10),
+                        ],
+                      ),
+                      SizedBox(height: 5.h),
+                      if (selectedUnit != null) ...[
                         Text(
-                          'Product Type',
+                          'Available Qty: ${selectedUnit!['stock']}',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
+                      ],
+                      if (units != null &&
+                          units.any((unit) => unit != null)) ...[
+                        SizedBox(height: 10.h),
                         DropdownButtonFormField<String>(
                           decoration: InputDecoration(
+                            labelText: 'Product Type',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
                             border:
@@ -304,19 +320,17 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           onChanged: (value) {
                             setDialogState(() {
                               selectedProductTypeId = value;
-                              selectedUnit = null; // Reset selected unit
+                              // selectedUnit = null; // Reset selected unit
                             });
                           },
                           value: selectedProductTypeId,
                           hint: Text('Select Product Type'),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Unit',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         DropdownButtonFormField<String>(
                           decoration: InputDecoration(
+                            labelText: 'Unit',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
                             contentPadding: EdgeInsets.symmetric(
                                 vertical: 2.h, horizontal: 10.w),
                             border:
@@ -337,27 +351,24 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                               selectedUnit = units.firstWhere(
                                   (unit) => unit['id'].toString() == value,
                                   orElse: () => null);
+                              amountController.text =
+                                  selectedUnit?['price']?.toString() ?? '';
                             });
                           },
                           value: selectedUnitId,
                           hint: Text('Select Unit'),
                         ),
-                        SizedBox(height: 10),
-                        if (selectedUnit != null) ...[
-                          Text('Price: ${selectedUnit!['price']}'),
-                          Text('Stock: ${selectedUnit!['stock']}'),
-                        ],
-                        SizedBox(height: 10),
-                        Text(
-                          'Quantity',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         TextFormField(
+                          autofocus: true,
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             quantity = value;
                           },
                           decoration: InputDecoration(
+                              labelText: 'Quantity',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Qty',
@@ -366,17 +377,14 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                               filled: true,
                               fillColor: Colors.grey.shade300),
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Amount',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        SizedBox(height: 10.h),
                         TextFormField(
                           keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            amount = value;
-                          },
+                          controller: amountController,
                           decoration: InputDecoration(
+                              labelText: 'Amount',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 2.h, horizontal: 10.w),
                               hintText: 'Amt',
@@ -395,14 +403,28 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                 ),
                 actions: <Widget>[
                   TextButton(
-                    child: Text('Close'),
+                    style: TextButton.styleFrom(
+                        backgroundColor: AppConfig.colorPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
                   ),
                   if (units != null && units.any((unit) => unit != null)) ...[
                     TextButton(
-                      child: Text('Save'),
+                      style: TextButton.styleFrom(
+                          backgroundColor: AppConfig.colorPrimary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.r))),
+                      child: Text(
+                        'Save',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onPressed: () async {
                         final prefs = await SharedPreferences.getInstance();
                         List<String>? selectedProducts =
@@ -426,7 +448,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           'unit_id': selectedUnitId,
                           'unit_name': selectedUnit?['name'],
                           'quantity': quantity ?? '',
-                          'amount': amount ?? '',
+                          'amount': amountController.text ?? '',
                         };
                         selectedProducts.add(jsonEncode(selectedProduct));
                         await prefs.setStringList(
