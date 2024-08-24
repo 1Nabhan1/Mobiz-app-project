@@ -52,12 +52,16 @@ class _SplashScreenState extends State<SplashScreen> {
     appState.buildNumber = json['build_number'];
     appState.userId = json['id'];
     appState.storeId = json['store_id'];
+    appState.vatState = json['vat_no_vat'];
+    appState.discountState = json['discount'];
+    appState.validate_qtySO = json['validate_qty_in_so'];
     appState.rolId = json['rol_id'];
     appState.email = json['email'];
     appState.osType = json['os_type'];
     appState.imageUrl = json['image_url'];
     appState.minorVersion = json['minor_version'];
     appState.username = json['username'];
+    appState.attendanceState = json['attendance'];
     appState.devices = json['devices'];
     appState.initialConsent = json['initial_consent'];
     appState.country = json['country'];

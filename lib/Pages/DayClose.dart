@@ -127,9 +127,9 @@ class _DaycloseState extends State<Dayclose> {
                   itemCount: 3,
                   itemBuilder: (context, index) =>
                       CommonWidgets.loadingContainers(
-                        height: SizeConfig.blockSizeVertical * 40,
-                        width: SizeConfig.blockSizeHorizontal * 40,
-                      ),
+                    height: SizeConfig.blockSizeVertical * 40,
+                    width: SizeConfig.blockSizeHorizontal * 40,
+                  ),
                 ),
               );
             } else if (snapshot.hasError) {
@@ -140,6 +140,7 @@ class _DaycloseState extends State<Dayclose> {
                 var url = '${RestDatasource().BASE_URL}/api/dayclose.store';
 
                 var Data = {
+                  "expense": data['expense'],
                   "in_date": formattedDate,
                   "store_id": AppState().storeId,
                   "van_id": AppState().vanId,
@@ -158,9 +159,9 @@ class _DaycloseState extends State<Dayclose> {
                   "collection_cheque_amount": data['collection_cheque'],
                   "last_day_balance_amount": data['last_day_balance_amount'],
                   "last_day_balance_no_of_cheque":
-                  data['last_day_balance_no_of_cheque'],
+                      data['last_day_balance_no_of_cheque'],
                   "last_day_balance_cheque_amount":
-                  data['last_day_balance_cheque_amount'],
+                      data['last_day_balance_cheque_amount'],
                   "cash_deposited": cashdeposit,
                   "cash_hand_over": cashHanded,
                   "no_of_cheque_deposited": Ncheqdepo,
@@ -184,11 +185,11 @@ class _DaycloseState extends State<Dayclose> {
                 if (response.statusCode == 200) {
                   if (mounted) {
                     CommonWidgets.showDialogueBox(
-                        context: context,
-                        title: "",
-                        msg: "Data Inserted Successfully")
+                            context: context,
+                            title: "",
+                            msg: "Data Inserted Successfully")
                         .then((value) =>
-                        Navigator.pushNamed(context, HomeScreen.routeName));
+                            Navigator.pushNamed(context, HomeScreen.routeName));
                   }
                   print('Data posted successfully');
                   print('Response: ${response.body}');
@@ -225,7 +226,7 @@ class _DaycloseState extends State<Dayclose> {
                           },
                           child: Text('OK',
                               style:
-                              TextStyle(color: AppConfig.backgroundColor)),
+                                  TextStyle(color: AppConfig.backgroundColor)),
                         ),
                       ],
                     );
@@ -259,24 +260,24 @@ class _DaycloseState extends State<Dayclose> {
                   });
                   if (cashdeposit.isNotEmpty && cashHanded.isNotEmpty) {
                     balcash = ((((data['collection_cash']) +
-                        (data['last_day_balance_amount'])) -
-                        (double.parse(cashdeposit) +
-                            double.parse(cashHanded))) -
-                        data['expense'])
+                                    (data['last_day_balance_amount'])) -
+                                (double.parse(cashdeposit) +
+                                    double.parse(cashHanded))) -
+                            data['expense'])
                         .toString();
                   }
                   if (Ncheqdepo.isNotEmpty && cheqhandedovr.isNotEmpty) {
                     cheqhand = (((data['collection_no_cheque']) +
-                        (data['last_day_balance_no_of_cheque'])) -
-                        (double.parse(Ncheqdepo) +
-                            double.parse(cheqhandedovr)))
+                                (data['last_day_balance_no_of_cheque'])) -
+                            (double.parse(Ncheqdepo) +
+                                double.parse(cheqhandedovr)))
                         .toString();
                   }
                   if (cheqdepo.isNotEmpty && cheqhandedovr.isNotEmpty) {
                     amtinhand = (((data['collection_cheque']) +
-                        (data['last_day_balance_cheque_amount'])) -
-                        (double.parse(cheqdepo) +
-                            double.parse(cheqhandedamt)))
+                                (data['last_day_balance_cheque_amount'])) -
+                            (double.parse(cheqdepo) +
+                                double.parse(cheqhandedamt)))
                         .toString();
                   }
                 }
@@ -386,7 +387,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                        '${data['no_of_sales']} | ${data['amount_of_sales']}',
+                                            '${data['no_of_sales']} | ${data['amount_of_sales']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -397,7 +398,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                        '${data['no_of_sales_order']} | ${data['amount_of_sales_order']}',
+                                            '${data['no_of_sales_order']} | ${data['amount_of_sales_order']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -408,7 +409,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                        '${data['no_of_sales_return']} | ${data['amount_of_sales_return']}',
+                                            '${data['no_of_sales_return']} | ${data['amount_of_sales_return']}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
@@ -484,7 +485,7 @@ class _DaycloseState extends State<Dayclose> {
                             children: [
                               Container(
                                 child:
-                                Center(child: Text("${data['expense']}")),
+                                    Center(child: Text("${data['expense']}")),
                                 width: 70,
                                 height: 20,
                                 decoration: BoxDecoration(
@@ -499,15 +500,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(CashDepositedcontrol,
-                                      'cashdeposit');
-                                },
+                                        _showDialog(CashDepositedcontrol,
+                                            'cashdeposit');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : Dayclosedata!['cash_deposited']
+                                              ? ''
+                                              : Dayclosedata!['cash_deposited']
                                           : cashdeposit)),
                                   width: 70,
                                   height: 20,
@@ -523,15 +524,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(CashHandedOvercontrol,
-                                      'cashHanded');
-                                },
+                                        _showDialog(CashHandedOvercontrol,
+                                            'cashHanded');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : Dayclosedata!['cash_hand_over']
+                                              ? ''
+                                              : Dayclosedata!['cash_hand_over']
                                           : cashHanded)),
                                   width: 70,
                                   height: 20,
@@ -547,15 +548,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(NoofChequeDepositedcontrol,
-                                      'Ncheqdepo');
-                                },
+                                        _showDialog(NoofChequeDepositedcontrol,
+                                            'Ncheqdepo');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : "${Dayclosedata!['no_of_cheque_deposited']}"
+                                              ? ''
+                                              : "${Dayclosedata!['no_of_cheque_deposited']}"
                                           : Ncheqdepo)),
                                   width: 70,
                                   height: 20,
@@ -571,17 +572,17 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(
-                                      ChequeDepositedAmountcontrol,
-                                      'cheqdepoamt');
-                                },
+                                        _showDialog(
+                                            ChequeDepositedAmountcontrol,
+                                            'cheqdepoamt');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : Dayclosedata![
-                                      'cheque_deposited_amount']
+                                              ? ''
+                                              : Dayclosedata![
+                                                  'cheque_deposited_amount']
                                           : cheqdepo)),
                                   width: 70,
                                   height: 20,
@@ -597,15 +598,15 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(NoofChequeHandedOvercontrol,
-                                      'cheqhandedovr');
-                                },
+                                        _showDialog(NoofChequeHandedOvercontrol,
+                                            'cheqhandedovr');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : "${Dayclosedata!['no_of_cheque_hand_over']}"
+                                              ? ''
+                                              : "${Dayclosedata!['no_of_cheque_hand_over']}"
                                           : cheqhandedovr)),
                                   width: 70,
                                   height: 20,
@@ -621,17 +622,17 @@ class _DaycloseState extends State<Dayclose> {
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
-                                  _showDialog(
-                                      ChequeHandedOverAmountcontrol,
-                                      'cheqhandedamt');
-                                },
+                                        _showDialog(
+                                            ChequeHandedOverAmountcontrol,
+                                            'cheqhandedamt');
+                                      },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
                                           ? Dayclosedata == null
-                                          ? ''
-                                          : Dayclosedata![
-                                      'cheque_hand_over_amount']
+                                              ? ''
+                                              : Dayclosedata![
+                                                  'cheque_hand_over_amount']
                                           : cheqhandedamt)),
                                   width: 70,
                                   height: 20,
@@ -647,8 +648,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                     child: Text(isdayclose == false
                                         ? Dayclosedata == null
-                                        ? ''
-                                        : "${Dayclosedata!['balance_cash_in_hand']}"
+                                            ? ''
+                                            : "${Dayclosedata!['balance_cash_in_hand']}"
                                         : balcash)),
                                 width: 70,
                                 height: 20,
@@ -664,8 +665,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                   child: Text(isdayclose == false
                                       ? Dayclosedata == null
-                                      ? ''
-                                      : "${Dayclosedata!['no_of_cheque_in_hand']}"
+                                          ? ''
+                                          : "${Dayclosedata!['no_of_cheque_in_hand']}"
                                       : cheqhand),
                                 ),
                                 width: 70,
@@ -682,8 +683,8 @@ class _DaycloseState extends State<Dayclose> {
                                 child: Center(
                                   child: Text(isdayclose == false
                                       ? Dayclosedata == null
-                                      ? ''
-                                      : "${Dayclosedata!['cheque_amount_in_hand']}"
+                                          ? ''
+                                          : "${Dayclosedata!['cheque_amount_in_hand']}"
                                       : amtinhand),
                                 ),
                                 width: 70,
@@ -724,14 +725,14 @@ class _DaycloseState extends State<Dayclose> {
                               shape: WidgetStateProperty.all(
                                   BeveledRectangleBorder()),
                               minimumSize:
-                              WidgetStateProperty.all(Size(70, 30)),
+                                  WidgetStateProperty.all(Size(70, 30)),
                             ),
                             onPressed: isdayclose == false
                                 ? null
                                 : () {
-                              postData();
-                              // print(DateFormat('dd/MM/yyyy').format(selectedDate));
-                            },
+                                    postData();
+                                    // print(DateFormat('dd/MM/yyyy').format(selectedDate));
+                                  },
                             child: SizedBox(
                               width: 120,
                               child: Center(

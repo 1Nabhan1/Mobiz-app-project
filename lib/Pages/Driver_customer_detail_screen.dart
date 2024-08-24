@@ -13,9 +13,7 @@ import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 
-
 import '../Utilities/rest_ds.dart';
-
 
 class Driver_customer_detail_screen extends StatefulWidget {
   static const routeName = "/Driver_customer_detail_screen";
@@ -55,6 +53,7 @@ class _Driver_customer_detail_screenState
   String? location;
   int? provinceId;
   int? routeId;
+  int? id;
   String? code;
   String? trn;
   int? creditDays;

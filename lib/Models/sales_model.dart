@@ -79,7 +79,7 @@ class Product {
   final double price;
   final int storeId;
   final int status;
-  final List<Unit> units;
+  final List<Units> units;
   String? selectedUnitName;
   int? selectedUnitId;
 
@@ -107,8 +107,8 @@ class Product {
       price: double.parse(json['price'].toString()),
       storeId: json['store_id'] ?? 0,
       status: json['status'] ?? 0,
-      units: List<Unit>.from(
-        json['units'].map((unit) => Unit.fromJson(unit)),
+      units: List<Units>.from(
+        json['units'].map((unit) => Units.fromJson(unit)),
       ),
     );
   }
@@ -128,7 +128,7 @@ class Product {
   }
 }
 
-class Unit {
+class Units {
   final int unit;
   final int id;
   final String name;
@@ -136,7 +136,7 @@ class Unit {
   final double minPrice;
   final int stock;
 
-  Unit({
+  Units({
     required this.unit,
     required this.id,
     required this.name,
@@ -145,8 +145,8 @@ class Unit {
     required this.stock,
   });
 
-  factory Unit.fromJson(Map<String, dynamic> json) {
-    return Unit(
+  factory Units.fromJson(Map<String, dynamic> json) {
+    return Units(
       unit: json['unit'] ?? 0,
       id: json['id'] ?? 0,
       name: json['name'] ?? '',

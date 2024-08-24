@@ -223,6 +223,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       LoginModel loginResp = LoginModel.fromJson(resJson);
       if (loginResp.status == "success") {
+        // print('loginResp.settings!.vatState');
+        // print(loginResp.settings!.vatState);
         if (loginResp.user != null && loginResp.authorisation != null) {
           appState.token = loginResp.authorisation!.token;
           appState.storeId = loginResp.user!.storeId;
@@ -230,6 +232,17 @@ class _LoginScreenState extends State<LoginScreen> {
           appState.name = loginResp.user!.name;
           appState.userId = loginResp.user!.id;
           appState.email = loginResp.user!.email;
+          appState.vatState =
+              loginResp.settings != null ? loginResp.settings!.vatState : '';
+          appState.discountState = loginResp.settings != null
+              ? loginResp.settings!.discountState
+              : '';
+          appState.validate_qtySO = loginResp.settings != null
+              ? loginResp.settings!.soValQtyState
+              : '';
+          appState.attendanceState = loginResp.settings != null
+              ? loginResp.settings!.attendanceState
+              : '';
           appState.loginState = 'LOGGED_IN';
 
           // Clear the shared preference if it is already present

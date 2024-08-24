@@ -55,6 +55,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? location;
   int? provinceId;
   int? routeId;
+  int? id;
   String? code;
   String? trn;
   int? creditDays;
@@ -328,7 +329,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       Navigator.pushNamed(
                           context, PaymentCollectionScreen.routeName,
                           arguments: {
-                            'customer': id,
+                            'customerId': id,
                             'name': name,
                             'code': code,
                             'paymentTerms': paymentTerms,

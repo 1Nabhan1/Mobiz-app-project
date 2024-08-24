@@ -115,7 +115,7 @@ class _DaycloseReportState extends State<DaycloseReport> {
                             padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               trailing: Text(
-                                  '${dayClose1.approvel == 1 ? 'Waiting for\nApproval' : dayClose1.approvel == 2 ? 'Approved' : dayClose1.approvel == 0 ? '' : ''}'),
+                                  '${dayClose1.approvel == 1 ? 'Approved' : dayClose1.approvel == 0 ? 'Waiting for\nApproval' : ''}'),
                               title: Text('Invoice ID: ${dayClose1.invoiceNo}'),
                               subtitle: Text('Date: ${dayClose1.inDate}'),
                               onTap: () {

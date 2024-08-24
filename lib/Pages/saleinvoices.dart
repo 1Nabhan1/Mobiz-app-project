@@ -429,106 +429,6 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     }
   }
 
-  // void _print(Invoice.InvoiceData invoice, bool isPrint) async {
-  //   if (_connected) {
-  //     String companyName = "${invoice.data!.store![0].name}";
-  //     String companyAddress = "${invoice.data!.store![0].address ?? 'N/A'}";
-  //     String companyTRN = "TRN:${invoice.data!.store![0].trn ?? 'N/A'}";
-  //     String billtype = "Tax Invoice";
-  //     String customerName =
-  //         "${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}";
-  //     String customerEmail = "${invoice.data!.customer![0].email}";
-  //     String customerContact = "${invoice.data!.customer![0].contactNumber}";
-  //     String customerTRN = "${invoice.data!.customer![0].trn ?? ''}";
-  //     String invoiceNumber = " ${invoice.data!.invoiceNo!}";
-  //     String invoiceDate =
-  //         "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-  //     String dueDate =
-  //         "${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}";
-  //     String productDescription = "${invoice.data!.detail![0].name}";
-  //     String productRate =
-  //         "${invoice.data!.detail![0].mrp?.toStringAsFixed(2)}";
-  //     String productQty = "${invoice.data!.detail![0].quantity}";
-  //     String productTotal = "${invoice.data!.total?.toStringAsFixed(2)}";
-  //     String tax = "${invoice.data!.totalTax?.toStringAsFixed(2)}";
-  //     String grandTotal = "${invoice.data!.grandTotal?.toStringAsFixed(2)}";
-  //     String amountInWords =
-  //         "AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY'";
-  //     String van = " ${invoice.data!.van![0].name}";
-  //     String salesman = "${invoice.data!.user![0].name}";
-  //
-  //     // Print company logo
-  //     String imageUrl =
-  //         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
-  //     String imageData = await _getImageData(imageUrl);
-  //     printer.printImage(imageData);
-  //
-  //     // Print company details
-  //     printer.printNewLine();
-  //     printer.printCustom(companyName, 3, 1);
-  //     printer.printCustom(companyAddress, 1, 1);
-  //     printer.printCustom(companyTRN, 1, 1);
-  //     printer.printCustom(billtype, 1, 1);
-  //     printer.printNewLine();
-  //     printer.printCustom(
-  //         "----------------------------------------------------------------------",
-  //         1,
-  //         0);
-  //     // Print customer details
-  //     printer.printCustom("Customer: $customerName", 1, 0);
-  //     printer.printCustom("Email: $customerEmail", 1, 0);
-  //     printer.printCustom("Contact No: $customerContact", 1, 0);
-  //     printer.printCustom("TRN: $customerTRN", 1, 0);
-  //     printer.printNewLine();
-  //
-  //     // Print invoice details
-  //     printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
-  //     printer.printCustom("Date: $invoiceDate", 1, 2);
-  //     printer.printCustom("Due Date: $dueDate", 1, 2);
-  //     printer.printNewLine();
-  //     printer.printCustom(
-  //         "----------------------------------------------------------------------",
-  //         1,
-  //         0);
-  //     // Print product details
-  //     printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
-  //     printer.printCustom(
-  //         "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
-  //         1,
-  //         0);
-  //     printer.printCustom(
-  //         "----------------------------------------------------------------------",
-  //         1,
-  //         0);
-  //     // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
-  //     // printer.printCustom(
-  //     //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
-  //     printer.printNewLine();
-  //
-  //     // Print totals
-  //     printer.printCustom("Total: $productTotal", 1, 2);
-  //     printer.printCustom("Tax: $tax", 1, 2);
-  //     printer.printCustom("Grand Total: $grandTotal", 1, 2);
-  //     printer.printNewLine();
-  //
-  //     // Print amount in words
-  //     printer.printCustom("Amount in Words: $amountInWords", 1, 0);
-  //     printer.printNewLine();
-  //
-  //     // Print van and salesman details
-  //     printer.printCustom("Van: $van", 1, 0);
-  //     printer.printCustom("Salesman: $salesman", 1, 0);
-  //     printer.printNewLine();
-  //
-  //     // Cut the paper
-  //     printer.paperCut();
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Printer not connected')),
-  //     );
-  //   }
-  // }
-
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
       String companyName = invoice.data!.store![0].name ?? 'N/A';
@@ -684,11 +584,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print totals
-      printer.printCustom("Van: $van", 1, 0); // Left aligned
-      printer.printCustom("Salesman: $salesman", 1, 0); // Left aligned
-      printer.printNewLine();
-      printer.printCustom("Total: $grandTotal", 1, 2); // Right aligned
-      printer.printCustom("Tax: $tax", 1, 2); // Right aligned
+      printAlignedText("Van: $van", "Total: $grandTotal");
+      printAlignedText("Salesman: $salesman", "Tax: $tax");
       printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();
       printer.printCustom(amountInWords, 1, 0); // Centered
@@ -954,7 +851,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     // Draw invoice details at the bottom right.
     String bottomInvoiceDetails = '''
   ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount?.toStringAsFixed(2)}' : '\t'}
-  Total: ${invoice.data!.total?.toStringAsFixed(2)}
+  Total: ${invoice.data!.discounted_amount ?? ''} 
   Vat: ${invoice.data!.totalTax?.toStringAsFixed(2)}
   ${'${invoice.data!.roundOff}' != 0 ? 'Round off:${double.parse(invoice.data!.roundOff ?? '').toStringAsFixed(2)}\nGrand Total: ${invoice.data!.grandTotal?.toStringAsFixed(2)}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
   

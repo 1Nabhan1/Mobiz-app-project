@@ -7,6 +7,10 @@ class AppState {
   String? userType;
   String? name;
   String? email;
+  String? vatState;
+  String? validate_qtySO;
+  String? discountState;
+  String? attendanceState;
   int? userId;
   int? vanId;
   int? storeId;
@@ -37,6 +41,10 @@ class AppState {
     userId;
     rolId;
     storeId;
+    vatState;
+    validate_qtySO;
+    discountState;
+    attendanceState;
     routeId;
     vanId;
     appVersion = "";
@@ -62,6 +70,10 @@ class AppState {
     isExistingUser = json['is_existing_user'];
     token = json['token'];
     storeId = json['store_id'];
+    vatState = json['vat_no_vat'];
+    validate_qtySO = json['validate_qty_in_so'];
+    discountState = json['discount'];
+    attendanceState = json['attendance'];
     routeId = json['route_id'];
     userType = json['user_type'];
     // userType = json['rol_id'];
@@ -96,6 +108,10 @@ class AppState {
     data['name'] = name;
     data['email'] = email;
     data['store_id'] = storeId;
+    data['vat_no_vat'] = vatState;
+    data['validate_qty_in_so'] = validate_qtySO;
+    data['discount'] = discountState;
+    data['attendance'] = attendanceState;
     data['route_id'] = routeId;
     data['app_version'] = appVersion;
     data['build_number'] = buildNumber;

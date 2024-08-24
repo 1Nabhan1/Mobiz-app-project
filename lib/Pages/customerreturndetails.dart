@@ -12,6 +12,7 @@ import '../Models/sales_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'homereturn.dart';
 
 class Customerreturndetail extends StatefulWidget {
   static const routeName = "/Customerreturndetail";
@@ -31,6 +32,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   final TextEditingController _remarksController = TextEditingController();
   String _remarksText = "";
   Map<int, String> amounts = {};
+  final TextEditingController _roundoff = TextEditingController();
   Map<int, String> qtys = {};
   TextEditingController _searchData = TextEditingController();
   int? id;
@@ -40,11 +42,13 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       []; // List to store selected product types
   String? name;
   int _ifVat = 1;
+  String roundoff = '';
   // num tax = 0;
   String? code;
   String? payment;
   String amount = '';
   String quantity = '';
+  bool _hasData = false;
   @override
   void initState() {
     super.initState();
@@ -84,65 +88,47 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     return total;
   }
 
-  // double tax = 0;
   double calculateTax() {
     double tax = 0;
-    double Tax = 0;
-    double totalRate = calculateTotalRate();
     for (int index = 0; index < cartItems.length; index++) {
-      double rate = double.tryParse(
-              amounts[index] ?? cartItems[index].price.toString()) ??
-          0;
       String discountValue = _discountData.text.trim();
-
+      double totalAmount = calculateTotalRate();
       double discountAmount = double.tryParse(discountValue) ?? 0;
-      double amt = totalRate - discountAmount;
-      double discountfrtax = (totalRate * discountAmount) / 100;
-      double netTotal = totalRate - discountfrtax;
-      double discount = (rate * discountAmount) / 100;
-      int stock = cartItems[index].units[0].stock ?? 0;
-      int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
+      double amt = totalAmount - discountAmount;
+      double discountfrtax = (totalAmount * discountAmount) / 100;
+      double netTotal = totalAmount - discountfrtax;
       num taxPercentage = 5;
-      // cartItems[index].taxPercentage ?? 0;
       double Tax = _isPercentage
           ? ((netTotal * taxPercentage) / 100)
           : (amt * taxPercentage) / 100;
-      // Use the tax percentage from the product
-      double totaltax = ((discountfrtax * taxPercentage) / 100);
       tax = Tax;
-      // print(discountfrtax);
-      // print('fffffffffffffffffff');
     }
-
     return tax;
   }
 
-  // double grnddtotal = 0;
   Map<String, dynamic> grandTotal() {
+    double taxamt = calculateTax();
+    roundoff = _roundoff.text;
+    double rundff = double.tryParse(roundoff) ?? 0;
     String discountValue = _discountData.text.trim();
     double discountAmount = double.tryParse(discountValue) ?? 0;
-    double totalRate = calculateTotalRate();
-    double discountinpercent = (totalRate * discountAmount) / 100;
     double totalTax = 5;
-    double nettotal = totalRate - discountinpercent;
-    double taxamt = calculateTax();
+    double totalAmount = calculateTotalRate();
+    double discountinpercent = (totalAmount * discountAmount) / 100;
+    double nettotal = totalAmount - discountinpercent;
     double taxamtperc = (nettotal * totalTax) / 100;
-
     double grandTotal = _ifVat == 1
         ? _isPercentage
-            ? totalRate - ((totalRate * discountAmount) / 100) + taxamtperc
-            : (totalRate - discountAmount) + taxamt
+            ? totalAmount - ((totalAmount * discountAmount) / 100) + taxamtperc
+            : (totalAmount - discountAmount) + taxamt
         : _isPercentage
-            ? totalRate - (totalRate * discountAmount) / 100
-            : totalRate - discountAmount;
-
-    int roundedGrandTotal = customRound(grandTotal);
-    double roundOffValue = roundedGrandTotal - grandTotal;
-    // print('llllllllllllllll');
-    // print(grandTotal);
+            ? totalAmount - (totalAmount * discountAmount) / 100
+            : totalAmount - discountAmount;
+    num roundedGrandTotal1 =
+        roundoff == '' ? customRound(grandTotal) : grandTotal + rundff;
+    double roundOffValue = roundedGrandTotal1 - grandTotal;
     return {
-      'original': grandTotal,
-      'rounded': roundedGrandTotal,
+      'rounded': roundedGrandTotal1,
       'roundOffValue': roundOffValue,
     };
   }
@@ -290,7 +276,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
     double total = calculateTotalRate();
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    int roundedGrandTotal = grandTotalMap['rounded'];
+    var roundedGrandTotal = grandTotalMap['rounded'];
     double roundOffValue = grandTotalMap['roundOffValue'];
 
     void postDataToApi() async {
@@ -362,6 +348,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
               .then(
             (value) {
               clearCart();
+              Navigator.pushReplacementNamed(
+                context,
+                HomereturnScreen.routeName,
+              );
             },
           );
         }
@@ -394,30 +384,33 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
         floatingActionButton: SizedBox(
           width: 100.w,
           height: 30.h,
-          child: ElevatedButton(
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(7.0),
-                ),
-              ),
-              backgroundColor: (cartItems.isNotEmpty)
-                  ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                  : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
-            ),
-            onPressed: (cartItems.isNotEmpty)
-                ? () async {
-                    postDataToApi();
-                  }
-                : null,
-            child: Text(
-              'SAVE',
-              style: TextStyle(
-                  fontSize: AppConfig.textCaption3Size,
-                  color: AppConfig.backgroundColor,
-                  fontWeight: AppConfig.headLineWeight),
-            ),
-          ),
+          child: _hasData
+              ? ElevatedButton(
+                  style: ButtonStyle(
+                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(7.0),
+                      ),
+                    ),
+                    backgroundColor: (cartItems.isNotEmpty)
+                        ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
+                        : const WidgetStatePropertyAll(
+                            AppConfig.buttonDeactiveColor),
+                  ),
+                  onPressed: (cartItems.isNotEmpty)
+                      ? () async {
+                          postDataToApi();
+                        }
+                      : null,
+                  child: Text(
+                    'SAVE',
+                    style: TextStyle(
+                        fontSize: AppConfig.textCaption3Size,
+                        color: AppConfig.backgroundColor,
+                        fontWeight: AppConfig.headLineWeight),
+                  ),
+                )
+              : Text('Return Type Not\n      Available'),
         ),
         appBar: AppBar(
           leading: GestureDetector(
@@ -496,72 +489,84 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                           ),
                         ),
                         const Spacer(),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _ifVat = 1;
-                            });
-                            total = 0;
-                            tax = 0;
-                            // _calculateTotal();
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black),
-                                color: (_ifVat == 1)
-                                    ? AppConfig.colorPrimary
-                                    : AppConfig.backButtonColor,
-                                borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(3),
-                                    bottomLeft: Radius.circular(3))),
-                            width: SizeConfig.blockSizeHorizontal * 13,
-                            height: SizeConfig.blockSizeVertical * 3,
-                            child: Center(
-                              child: Text(
-                                'VAT',
-                                style: TextStyle(
-                                  fontSize: AppConfig.textCaption3Size,
-                                  color: (_ifVat == 1)
-                                      ? AppConfig.backButtonColor
-                                      : AppConfig.textBlack,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _ifVat = 0;
-                            });
-                            total = 0;
-                            tax = 0;
-                            // _calculateTotal();
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black),
-                                color: (_ifVat == 0)
-                                    ? AppConfig.colorPrimary
-                                    : AppConfig.backButtonColor,
-                                borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(3),
-                                    bottomRight: Radius.circular(3))),
-                            width: SizeConfig.blockSizeHorizontal * 13,
-                            height: SizeConfig.blockSizeVertical * 3,
-                            child: Center(
-                              child: Text(
-                                'NO VAT',
-                                style: TextStyle(
-                                  fontSize: AppConfig.textCaption3Size,
-                                  color: (_ifVat == 0)
-                                      ? AppConfig.backButtonColor
-                                      : AppConfig.textBlack,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        AppState().vatState != 'Disable'
+                            ? Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _ifVat = 1;
+                                      });
+                                      total = 0;
+                                      tax = 0;
+                                      // _calculateTotal();
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.black),
+                                          color: (_ifVat == 1)
+                                              ? AppConfig.colorPrimary
+                                              : AppConfig.backButtonColor,
+                                          borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(3),
+                                              bottomLeft: Radius.circular(3))),
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 13,
+                                      height: SizeConfig.blockSizeVertical * 3,
+                                      child: Center(
+                                        child: Text(
+                                          'VAT',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                            color: (_ifVat == 1)
+                                                ? AppConfig.backButtonColor
+                                                : AppConfig.textBlack,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _ifVat = 0;
+                                      });
+                                      total = 0;
+                                      tax = 0;
+                                      // _calculateTotal();
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.black),
+                                          color: (_ifVat == 0)
+                                              ? AppConfig.colorPrimary
+                                              : AppConfig.backButtonColor,
+                                          borderRadius: const BorderRadius.only(
+                                              topRight: Radius.circular(3),
+                                              bottomRight: Radius.circular(3))),
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 13,
+                                      height: SizeConfig.blockSizeVertical * 3,
+                                      child: Center(
+                                        child: Text(
+                                          'NO VAT',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                            color: (_ifVat == 0)
+                                                ? AppConfig.backButtonColor
+                                                : AppConfig.textBlack,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : SizedBox.shrink()
                       ],
                     ),
                   ),
@@ -1102,83 +1107,144 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                         SizedBox(
                           height: 10,
                         ),
+                        AppState().discountState == 'Enable'
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Discount ',
+                                    style: TextStyle(
+                                      fontSize: AppConfig.textCaption3Size,
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () => setState(() {
+                                      _isPercentage = !_isPercentage;
+                                    }),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.black),
+                                          color: (!_isPercentage)
+                                              ? AppConfig.colorPrimary
+                                              : AppConfig.backButtonColor,
+                                          borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(3),
+                                              bottomLeft: Radius.circular(3))),
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 24,
+                                      height: SizeConfig.blockSizeVertical * 3,
+                                      child: Center(
+                                        child: Text(
+                                          'AMOUNT',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppConfig.textCaption3Size,
+                                            color: (!_isPercentage)
+                                                ? AppConfig.backButtonColor
+                                                : AppConfig.textBlack,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () => setState(() {
+                                      _isPercentage = !_isPercentage;
+                                    }),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.black),
+                                          color: (_isPercentage)
+                                              ? AppConfig.colorPrimary
+                                              : AppConfig.backButtonColor,
+                                          borderRadius: const BorderRadius.only(
+                                              topRight: Radius.circular(3),
+                                              bottomRight: Radius.circular(3))),
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 24,
+                                      height: SizeConfig.blockSizeVertical * 3,
+                                      child: Center(
+                                          child: Text(
+                                        'PERCENTAGE',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          color: (_isPercentage)
+                                              ? AppConfig.backButtonColor
+                                              : AppConfig.textBlack,
+                                        ),
+                                      )),
+                                    ),
+                                  ),
+                                  CommonWidgets.horizontalSpace(2),
+                                  InkWell(
+                                    onTap: () {
+                                      showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text('Discount'),
+                                              content: TextField(
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                controller: _discountData,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        hintText: "Discount"),
+                                              ),
+                                              actions: <Widget>[
+                                                MaterialButton(
+                                                  color: AppConfig.colorPrimary,
+                                                  textColor: Colors.white,
+                                                  child: const Text('OK'),
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    child: Container(
+                                        width:
+                                            SizeConfig.blockSizeHorizontal * 17,
+                                        height:
+                                            SizeConfig.blockSizeVertical * 3,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                                color: AppConfig
+                                                    .buttonDeactiveColor),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(5))),
+                                        child: Center(
+                                          child: Text(_discountData.text.isEmpty
+                                              ? ''
+                                              : _discountData.text),
+                                        )),
+                                  ),
+                                ],
+                              )
+                            : SizedBox.shrink(),
+                        Text('Total: $total'),
+                        Text('Tax: $tax'),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text(
-                              'Discount ',
-                              style: TextStyle(
-                                fontSize: AppConfig.textCaption3Size,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => setState(() {
-                                _isPercentage = !_isPercentage;
-                              }),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.black),
-                                    color: (!_isPercentage)
-                                        ? AppConfig.colorPrimary
-                                        : AppConfig.backButtonColor,
-                                    borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(3),
-                                        bottomLeft: Radius.circular(3))),
-                                width: SizeConfig.blockSizeHorizontal * 24,
-                                height: SizeConfig.blockSizeVertical * 3,
-                                child: Center(
-                                  child: Text(
-                                    'AMOUNT',
-                                    style: TextStyle(
-                                      fontSize: AppConfig.textCaption3Size,
-                                      color: (!_isPercentage)
-                                          ? AppConfig.backButtonColor
-                                          : AppConfig.textBlack,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => setState(() {
-                                _isPercentage = !_isPercentage;
-                              }),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.black),
-                                    color: (_isPercentage)
-                                        ? AppConfig.colorPrimary
-                                        : AppConfig.backButtonColor,
-                                    borderRadius: const BorderRadius.only(
-                                        topRight: Radius.circular(3),
-                                        bottomRight: Radius.circular(3))),
-                                width: SizeConfig.blockSizeHorizontal * 24,
-                                height: SizeConfig.blockSizeVertical * 3,
-                                child: Center(
-                                    child: Text(
-                                  'PERCENTAGE',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    color: (_isPercentage)
-                                        ? AppConfig.backButtonColor
-                                        : AppConfig.textBlack,
-                                  ),
-                                )),
-                              ),
-                            ),
-                            CommonWidgets.horizontalSpace(2),
+                            Text('Round off: '),
                             InkWell(
                               onTap: () {
                                 showDialog(
                                     context: context,
                                     builder: (context) {
                                       return AlertDialog(
-                                        title: const Text('Discount'),
+                                        title: const Text('Round off'),
                                         content: TextField(
                                           keyboardType: TextInputType.number,
-                                          controller: _discountData,
+                                          controller: _roundoff,
                                           decoration: const InputDecoration(
-                                              hintText: "Discount"),
+                                              hintText: "Round off"),
                                         ),
                                         actions: <Widget>[
                                           MaterialButton(
@@ -1202,16 +1268,12 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                       borderRadius: const BorderRadius.all(
                                           Radius.circular(5))),
                                   child: Center(
-                                    child: Text(_discountData.text.isEmpty
-                                        ? ''
-                                        : _discountData.text),
+                                    child: Text(''
+                                        '${roundoff == '' ? roundOffValue.toStringAsFixed(2) : roundoff}'),
                                   )),
                             ),
                           ],
                         ),
-                        Text('Total: $total'),
-                        Text('Tax: $tax'),
-                        Text('Round off: ${roundOffValue.toStringAsFixed(2)}'),
                         Text('Grand Total: $roundedGrandTotal'),
                       ],
                     ),
@@ -1233,10 +1295,11 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       for (var item in data['data']) {
         loadedProductTypes.add(ProductType.fromJson(item));
       }
-
+      // print(_hasData);
       setState(() {
         productTypes = loadedProductTypes;
         initializeValues();
+        _hasData = data['data'].isNotEmpty;
       });
     } else {
       throw Exception('Failed to load product types');

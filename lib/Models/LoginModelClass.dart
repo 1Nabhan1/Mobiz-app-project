@@ -1,13 +1,17 @@
 class LoginModel {
   String? status;
   User? user;
+  Settings? settings;
   Authorisation? authorisation;
 
-  LoginModel({this.status, this.user, this.authorisation});
+  LoginModel({this.status, this.user, this.authorisation, this.settings});
 
   LoginModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     user = json['user'] != null ? new User.fromJson(json['user']) : null;
+    settings = json['settings'] != null
+        ? new Settings.fromJson(json['settings'])
+        : null;
     authorisation = json['authorisation'] != null
         ? new Authorisation.fromJson(json['authorisation'])
         : null;
@@ -88,6 +92,24 @@ class User {
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     return data;
+  }
+}
+
+class Settings {
+  String? vatState;
+  String? discountState;
+  String? soValQtyState;
+  String? attendanceState;
+  Settings(
+      {this.discountState,
+      this.soValQtyState,
+      this.vatState,
+      this.attendanceState});
+  Settings.fromJson(Map<String, dynamic> json) {
+    vatState = json['vat_no_vat'];
+    soValQtyState = json['validate_qty_in_so'];
+    discountState = json['discount'];
+    attendanceState = json['attendance'];
   }
 }
 

@@ -41,19 +41,91 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
   List<bool> expandedStates = [];
   List<bool> expandedStates1 = [];
   List<bool> expandedStates2 = [];
+  List<bool> expandedStates3 = [];
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    futureLoading = fetchDeliverLoadingPending();
     futurePending = fetchDeliverstatusPending();
     futureDelivered = fetchDeliverstatusDelivered();
     futureAll = fetchDeliverstatusAll();
   }
 
+  late Future<List<CustomerDelivery>> futureLoading;
   late Future<List<CustomerDelivery>> futurePending;
   late Future<List<CustomerDelivery>> futureDelivered;
   late Future<List<CustomerDelivery>> futureAll;
+
+  Future<List<CustomerDelivery>> fetchDeliverLoadingPending() async {
+    final String uri =
+        '${RestDatasource().BASE_URL}/api/delivery_loading_pending?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+    final response = await http.get(Uri.parse(uri));
+    print(uri);
+    if (response.statusCode == 200) {
+      // print(AppState().storeId);
+      // print(AppState().userId);
+
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['success']) {
+        final deliveries = List<CustomerDelivery>.from(jsonResponse['data']
+            .map((delivery) => CustomerDelivery.fromJson(delivery)));
+
+        // Reset expandedStates to match the length of the new deliveries
+        setState(() {
+          expandedStates3 = List<bool>.filled(deliveries.length, false);
+        });
+
+        return deliveries;
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+  Future<void> postDeliveryDriverConfirm(int id) async {
+    // Define the URL of the API
+    final url = Uri.parse(
+        '${RestDatasource().BASE_URL}/api/delivery_driver_confirm?id=$id');
+
+    // Define the headers
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Define the body
+    // final body = jsonEncode({
+    //   'id': id,
+    // });
+
+    try {
+      // Send the POST request
+      final response = await http.post(
+        url,
+        headers: headers,
+        // body: body,
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        // Successfully received response
+        print('Success: ${response.body}');
+        futureLoading = fetchDeliverLoadingPending();
+        futurePending = fetchDeliverstatusPending();
+        futureDelivered = fetchDeliverstatusDelivered();
+        futureAll = fetchDeliverstatusAll();
+      } else {
+        // Something went wrong
+        print('Error: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      // Handle any errors that occur
+      print('Exception: $e');
+    }
+  }
 
   Future<List<CustomerDelivery>> fetchDeliverstatusPending() async {
     final String uri =
@@ -178,6 +250,8 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
         leading: GestureDetector(
           onTap: () {
             Navigator.pop(context);
+            // print(AppState().storeId);
+            // print(AppState().userId);
           },
           child: Icon(
             Icons.arrow_back,
@@ -242,8 +316,199 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
           Expanded(
               child: TabBarView(controller: _tabController, children: [
             Container(
-              child: Center(
-                child: Text('No data'),
+              child: Column(
+                children: [
+                  FutureBuilder<List<CustomerDelivery>>(
+                      future: futureLoading,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Shimmer.fromColors(
+                            baseColor:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width:
+                                          SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          print('Error: ${snapshot.error}');
+                          return Center(child: Text('No data'));
+                        } else {
+                          if (expandedStates3.isEmpty) {
+                            expandedStates3 =
+                                List<bool>.filled(snapshot.data!.length, false);
+                          }
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: SingleChildScrollView(
+                                child: ListView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: snapshot.data!.length,
+                                  itemBuilder: (context, index) {
+                                    final delivery = snapshot.data![index];
+                                    // final isSelected =
+                                    // selectedDeliveries.contains(delivery);
+                                    return Card(
+                                      elevation: 3,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: AppConfig.backgroundColor,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Tooltip(
+                                                    message: delivery.invoiceNo,
+                                                    child: Text(
+                                                      '${delivery.invoiceNo}',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                        color: Colors.black87,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Spacer(),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          expandedStates3[
+                                                                  index] =
+                                                              !expandedStates3[
+                                                                  index];
+                                                        });
+                                                      },
+                                                      icon: Icon(Icons
+                                                          .arrow_drop_down_circle))
+                                                ],
+                                              ),
+                                              Visibility(
+                                                  visible:
+                                                      expandedStates3[index],
+                                                  child: Container(
+                                                    child: Column(
+                                                      children: [
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: delivery
+                                                              .details
+                                                              .map((Details) {
+                                                            return Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  'Prd: ${Details.name}',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        AppConfig
+                                                                            .textCaption3Size,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  'Qty: ${Details.quantity}',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        AppConfig
+                                                                            .textCaption3Size,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                  ),
+                                                                ),
+                                                                Divider(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade300,
+                                                                )
+                                                              ],
+                                                            );
+                                                          }).toList(),
+                                                        ),
+                                                        ElevatedButton(
+                                                            style: ElevatedButton
+                                                                .styleFrom(
+                                                                    backgroundColor:
+                                                                        AppConfig
+                                                                            .colorPrimary),
+                                                            onPressed: () {
+                                                              postDeliveryDriverConfirm(
+                                                                  delivery.id);
+                                                            },
+                                                            child: Text(
+                                                              'Confirm',
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white),
+                                                            ))
+                                                      ],
+                                                    ),
+                                                  ))
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      })
+                ],
               ),
             ),
             Container(

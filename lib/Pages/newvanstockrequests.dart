@@ -241,7 +241,6 @@ class _VanStocksState extends State<VanStocks> {
         'item_id': cartItems.map((item) => item.id).toList(),
         'quantity': quantities,
         'unit': selectedUnitIds,
-
       };
       // print(_remarksText);
       // print('wwwwwwwwwwwwwwwwwwwwwwwww');

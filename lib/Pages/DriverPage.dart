@@ -60,6 +60,7 @@ class _DriverPageState extends State<DriverPage> {
   String? code;
   String? trn;
   int? creditDays;
+  int? id;
   String? creditBalance;
   String? totalOutstanding;
   String? paymentTerms;
@@ -259,6 +260,7 @@ class _DriverPageState extends State<DriverPage> {
                       onTap: () {
                         Navigator.pushNamed(context, DriverDetails.routeName,
                             arguments: {
+                              'customer': id,
                               'name': name,
                               'address': address,
                               'code': code,

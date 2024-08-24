@@ -75,7 +75,7 @@ class _DriverDetailsState extends State<DriverDetails> {
 
     if (response.statusCode == 200) {
       // print(AppState().storeId);
-      // print(AppState().userId);
+      // print(id);
       // print(id);
 
       final jsonResponse = json.decode(response.body);
@@ -130,7 +130,7 @@ class _DriverDetailsState extends State<DriverDetails> {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      id = params!['id'];
+      id = params!['customer'];
       name = params['name'];
       address = params['address'];
       code = params['code'];

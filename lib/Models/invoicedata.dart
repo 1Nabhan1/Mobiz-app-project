@@ -42,6 +42,7 @@ class Data {
   int? storeId;
   int? status;
   String? createdAt;
+  String? discounted_amount;
   String? updatedAt;
   String? deletedAt;
   List<Store>? store;
@@ -73,6 +74,7 @@ class Data {
         this.storeId,
         this.status,
         this.createdAt,
+        this.discounted_amount,
         this.updatedAt,
         this.deletedAt,
         this.store,
@@ -104,6 +106,7 @@ class Data {
     storeId = json['store_id'];
     status = json['status'];
     createdAt = json['created_at'];
+    discounted_amount = json['discounted_amount'];
     updatedAt = json['updated_at'];
     deletedAt = json['deleted_at'];
     if (json['store'] != null) {

@@ -28,12 +28,13 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
   int _currentPage = 1;
   bool _isLoading = false;
   bool _hasMore = true;
-  bool _search = false;
+  bool _search = true;
   final TextEditingController _searchData = TextEditingController();
   int? id;
   String? name;
   String? code;
   String? payment;
+
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? cartItems = prefs.getStringList('cartItemsvanstock') ?? [];
@@ -52,10 +53,8 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
         SnackBar(content: Text('${product.name} added')),
       );
     } else {
-      cartItems.add(jsonEncode(product.toJson()));
-      await prefs.setStringList('cartItemsvanstock', cartItems);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${product.name} added')),
+        SnackBar(content: Text('${product.name} already in cart')),
       );
     }
   }
@@ -101,21 +100,41 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
   }
 
   Future<void> _searchProducts(String query) async {
-    setState(() {
-      if (query.isEmpty) {
+    if (query.isEmpty) {
+      setState(() {
         _filteredProducts = List.from(_products);
-      } else {
-        _filteredProducts = _products
-            .where((product) =>
-        product.name!.toLowerCase().contains(query.toLowerCase()) ||
-            product.code!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
     });
 
-    if (_filteredProducts.isEmpty && _hasMore) {
-      await _fetchProducts();
-      _searchProducts(query); // Re-run the search after fetching more products
+    try {
+      final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=${Uri.encodeComponent(query)}',
+      ));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final List<Product> products = (jsonResponse['data'] as List)
+            .map((productJson) => Product.fromJson(productJson))
+            .toList();
+
+        setState(() {
+          _filteredProducts = products;
+          _hasMore = false; // Assuming the search is not paginated
+        });
+      } else {
+        throw Exception('Failed to search products');
+      }
+    } catch (e) {
+      print('Error: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -218,37 +237,15 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                 )
               : ListView.builder(
                   controller: _scrollController,
-                  itemCount: _filteredProducts.length + (_hasMore ? 1 : 0),
+                  itemCount: _filteredProducts.length,
                   itemBuilder: (context, index) {
-                    if (index == _filteredProducts.length) {
-                      return SizedBox.shrink();
-                      //   Shimmer.fromColors(
-                      //   baseColor:
-                      //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      //   highlightColor: AppConfig.backButtonColor,
-                      //   child: Center(
-                      //     child: Column(
-                      //       children: [
-                      //         CommonWidgets.loadingContainers(
-                      //             height: SizeConfig.blockSizeVertical * 10,
-                      //             width: SizeConfig.blockSizeHorizontal * 90),
-                      //       ],
-                      //     ),
-                      //   ),
-                      // );
-                    }
                     final product = _filteredProducts[index];
                     return GestureDetector(
                       onTap: () {
                         addToCart(product);
                         Navigator.pushReplacementNamed(
-                          context, VanStocks.routeName,
-                          // arguments: {
-                          //   'customerId': id,
-                          //   'name': name,
-                          //   'code': code,
-                          //   'paymentTerms': payment
-                          // }
+                          context,
+                          VanStocks.routeName,
                         );
                       },
                       child: Padding(
@@ -259,12 +256,7 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                           child: Container(
                             width: SizeConfig.blockSizeHorizontal * 90,
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                  color:
-                                      // selectedItems.contains(index)
-                                      //     ? AppConfig.colorPrimary
-                                      //     :
-                                      Colors.transparent),
+                              border: Border.all(color: Colors.transparent),
                               color: AppConfig.backgroundColor,
                               borderRadius: const BorderRadius.all(
                                 Radius.circular(10),
@@ -315,9 +307,6 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                                       ),
                                       Row(
                                         children: [
-                                          // for (int i = data.productDetail!.length - 1;
-                                          //     i >= 0;
-                                          //     i--)
                                           Text(
                                             product.units != null &&
                                                     product.units.length > 0

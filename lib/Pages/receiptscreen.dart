@@ -145,8 +145,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(
-                          'Collection Type:  ${data.collectionType}'),
+                      pw.Text('Collection Type:  ${data.collectionType}'),
                       pw.Text('Bank Name: ${data.bank}'),
                       pw.Text('Cheque No: ${data.chequeNo}'),
                       pw.Text('Cheque Date: ${data.chequeDate}'),
@@ -171,7 +170,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                       children: [
                         pw.TableRow(
-                          verticalAlignment: pw.TableCellVerticalAlignment.middle,
+                          verticalAlignment:
+                              pw.TableCellVerticalAlignment.middle,
                           children: [
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4.0),
@@ -232,7 +232,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                       children: [
                         ...data.sales!.asMap().entries.map((entry) {
-                          final index = entry.key + 1; // Serial number starts from 1
+                          final index =
+                              entry.key + 1; // Serial number starts from 1
                           final sale = entry.value;
                           return pw.TableRow(
                             children: [

@@ -26,7 +26,7 @@ class PaymentCollectionScreen extends StatefulWidget {
       _PaymentCollectionScreenState();
 }
 
-int cuId = 0;
+int? cuId;
 String cuname = '';
 String cucode = '';
 String cupay = '';
@@ -61,7 +61,25 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   @override
   void initState() {
     super.initState();
-    futureInvoices = fetchInvoices();
+    // futureInvoices = fetchInvoices();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleRouteArguments();
+      futureInvoices = fetchInvoices();
+    });
+  }
+
+  void _handleRouteArguments() {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (arguments != null) {
+      setState(() {
+        cuId = arguments['customerId'];
+        cucode = arguments['code'];
+        cuname = arguments['name'];
+        cupay = arguments['paymentTerms'];
+        cuoutstand = arguments['outstandamt'];
+      });
+    }
   }
 
   double getAllocatedAmount() {
@@ -110,15 +128,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      cuId = params!['customer'];
-      cucode = params!['code'];
-      cuname = params!['name'];
-      cupay = params!['paymentTerms'];
-      cuoutstand = params!['outstandamt'];
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   cuId = params!['customerId'];
+    //   cucode = params!['code'];
+    //   cuname = params!['name'];
+    //   cupay = params!['paymentTerms'];
+    //   cuoutstand = params!['outstandamt'];
+    //   futureInvoices = fetchInvoices();
+    // }
 
     PaidAmt = _paidAmt.text;
     return Scaffold(
@@ -138,7 +157,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   Text(
                     '${cucode ?? ''} | ${cuname ?? ''} | ${cupay ?? ''}',
                     style:
-                    const TextStyle(color: AppConfig.buttonDeactiveColor),
+                        const TextStyle(color: AppConfig.buttonDeactiveColor),
                   ),
                   CommonWidgets.verticalSpace(2),
                   Row(
@@ -208,7 +227,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       CommonWidgets.horizontalSpace(1),
                       _inputBox(
                           status: false,
-                          value: getAllocatedAmount().toString()),
+                          value: getAllocatedAmount().toStringAsFixed(2)),
                       const Spacer(),
                       const Text(
                         'Balance Amount',
@@ -216,7 +235,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       ),
                       CommonWidgets.horizontalSpace(1),
                       _inputBox(
-                          status: false, value: getBalanceAmount().toString()),
+                          status: false,
+                          value: getBalanceAmount().toStringAsFixed(2)),
                     ],
                   ),
                 ],
@@ -235,7 +255,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                             ConnectionState.waiting) {
                           return Shimmer.fromColors(
                             baseColor:
-                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
                             highlightColor: AppConfig.backButtonColor,
                             child: Center(
                               child: Column(
@@ -243,23 +263,23 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                   CommonWidgets.loadingContainers(
                                       height: SizeConfig.blockSizeVertical * 10,
                                       width:
-                                      SizeConfig.blockSizeHorizontal * 90),
+                                          SizeConfig.blockSizeHorizontal * 90),
                                   CommonWidgets.loadingContainers(
                                       height: SizeConfig.blockSizeVertical * 10,
                                       width:
-                                      SizeConfig.blockSizeHorizontal * 90),
+                                          SizeConfig.blockSizeHorizontal * 90),
                                   CommonWidgets.loadingContainers(
                                       height: SizeConfig.blockSizeVertical * 10,
                                       width:
-                                      SizeConfig.blockSizeHorizontal * 90),
+                                          SizeConfig.blockSizeHorizontal * 90),
                                   CommonWidgets.loadingContainers(
                                       height: SizeConfig.blockSizeVertical * 10,
                                       width:
-                                      SizeConfig.blockSizeHorizontal * 90),
+                                          SizeConfig.blockSizeHorizontal * 90),
                                   CommonWidgets.loadingContainers(
                                       height: SizeConfig.blockSizeVertical * 10,
                                       width:
-                                      SizeConfig.blockSizeHorizontal * 90),
+                                          SizeConfig.blockSizeHorizontal * 90),
                                 ],
                               ),
                             ),
@@ -308,7 +328,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                               // }
                               return Padding(
                                 padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
+                                    const EdgeInsets.symmetric(horizontal: 20),
                                 child: Card(
                                   color: AppConfig.backgroundColor,
                                   child: Padding(
@@ -316,13 +336,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                         vertical: 8.0),
                                     child: Column(
                                       crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
+                                          CrossAxisAlignment.stretch,
                                       children: [
                                         GestureDetector(
                                           onTap: () {
                                             setState(() {
                                               expandedStates[index] =
-                                              !expandedStates[index];
+                                                  !expandedStates[index];
                                             });
                                           },
                                           child: Container(
@@ -331,8 +351,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                               children: [
                                                 Row(
                                                   mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     Text(
                                                         "${formatDate(invoice.invoiceDate)} | ${invoice.invoiceNo} | ${invoice.invoiceType}"),
@@ -344,7 +364,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                       child: _inputBox(
                                                           status: false,
                                                           value: enteredValues[
-                                                          index]),
+                                                              index]),
                                                     ),
                                                   ],
                                                 ),
@@ -372,7 +392,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                             padding: EdgeInsets.all(8.0),
                                             child: Column(
                                               crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Column(
                                                   children: invoice.collection
@@ -466,126 +486,126 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 : Container(),
                             (dropdownvalue != "Cash")
                                 ? const Text(
-                              'Bank',
-                              style: TextStyle(
-                                  color: AppConfig.buttonDeactiveColor),
-                            )
+                                    'Bank',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  )
                                 : Container(),
                             (dropdownvalue != "Cash")
                                 ? CommonWidgets.horizontalSpace(1)
                                 : Container(),
                             (dropdownvalue != "Cash")
                                 ? InkWell(
-                              onTap: () {
-                                showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text('Bank'),
-                                      content: TextField(
-                                        controller: _bankController,
-                                        keyboardType: TextInputType.name,
-                                        decoration: const InputDecoration(
-                                          hintText: "Bank",
-                                        ),
-                                      ),
-                                      actions: <Widget>[
-                                        MaterialButton(
-                                          color: AppConfig.colorPrimary,
-                                          textColor: Colors.white,
-                                          child: const Text('OK'),
-                                          onPressed: () {
-                                            setState(() {
-                                              bankData =
-                                                  _bankController.text;
-                                            });
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: _inputBox(
-                                  status: true, value: bankData),
-                            )
+                                    onTap: () {
+                                      showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('Bank'),
+                                            content: TextField(
+                                              controller: _bankController,
+                                              keyboardType: TextInputType.name,
+                                              decoration: const InputDecoration(
+                                                hintText: "Bank",
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              MaterialButton(
+                                                color: AppConfig.colorPrimary,
+                                                textColor: Colors.white,
+                                                child: const Text('OK'),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    bankData =
+                                                        _bankController.text;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: _inputBox(
+                                        status: true, value: bankData),
+                                  )
                                 : Container(),
                           ],
                         ),
                         CommonWidgets.verticalSpace(1),
                         (dropdownvalue != "Cash")
                             ? Row(
-                          children: [
-                            const Text(
-                              'Cheque Date',
-                              style: TextStyle(
-                                  color: AppConfig.buttonDeactiveColor),
-                            ),
-                            CommonWidgets.horizontalSpace(1),
-                            InkWell(
-                              onTap: () async {
-                                DateTime? pickedDate =
-                                await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime(1950),
-                                    lastDate: DateTime(2100));
+                                children: [
+                                  const Text(
+                                    'Cheque Date',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  ),
+                                  CommonWidgets.horizontalSpace(1),
+                                  InkWell(
+                                    onTap: () async {
+                                      DateTime? pickedDate =
+                                          await showDatePicker(
+                                              context: context,
+                                              initialDate: DateTime.now(),
+                                              firstDate: DateTime(1950),
+                                              lastDate: DateTime(2100));
 
-                                if (pickedDate != null) {
-                                  formattedDate = DateFormat('dd-MM-yyyy')
-                                      .format(pickedDate);
-                                } else {}
-                              },
-                              child: _inputBox(
-                                  status: true, value: "$formattedDate"),
-                            ),
-                            const Spacer(),
-                            const Text(
-                              'Cheque No',
-                              style: TextStyle(
-                                  color: AppConfig.buttonDeactiveColor),
-                            ),
-                            CommonWidgets.horizontalSpace(1),
-                            InkWell(
-                              onTap: () {
-                                showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text('Cheque No'),
-                                      content: TextField(
-                                        controller: _chequeController,
-                                        keyboardType: TextInputType.name,
-                                        decoration: const InputDecoration(
-                                          hintText: "Cheque No",
-                                        ),
-                                      ),
-                                      actions: <Widget>[
-                                        MaterialButton(
-                                          color: AppConfig.colorPrimary,
-                                          textColor: Colors.white,
-                                          child: const Text('OK'),
-                                          onPressed: () {
-                                            setState(() {
-                                              chequeData =
-                                                  _chequeController.text;
-                                            });
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              child: _inputBox(
-                                  status: true, value: chequeData),
-                            ),
-                          ],
-                        )
+                                      if (pickedDate != null) {
+                                        formattedDate = DateFormat('dd-MM-yyyy')
+                                            .format(pickedDate);
+                                      } else {}
+                                    },
+                                    child: _inputBox(
+                                        status: true, value: "$formattedDate"),
+                                  ),
+                                  const Spacer(),
+                                  const Text(
+                                    'Cheque No',
+                                    style: TextStyle(
+                                        color: AppConfig.buttonDeactiveColor),
+                                  ),
+                                  CommonWidgets.horizontalSpace(1),
+                                  InkWell(
+                                    onTap: () {
+                                      showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('Cheque No'),
+                                            content: TextField(
+                                              controller: _chequeController,
+                                              keyboardType: TextInputType.name,
+                                              decoration: const InputDecoration(
+                                                hintText: "Cheque No",
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              MaterialButton(
+                                                color: AppConfig.colorPrimary,
+                                                textColor: Colors.white,
+                                                child: const Text('OK'),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    chequeData =
+                                                        _chequeController.text;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: _inputBox(
+                                        status: true, value: chequeData),
+                                  ),
+                                ],
+                              )
                             : Container(),
                       ],
                     )),
@@ -690,12 +710,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   Future<ApiResponse> fetchInvoices() async {
     final String url =
-        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
+        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$cuId';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       // print('llllllllllllllllllllllllll');
-      // print(id);
+      print(cuId);
       ApiResponse apiResponse = ApiResponse.fromJson(jsonDecode(response.body));
       invoices = apiResponse.data;
       // Initialize enteredValues list with the length of fetched invoices
@@ -721,6 +741,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return value.isEmpty ? 0.0 : double.parse(value);
     }).toList();
     final body = {
+      'allocation_amount': getAllocatedAmount(),
       'van_id': AppState().vanId,
       'store_id': AppState().storeId,
       'user_id': AppState().userId,
@@ -736,7 +757,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'invoice_date': invoicedate,
       'invoice_id': invoiceid
     };
-
+    print('processedValues');
+    print(processedValues);
     final response = await http.post(
       Uri.parse(url),
       headers: {
@@ -747,15 +769,15 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     if (response.statusCode == 200) {
       print(response.body);
-      print(processedValues);
-      print('dddddddddddddddd');
+      // print(processedValues);
+      // print('dddddddddddddddd');
       // Handle success response
       print('Data posted successfully');
       if (mounted) {
         CommonWidgets.showDialogueBox(
-            context: context, title: "Alert", msg: "Transaction Successful")
+                context: context, title: "Alert", msg: "Transaction Successful")
             .then(
-              (value) {
+          (value) {
             Navigator.pop(context);
           },
         );

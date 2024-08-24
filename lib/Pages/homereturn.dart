@@ -245,7 +245,9 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
                       style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                           fontWeight: AppConfig.headLineWeight),
-                    ),Text(' | '), Text(
+                    ),
+                    Text(' | '),
+                    Text(
                       (data.customer!.isNotEmpty)
                           ? data.customer![0].name ?? ''
                           : '',
@@ -256,25 +258,25 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
                   ],
                 ),
                 // (data.detail!.isNotEmpty)
-                    // ? Text(
-                    //     'Type: ${data.detail![0].productType}',
-                    //     style: TextStyle(
-                    //       fontSize: AppConfig.textCaption3Size,
-                    //     ),
-                    //   )
+                // ? Text(
+                //     'Type: ${data.detail![0].productType}',
+                //     style: TextStyle(
+                //       fontSize: AppConfig.textCaption3Size,
+                //     ),
+                //   )
 
-                    Text(
-                        'Total: ${data.total}',
-                        style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                        ),
-                      ),
-                    // : Text(
-                    //     'Type:  ',
-                    //     style: TextStyle(
-                    //       fontSize: AppConfig.textCaption3Size,
-                    //     ),
-                    //   ),
+                Text(
+                  'Total: ${data.total}',
+                  style: TextStyle(
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                ),
+                // : Text(
+                //     'Type:  ',
+                //     style: TextStyle(
+                //       fontSize: AppConfig.textCaption3Size,
+                //     ),
+                //   ),
                 Text(
                   'Discount(%): ${data.discount}',
                   style: TextStyle(
@@ -458,7 +460,7 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
     //     'TAX INVOICE', PdfStandardFont(PdfFontFamily.helvetica, 30));
 
     //heading
-    final String head =  '${invoice.data!.store![0].name}';
+    final String head = '${invoice.data!.store![0].name}';
     // Define the text and font
     final double pageWidth = page.getClientSize().width;
 
@@ -505,7 +507,7 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
           trnxPosition, trnyPosition, trntextSize.width, trntextSize.height),
     );
 
-    final String text = 'TAX INVOICE';
+    final String text = 'TAX CREDIT NOTE';
 
     final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 15);
 
@@ -542,7 +544,7 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
   ''';
 
     String invoiceDetails = '''
-  Invoice No: ${invoice.data!.invoiceNo!}
+  Reference No: ${invoice.data!.invoiceNo!}
   Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
   Due Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
   ''';
@@ -757,8 +759,8 @@ Salesman: ${invoice.data!.user![0].name}
   Future<void> _getInvoiceData(int id, bool isPrint) async {
     Invoice.InvoiceData invoice = Invoice.InvoiceData();
     RestDatasource api = RestDatasource();
-    dynamic response =
-        await api.getDetails('/api/get_sales_return_invoice?id=$id', AppState().token);
+    dynamic response = await api.getDetails(
+        '/api/get_sales_return_invoice?id=$id', AppState().token);
 
     if (response['data'] != null) {
       invoice = Invoice.InvoiceData.fromJson(response);
