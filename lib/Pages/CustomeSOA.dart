@@ -1175,7 +1175,7 @@ class _SOAState extends State<SOA> {
               );
             } else if (snapshot.hasError) {
               return Center(
-                child: Text("${snapshot.error}"),
+                child: Text("Something wenty wrong"),
               );
             }
 

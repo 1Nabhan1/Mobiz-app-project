@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Pages/CustomeSOA.dart';
+import 'package:mobizapp/Pages/receiptscreen.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 
@@ -778,7 +779,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 context: context, title: "Alert", msg: "Transaction Successful")
             .then(
           (value) {
-            Navigator.pop(context);
+            Navigator.pushReplacementNamed(
+              context,
+              ReceiptScreen.receiptScreen,
+            );
           },
         );
       }

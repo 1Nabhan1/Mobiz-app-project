@@ -186,7 +186,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4.0),
                               child: pw.Text(
-                                'Invoice No',
+                                'Reference No',
                                 style: pw.TextStyle(
                                   fontWeight: pw.FontWeight.bold,
                                   fontSize: AppConfig.textCaption3Size,
@@ -196,7 +196,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                             pw.Padding(
                               padding: const pw.EdgeInsets.all(4.0),
                               child: pw.Text(
-                                'Invoice Type',
+                                'Type',
                                 style: pw.TextStyle(
                                   fontWeight: pw.FontWeight.bold,
                                   fontSize: AppConfig.textCaption3Size,
