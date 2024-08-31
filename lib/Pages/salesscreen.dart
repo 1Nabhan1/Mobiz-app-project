@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesselectproducts.dart';
-import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/vanstockselactpro_tst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Models/sales_model.dart';
 import '../Components/commonwidgets.dart';

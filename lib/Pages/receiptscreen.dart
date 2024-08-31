@@ -470,7 +470,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                     ),
                     Text(
-                      'Type:  ${data.collectionType}',
+                      'Type:  ${data.collectionType == 'cheque' ? 'Cheque | ${data.bank} | ${data.chequeNo} \nCheque Date: ${data.chequeDate}' : data.collectionType}',
                       style: TextStyle(
                         fontSize: AppConfig.textCaption3Size,
                       ),
@@ -491,13 +491,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       children: [
                         Divider(),
                         Text(
-                          'Invoice No: ${sale.invoiceNo ?? 'N/A'}',
+                          'Reference No: ${sale.invoiceNo ?? 'N/A'}',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),
                         ),
                         Text(
-                          'Invoice Type: ${sale.invoiceType ?? 'N/A'}',
+                          'Reference Type: ${sale.invoiceType == 'salesreturn' ? 'Sales Return' : sale.invoiceType == 'sales' ? 'Sales' : sale.invoiceType == 'paymentvoucher' ? 'Payment Voucher' : 'N/A'}',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),

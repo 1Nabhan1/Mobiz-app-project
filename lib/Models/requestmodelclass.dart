@@ -112,6 +112,7 @@ class Detail {
   int? vanRequestId;
   int? itemId;
   String? unit;
+  String? product_type;
   int? quantity;
   String? approvedQuantity;
   int? convertQty;
@@ -129,6 +130,7 @@ class Detail {
   Detail(
       {this.id,
       this.vanRequestId,
+      this.product_type,
       this.itemId,
       this.unit,
       this.quantity,
@@ -148,6 +150,7 @@ class Detail {
   Detail.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     vanRequestId = json['van_request_id'];
+    product_type = json['product_type'];
     itemId = json['item_id'];
     unit = json['unit'];
     quantity = json['quantity'];

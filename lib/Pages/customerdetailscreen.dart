@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
+import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/CustomeSOA.dart';
 import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/customerorderdetail.dart';
@@ -12,7 +13,7 @@ import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
-import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/vanstockselactpro_tst.dart';
 
 import '../Utilities/rest_ds.dart';
 import '../sales_screen.dart';
@@ -37,6 +38,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     // TODO: implement initState
     super.initState();
     fetchData();
+    _fetchData();
     _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchData());
   }
 
@@ -45,6 +47,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.dispose();
   }
 
+  bool _showButton = false;
+  String _message = "";
   String _data = '';
   String? name;
   String? address;
@@ -63,6 +67,19 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? totalOutstanding;
   String? paymentTerms;
   int? creditLimit;
+  void _showSnackBar(BuildContext context) {
+    final snackBar = SnackBar(
+      content: Text(
+          'Pending Offload request found, Please cancel or approve to Proceed'),
+      action: SnackBarAction(
+        label: '',
+        onPressed: () {},
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -304,11 +321,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 InkWell(
                     onTap: () {
-                      Navigator.of(context)
-                          .pushNamed(SalesScreen.routeName, arguments: {
-                        'customerId': id,
-                        'name': name,
-                      });
+                      _showButton
+                          ? _showSnackBar(context)
+                          : Navigator.of(context)
+                              .pushNamed(SalesScreen.routeName, arguments: {
+                              'customerId': id,
+                              'name': name,
+                            });
                     },
                     child: _iconButtons(
                         icon: Icons.point_of_sale, title: 'Sales')),
@@ -415,6 +434,34 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _fetchData() async {
+    final url =
+        '${RestDatasource().BASE_URL}/api/vanoffloadrequest.pending?store_id=${AppState().storeId}&van_id=${AppState().vanId}';
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _showButton = data['success'] ?? false;
+          _message = _showButton ? "" : "Button is hidden due to API response.";
+        });
+      } else {
+        // Handle server errors or other HTTP errors
+        setState(() {
+          _showButton = false;
+          _message = "Failed to fetch data.";
+        });
+      }
+    } catch (e) {
+      // Handle other errors, such as network issues
+      setState(() {
+        _showButton = false;
+        _message = "An error occurred: $e";
+      });
+    }
   }
 
   Future<void> fetchData() async {

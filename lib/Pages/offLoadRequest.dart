@@ -12,7 +12,9 @@ import '../Models/requestmodelclass.dart';
 import '../Models/stockdata.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
+import 'package:http/http.dart' as http;
 import '../confg/sizeconfig.dart';
+import '../vanstocktst.dart';
 
 class OffLoadRequestScreen extends StatefulWidget {
   static const routeName = "/OffLoadRequest";
@@ -210,14 +212,18 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                               ? 'Pending'
                               : (data.status == 2)
                                   ? 'Approved'
-                                  : 'Confirmed',
+                                  : (data.status == 0)
+                                      ? 'Cancelled'
+                                      : 'Confirmed',
                           style: TextStyle(
                               fontSize: AppConfig.textCaption3Size,
                               color: (data.status == 1)
                                   ? AppConfig.colorWarning
                                   : (data.status == 2)
                                       ? Colors.orange
-                                      : Colors.green,
+                                      : (data.status == 0)
+                                          ? Colors.red
+                                          : Colors.green,
                               fontWeight: AppConfig.headLineWeight),
                         ),
                       ],
@@ -269,14 +275,14 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      '${data.detail![i].unit} : ${data.detail![i].approvedQuantity}',
+                                      '${data.detail![i].unit} : ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}',
                                       style: TextStyle(
                                           fontSize: AppConfig.textCaption3Size,
                                           fontWeight: AppConfig.headLineWeight),
                                     ),
                                     CommonWidgets.horizontalSpace(2),
                                     Text(
-                                      'Requested Qty: ${data.detail![i].quantity}',
+                                      'Requested Qty: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
                                       style: TextStyle(
                                           fontSize: AppConfig.textCaption3Size,
                                           fontWeight: AppConfig.headLineWeight),
@@ -284,7 +290,8 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                                   ],
                                 ),
                                 Divider(
-                                  color: AppConfig.textBlack.withOpacity(0.7),
+                                  color: AppConfig.buttonDeactiveColor
+                                      .withOpacity(0.4),
                                 ),
                               ],
                             ),
@@ -330,10 +337,10 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                         //             AppConfig.colorPrimary),
                         //       ),
                         //       onPressed: () {
-                        //         _conformrequest(data.id!);
+                        //         _conformrequest(data.detail![index].id ?? 0);
                         //       },
                         //       child: Text(
-                        //         'Confirm',
+                        //         'Cancel',
                         //         style: TextStyle(
                         //             fontSize: AppConfig.textCaption3Size,
                         //             color: AppConfig.backgroundColor,
@@ -346,71 +353,218 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                       ],
                     ),
                   )
-                : Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CommonWidgets.verticalSpace(1),
-                        Divider(
-                            color:
-                                AppConfig.buttonDeactiveColor.withOpacity(0.4)),
-                        for (int i = 0; i < data.detail!.length; i++)
-                          Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Tooltip(
-                                  message: (data.detail![i].productName ?? '')
-                                      .toUpperCase(),
-                                  child: SizedBox(
-                                    width: SizeConfig.blockSizeHorizontal * 80,
-                                    child: Text(
-                                      '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
-                                      style: TextStyle(
-                                          fontSize: AppConfig.textCaption3Size,
-                                          fontWeight: AppConfig.headLineWeight),
-                                    ),
-                                  ),
-                                ),
-                                CommonWidgets.verticalSpace(1),
-                                Row(
+                : (data.status == 1)
+                    ? Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CommonWidgets.verticalSpace(1),
+                            Divider(
+                                color: AppConfig.buttonDeactiveColor
+                                    .withOpacity(0.4)),
+                            for (int i = 0; i < data.detail!.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      (data.status == 3)
-                                          ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity}'
-                                          : '${data.detail![i].unit}: ${data.detail![i].quantity}',
-                                      style: TextStyle(
-                                          fontSize: AppConfig.textCaption3Size,
-                                          fontWeight: AppConfig.headLineWeight),
+                                    Tooltip(
+                                      message:
+                                          (data.detail![i].productName ?? '')
+                                              .toUpperCase(),
+                                      child: SizedBox(
+                                        width:
+                                            SizeConfig.blockSizeHorizontal * 80,
+                                        child: Text(
+                                          '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
+                                          style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                              fontWeight:
+                                                  AppConfig.headLineWeight),
+                                        ),
+                                      ),
                                     ),
-                                    CommonWidgets.horizontalSpace(2),
-                                    (data.status == 3)
-                                        ? Text(
-                                            'Requested Qty: ${data.detail![i].quantity}',
-                                            style: TextStyle(
-                                                fontSize:
-                                                    AppConfig.textCaption3Size,
-                                                fontWeight:
-                                                    AppConfig.headLineWeight),
-                                          )
-                                        : const SizedBox(),
+                                    CommonWidgets.verticalSpace(1),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          (data.status == 3)
+                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}'
+                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
+                                          style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                              fontWeight:
+                                                  AppConfig.headLineWeight),
+                                        ),
+                                        CommonWidgets.horizontalSpace(2),
+                                        (data.status == 3)
+                                            ? Text(
+                                                'Requested Qty: ${data.detail![i].quantity}',
+                                                style: TextStyle(
+                                                    fontSize: AppConfig
+                                                        .textCaption3Size,
+                                                    fontWeight: AppConfig
+                                                        .headLineWeight),
+                                              )
+                                            : const SizedBox(),
+                                      ],
+                                    ),
+                                    (i == data.detail!.length - 1)
+                                        ? Container()
+                                        : Divider(
+                                            color: AppConfig.buttonDeactiveColor
+                                                .withOpacity(0.4)),
                                   ],
                                 ),
-                                (i == data.detail!.length - 1)
-                                    ? Container()
-                                    : Divider(
-                                        color: AppConfig.buttonDeactiveColor
-                                            .withOpacity(0.4)),
-                              ],
+                              ),
+                            Center(
+                              child: SizedBox(
+                                width: SizeConfig.blockSizeHorizontal * 25,
+                                height: SizeConfig.blockSizeVertical * 5,
+                                child: ElevatedButton(
+                                  style: ButtonStyle(
+                                    shape: WidgetStateProperty.all<
+                                        RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20.0),
+                                      ),
+                                    ),
+                                    backgroundColor:
+                                        const WidgetStatePropertyAll(
+                                            AppConfig.colorPrimary),
+                                  ),
+                                  onPressed: () {
+                                    cancelVanOffloadRequest(data.id ?? 0);
+                                    // _conformrequest(
+                                    //     data.id ?? 0);
+                                    print(data.id);
+                                  },
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                        fontSize: AppConfig.textCaption3Size,
+                                        color: AppConfig.backgroundColor,
+                                        fontWeight: AppConfig.headLineWeight),
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
+                          ],
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(5.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CommonWidgets.verticalSpace(1),
+                            Divider(
+                                color: AppConfig.buttonDeactiveColor
+                                    .withOpacity(0.4)),
+                            for (int i = 0; i < data.detail!.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Tooltip(
+                                      message:
+                                          (data.detail![i].productName ?? '')
+                                              .toUpperCase(),
+                                      child: SizedBox(
+                                        width:
+                                            SizeConfig.blockSizeHorizontal * 80,
+                                        child: Text(
+                                          '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
+                                          style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                              fontWeight:
+                                                  AppConfig.headLineWeight),
+                                        ),
+                                      ),
+                                    ),
+                                    CommonWidgets.verticalSpace(1),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          (data.status == 3)
+                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}'
+                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
+                                          style: TextStyle(
+                                              fontSize:
+                                                  AppConfig.textCaption3Size,
+                                              fontWeight:
+                                                  AppConfig.headLineWeight),
+                                        ),
+                                        CommonWidgets.horizontalSpace(2),
+                                        (data.status == 3)
+                                            ? Text(
+                                                'Requested Qty: ${data.detail![i].quantity}',
+                                                style: TextStyle(
+                                                    fontSize: AppConfig
+                                                        .textCaption3Size,
+                                                    fontWeight: AppConfig
+                                                        .headLineWeight),
+                                              )
+                                            : const SizedBox(),
+                                      ],
+                                    ),
+                                    (i == data.detail!.length - 1)
+                                        ? Container()
+                                        : Divider(
+                                            color: AppConfig.buttonDeactiveColor
+                                                .withOpacity(0.4)),
+                                    // Center(
+                                    //   child: SizedBox(
+                                    //     width:
+                                    //         SizeConfig.blockSizeHorizontal * 25,
+                                    //     height:
+                                    //         SizeConfig.blockSizeVertical * 5,
+                                    //     child: ElevatedButton(
+                                    //       style: ButtonStyle(
+                                    //         shape: WidgetStateProperty.all<
+                                    //             RoundedRectangleBorder>(
+                                    //           RoundedRectangleBorder(
+                                    //             borderRadius:
+                                    //                 BorderRadius.circular(20.0),
+                                    //           ),
+                                    //         ),
+                                    //         backgroundColor:
+                                    //             const WidgetStatePropertyAll(
+                                    //                 AppConfig.colorPrimary),
+                                    //       ),
+                                    //       onPressed: () {
+                                    //         _conformrequest(
+                                    //             data.detail![i].id ?? 0);
+                                    //       },
+                                    //       child: Text(
+                                    //         'Cancel',
+                                    //         style: TextStyle(
+                                    //             fontSize:
+                                    //                 AppConfig.textCaption3Size,
+                                    //             color:
+                                    //                 AppConfig.backgroundColor,
+                                    //             fontWeight:
+                                    //                 AppConfig.headLineWeight),
+                                    //       ),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
           ],
         ),
       ),
@@ -441,26 +595,40 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
     }
   }
 
-  Future<void> _conformrequest(int id) async {
-    RestDatasource api = RestDatasource();
+  Future<void> cancelVanOffloadRequest(int id) async {
+    // The URL to which the POST request will be made
+    final url = '${RestDatasource().BASE_URL}/api/vanoffloadrequest.cancel';
 
-    dynamic bodyJson = {
-      "id": id,
-    };
+    // Create the body of the request
+    final body = jsonEncode({'id': id});
+
     try {
-      dynamic resJson = await api.sendData(
-          '/api/vanrequest.confirm', AppState().token, jsonEncode(bodyJson));
-    } catch (e) {
-      if (mounted) {
-        CommonWidgets.showDialogueBox(
-            context: context,
-            title: "Alert",
-            msg: "Requset Added Successfully");
+      // Make the POST request
+      final response = await http.post(
+        Uri.parse(url),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: body,
+      );
+
+      // Check the status code for success or failure
+      if (response.statusCode == 200) {
+        // Successful response
         setState(() {
-          _initDone = false;
+          _getRequests();
         });
-        _getRequests();
+        print('Request was successful');
+        print('Response body: ${response.body}');
+      } else {
+        // Failed response
+        print('Failed to cancel request');
+        print('Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
       }
+    } catch (e) {
+      // Handle any exceptions
+      print('Error occurred: $e');
     }
   }
 }

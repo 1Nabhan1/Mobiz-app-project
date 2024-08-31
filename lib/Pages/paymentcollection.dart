@@ -127,6 +127,22 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     setState(() {});
   }
 
+  double getPaidAmount() {
+    String text = _paidAmt.text;
+
+    if (text.isEmpty) {
+      return 0.0; // or handle the empty case as needed
+    }
+
+    try {
+      return double.parse(text);
+    } catch (e) {
+      // Handle the error (e.g., show a message to the user)
+      print('Error parsing double: $e');
+      return 0.0; // or handle the invalid number case as needed
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -139,7 +155,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     //   cuoutstand = params!['outstandamt'];
     //   futureInvoices = fetchInvoices();
     // }
-
+    double allocatedAmount = getAllocatedAmount();
+    double PaidAmount = getPaidAmount();
     PaidAmt = _paidAmt.text;
     return Scaffold(
       appBar: AppBar(
@@ -621,9 +638,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     borderRadius: BorderRadius.circular(3), // Rectangle shape
                   ),
                 ),
-                onPressed: () {
-                  postCollectionData();
-                },
+                onPressed: allocatedAmount == PaidAmount
+                    ? () {
+                        postCollectionData();
+                      }
+                    : null,
                 child: Text("Save", style: TextStyle(color: Colors.white)),
               ),
             ),

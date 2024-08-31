@@ -12,7 +12,7 @@ import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
-import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/vanstockselactpro_tst.dart';
 
 import '../Utilities/rest_ds.dart';
 import '../sales_screen.dart';

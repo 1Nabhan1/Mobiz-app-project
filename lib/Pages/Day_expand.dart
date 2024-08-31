@@ -352,6 +352,18 @@ class _DayexpandingState extends State<Dayexpanding> {
                         children: [
                           RichText(
                             text: TextSpan(
+                              text: 'Expense  ',
+                              style: TextStyle(color: Colors.black),
+                              children: [
+                                TextSpan(
+                                  text: '${dayClose.expense}',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          RichText(
+                            text: TextSpan(
                               text: 'Cash Deposited  ',
                               style: TextStyle(color: Colors.black),
                               children: [
