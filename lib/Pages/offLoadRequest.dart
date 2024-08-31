@@ -275,14 +275,14 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      '${data.detail![i].unit} : ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}',
+                                      '${data.detail![i].unit} : ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type == null ? 'Normal' : data.detail![i].product_type == 'normal' ? 'Normal' : data.detail![i].product_type}',
                                       style: TextStyle(
                                           fontSize: AppConfig.textCaption3Size,
                                           fontWeight: AppConfig.headLineWeight),
                                     ),
                                     CommonWidgets.horizontalSpace(2),
                                     Text(
-                                      'Requested Qty: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
+                                      'Requested Qty: ${data.detail![i].quantity}',
                                       style: TextStyle(
                                           fontSize: AppConfig.textCaption3Size,
                                           fontWeight: AppConfig.headLineWeight),
@@ -393,8 +393,8 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                                       children: [
                                         Text(
                                           (data.status == 3)
-                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}'
-                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
+                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type == null ? 'Normal' : data.detail![i].product_type == 'normal' ? 'Normal' : data.detail![i].product_type}'
+                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type == null ? 'Normal' : data.detail![i].product_type == 'normal' ? 'Normal' : data.detail![i].product_type}',
                                           style: TextStyle(
                                               fontSize:
                                                   AppConfig.textCaption3Size,
@@ -497,8 +497,8 @@ class _OffLoadRequestScreenState extends State<OffLoadRequestScreen> {
                                       children: [
                                         Text(
                                           (data.status == 3)
-                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type}'
-                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type}',
+                                              ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].product_type == null ? 'Normal' : data.detail![i].product_type == 'normal' ? 'Normal' : data.detail![i].product_type}'
+                                              : '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].product_type == null ? 'Normal' : data.detail![i].product_type == 'normal' ? 'Normal' : data.detail![i].product_type}',
                                           style: TextStyle(
                                               fontSize:
                                                   AppConfig.textCaption3Size,

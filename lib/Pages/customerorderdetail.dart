@@ -43,6 +43,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
 
   String roundoff = '';
   @override
+  bool _isButtonDisabled = true;
+  bool _isDialogOpen = false;
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
@@ -85,6 +87,12 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
         );
       },
     );
+  }
+
+  void _onSaveButtonPressed() {
+    setState(() {
+      _isButtonDisabled = true; // Disable the button after it's pressed
+    });
   }
 
   DateTime? _selectedDate;
@@ -479,8 +487,12 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                   ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
                   : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
             ),
-            onPressed: (savedProducts.isNotEmpty)
+            onPressed: (savedProducts.isNotEmpty && _isButtonDisabled)
                 ? () async {
+                    setState(() {
+                      _isButtonDisabled =
+                          false; // Disable the button after it's pressed
+                    });
                     postDataToApi();
                     // print(roundOffValue);
                   }
@@ -642,8 +654,14 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
 
                         final total = quantity * amount;
                         return InkWell(
-                          onTap: () =>
-                              showProductDetailsDialog(context, product),
+                          onTap: _isDialogOpen
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _isDialogOpen = true;
+                                  });
+                                  showProductDetailsDialog(context, product);
+                                },
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -1298,7 +1316,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
             },
           );
         },
-      );
+      ).then((_) {
+        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+      });
     }
   }
 }

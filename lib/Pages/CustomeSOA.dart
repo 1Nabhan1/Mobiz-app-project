@@ -400,10 +400,26 @@ class _SOAState extends State<SOA> {
     _selectedDateto = DateTime.now();
     _refreshData();
     // _fetchtransactions();
-    futureSOA = fetchSOAData(); // Initial data load
+    // futureSOA = fetchSOAData(); // Initial data load
     _selectedDatefrom = DateTime(DateTime.now().year, DateTime.now().month, 1);
     _selectedDateto =
         DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+  }
+
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      id = params!['customerId'];
+      name = params['name'];
+      address = params['address'];
+      code = params['code'];
+      payment = params!['paymentTerms'];
+    }
+
+    // Fetch customer deliveries here, as the context is now safe to use.
+    futureSOA = fetchSOAData();
   }
 
   void _refreshData() {
@@ -432,6 +448,7 @@ class _SOAState extends State<SOA> {
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
+      print(id);
       return SOAResponse.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load SOA data');
@@ -467,15 +484,15 @@ class _SOAState extends State<SOA> {
 
   @override
   Widget build(BuildContext context) {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      id = params!['customerId'];
-      name = params!['name'];
-      address = params['address'];
-      code = params!['code'];
-      payment = params!['paymentTerms'];
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   id = params!['customerId'];
+    //   name = params!['name'];
+    //   address = params['address'];
+    //   code = params!['code'];
+    //   payment = params!['paymentTerms'];
+    // }
     return Scaffold(
       appBar: AppBar(
         leading: GestureDetector(

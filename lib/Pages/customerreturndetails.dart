@@ -48,6 +48,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   String? payment;
   String amount = '';
   String quantity = '';
+  bool _isButtonDisabled = true;
   bool _hasData = false;
   @override
   void initState() {
@@ -397,8 +398,11 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                         : const WidgetStatePropertyAll(
                             AppConfig.buttonDeactiveColor),
                   ),
-                  onPressed: (cartItems.isNotEmpty)
+                  onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
                       ? () async {
+                    setState(() {
+                      _isButtonDisabled = true; // Disable the button after it's pressed
+                    });
                           postDataToApi();
                         }
                       : null,

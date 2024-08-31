@@ -28,6 +28,7 @@ class _SalesSelectProductsorderScreenState
   int currentPage = 1;
   bool isLoading = false;
   bool hasMoreProducts = true;
+  bool _isDialogOpen = false;
   bool _search = true;
   List<Products> filteredProducts = [];
 
@@ -234,7 +235,14 @@ class _SalesSelectProductsorderScreenState
                     return Card(
                       elevation: 3,
                       child: InkWell(
-                        onTap: () => showProductDetailsDialog(context, product),
+                        onTap:  _isDialogOpen
+                            ? null
+                            : () {
+                          setState(() {
+                            _isDialogOpen = true;
+                          });
+                          showProductDetailsDialog(context, product);
+                        },
                         child: Container(
                           width: SizeConfig.blockSizeHorizontal * 90,
                           decoration: BoxDecoration(
@@ -661,7 +669,9 @@ class _SalesSelectProductsorderScreenState
             },
           );
         },
-      );
+      ).then((_) {
+        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+      });
     }
   }
 }

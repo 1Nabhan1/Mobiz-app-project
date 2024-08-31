@@ -45,6 +45,22 @@ class _DriverDetailsState extends State<DriverDetails> {
   @override
   void initState() {
     super.initState();
+
+    futureDeliveries = fetchCustomerDeliveries();
+  }
+
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      id = params!['customer'];
+      name = params['name'];
+      address = params['address'];
+      code = params['code'];
+    }
+
+    // Fetch customer deliveries here, as the context is now safe to use.
     futureDeliveries = fetchCustomerDeliveries();
   }
 
@@ -67,27 +83,6 @@ class _DriverDetailsState extends State<DriverDetails> {
         selectedDeliveries.add(delivery);
       }
     });
-  }
-
-  Future<List<CustomerDelivery>> fetchCustomerDeliveries() async {
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_customer_delivery_by_driver?store_id=${AppState().storeId}&user_id=${AppState().userId}&customer_id=$id'));
-
-    if (response.statusCode == 200) {
-      // print(AppState().storeId);
-      // print(id);
-      // print(id);
-
-      final jsonResponse = json.decode(response.body);
-      if (jsonResponse['success']) {
-        return List<CustomerDelivery>.from(jsonResponse['data']
-            .map((delivery) => CustomerDelivery.fromJson(delivery)));
-      } else {
-        throw Exception('Failed to load data');
-      }
-    } else {
-      throw Exception('Failed to load data');
-    }
   }
 
   @override
@@ -127,14 +122,14 @@ class _DriverDetailsState extends State<DriverDetails> {
 
   @override
   Widget build(BuildContext context) {
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      id = params!['customer'];
-      name = params['name'];
-      address = params['address'];
-      code = params['code'];
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   id = params!['customer'];
+    //   name = params['name'];
+    //   address = params['address'];
+    //   code = params['code'];
+    // }
 
     return Scaffold(
       appBar: AppBar(
@@ -564,7 +559,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                       ElevatedButton(
                         style: ButtonStyle(
                           backgroundColor:
-                              WidgetStateProperty.all(AppConfig.colorPrimary),
+                              WidgetStateProperty.all( selectedDeliveries.isEmpty? Colors.grey : AppConfig.colorPrimary),
                           fixedSize: WidgetStateProperty.all(Size(150, 20)),
                           shape: WidgetStateProperty.all(
                             RoundedRectangleBorder(
@@ -572,10 +567,12 @@ class _DriverDetailsState extends State<DriverDetails> {
                             ),
                           ),
                         ),
-                        onPressed: () async {
-                          postData();
-                          // print(AppState().routeId);
-                        },
+                        onPressed: selectedDeliveries.isEmpty
+                            ? null
+                            : () async {
+                                postData();
+                                // print(AppState().routeId);
+                              },
                         child: Text(
                           'SAVE',
                           style: TextStyle(color: Colors.white),
@@ -590,5 +587,26 @@ class _DriverDetailsState extends State<DriverDetails> {
         },
       ),
     );
+  }
+
+  Future<List<CustomerDelivery>> fetchCustomerDeliveries() async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_customer_delivery_by_driver?store_id=${AppState().storeId}&user_id=${AppState().userId}&customer_id=$id'));
+
+    if (response.statusCode == 200) {
+      // print(AppState().storeId);
+      print(id);
+      // print(id);
+
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['success']) {
+        return List<CustomerDelivery>.from(jsonResponse['data']
+            .map((delivery) => CustomerDelivery.fromJson(delivery)));
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } else {
+      throw Exception('Failed to load data');
+    }
   }
 }

@@ -29,6 +29,8 @@ class _SalesScreenState extends State<SalesScreen> {
   final TextEditingController _roundoff = TextEditingController();
   double totalAmount = 0.0;
   double roundOffValue = 0.0;
+  bool _isDialogOpen = false;
+  bool _isButtonDisabled = true;
   String _remarksText = "";
   List<ProductType> productTypes = [];
   List<ProductType?> selectedProductTypes = [];
@@ -390,8 +392,12 @@ class _SalesScreenState extends State<SalesScreen> {
                   ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
                   : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
             ),
-            onPressed: (savedProducts.isNotEmpty)
+            onPressed: (savedProducts.isNotEmpty && _isButtonDisabled)
                 ? () async {
+                    setState(() {
+                      _isButtonDisabled =
+                          true; // Disable the button after it's pressed
+                    });
                     postDataToApi();
                     // print(roundOffValue);
                   }
@@ -521,8 +527,14 @@ class _SalesScreenState extends State<SalesScreen> {
 
                         final total = quantity * amount;
                         return InkWell(
-                          onTap: () =>
-                              showProductDetailsDialog(context, product),
+                          onTap: _isDialogOpen
+                              ? null
+                              : () {
+                            setState(() {
+                              _isDialogOpen = true;
+                            });
+                            showProductDetailsDialog(context, product);
+                          },
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -1175,7 +1187,9 @@ class _SalesScreenState extends State<SalesScreen> {
             },
           );
         },
-      );
+      ).then((_) {
+        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+      });
     }
   }
 }
