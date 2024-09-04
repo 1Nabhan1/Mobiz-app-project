@@ -241,33 +241,58 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
               ),
             ),
             ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConfig.colorPrimary),
-                onPressed: () {
-                  List<Map<String, dynamic>> items = [];
-                  for (int i = 0; i < data.detail!.length; i++) {
-                    items.add({
-                      'id': data.detail![i].id,
-                      'quantity': data.detail![i].quantity,
-                    });
-                  }
-                  sendPostRequests(items);
-                },
-                child: Text(
-                  'Approve',
-                  style: TextStyle(color: Colors.white),
-                ))
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConfig.colorPrimary),
+              onPressed: () => _submitApprovalRequest(data),
+              child: Text(
+                'Approve',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  Future<void> _submitApprovalRequest(Data data) async {
+    final url = 'http://68.183.92.8:3699/api/vantransfar.receive.store';
+
+    final body = {
+      'id': data.id,
+      'detail_id': data.detail!.map((detail) => detail.id).toList(),
+      // Use the updated quantity from the data.detail list
+      'quantity': data.detail!.map((detail) => detail.quantity).toList(),
+    };
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        _getRequests();
+        // Handle successful response
+        print('Success: ${response.body}');
+        // You may want to show a success message or navigate to another screen
+      } else {
+        // Handle non-200 responses
+        print('Failed: ${response.statusCode}');
+        // Show an error message to the user
+      }
+    } catch (e) {
+      // Handle any errors that occurred during the request
+      print('Error: $e');
+      // Show an error message to the user
+    }
+  }
+
   Future<void> _getRequests() async {
     RestDatasource api = RestDatasource();
     stocks = await StockHistory.getStockHistory();
     dynamic resJson = await api.getDetails(
-        '/api/vantransfar.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        '/api/vantransfar.receive.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
         AppState().token);
 
     if (resJson['data'] != null) {
@@ -336,38 +361,6 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
 //       print('Error: $e');
 //     }
 //   }
-  Future<void> sendPostRequests(List<Map<String, dynamic>> items) async {
-    final url = 'http://68.183.92.8:3699/api/vantransfar.receive.store';
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'details': items.map((item) {
-            print('edamone');
-            print(item['id']);
-
-            return {
-              'detail_id': item['id'],
-              'quantity': item['quantity'],
-            };
-          }).toList(),
-        }),
-      );
-      if (response.statusCode == 200) {
-        // The server did return a 200 OK response, parse the data
-        print('Success: ${response.body}');
-      } else {
-        // The server did not return a 200 OK response, throw an exception
-        print('Failed: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
 
   void _showEditDialog(int index, Data data) {
     TextEditingController _quantityController = TextEditingController(

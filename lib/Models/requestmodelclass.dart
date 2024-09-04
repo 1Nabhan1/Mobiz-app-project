@@ -114,6 +114,7 @@ class Detail {
   String? unit;
   String? product_type;
   int? quantity;
+  int? editedQuantity;
   String? approvedQuantity;
   int? convertQty;
   int? vanId;
@@ -134,6 +135,7 @@ class Detail {
       this.itemId,
       this.unit,
       this.quantity,
+      this.editedQuantity,
       this.approvedQuantity,
       this.convertQty,
       this.vanId,
