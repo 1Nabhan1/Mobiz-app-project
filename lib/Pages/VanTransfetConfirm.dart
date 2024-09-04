@@ -244,9 +244,14 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppConfig.colorPrimary),
                 onPressed: () {
-                  for (int i = 0; i < data.detail!.length; i++)
-                    sendPostRequest(
-                        data.detail![i].id ?? 0, data.detail![i].quantity ?? 0);
+                  List<Map<String, dynamic>> items = [];
+                  for (int i = 0; i < data.detail!.length; i++) {
+                    items.add({
+                      'id': data.detail![i].id,
+                      'quantity': data.detail![i].quantity,
+                    });
+                  }
+                  sendPostRequests(items);
                 },
                 child: Text(
                   'Approve',
@@ -341,10 +346,17 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode({
-          'details': items,
+          'details': items.map((item) {
+            print('edamone');
+            print(item['id']);
+
+            return {
+              'detail_id': item['id'],
+              'quantity': item['quantity'],
+            };
+          }).toList(),
         }),
       );
-
       if (response.statusCode == 200) {
         // The server did return a 200 OK response, parse the data
         print('Success: ${response.body}');
