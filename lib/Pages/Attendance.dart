@@ -33,12 +33,14 @@ class _AttendanceState extends State<Attendance> {
   late Future<ApiResponse> futureApiResponse;
   String _containerText = '';
   String _containerText1 = '';
+  String lastOdometerOut = '';
   bool _isCheckedIn = false;
 
   @override
   void initState() {
     super.initState();
     fetchData();
+
     futureApiResponse =
         fetchCheckInOutData(AppState().vanId!, AppState().storeId!);
     _timer = Timer.periodic(Duration(minutes: 1), (timer) {
@@ -50,6 +52,8 @@ class _AttendanceState extends State<Attendance> {
   }
 
   void fetchData() async {
+    // print('lastOdometerOut');
+    // print(lastOdometerOut);
     try {
       final data = await fetchCheckInDetails();
       setState(() {
@@ -58,40 +62,6 @@ class _AttendanceState extends State<Attendance> {
     } catch (e) {
       print('Error fetching data: $e');
     }
-  }
-
-  void _showDialog() {
-    TextEditingController _textFieldController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Enter Text'),
-          content: TextField(
-            keyboardType: TextInputType.number,
-            controller: _textFieldController,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _containerText = _textFieldController.text;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showDialog1() {
@@ -190,6 +160,74 @@ class _AttendanceState extends State<Attendance> {
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             } else if (snapshot.hasData) {
+              void _showDialog() {
+                TextEditingController _textFieldController =
+                    TextEditingController();
+
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    final double minOdometer = double.parse(
+                        snapshot.data!.data.lastOdometerOut ?? '0');
+                    return AlertDialog(
+                      title: Text('Enter Text'),
+                      content: TextField(
+                        keyboardType: TextInputType.number,
+                        controller: _textFieldController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter value',
+                          // errorText: _textFieldController.text.isEmpty
+                          //     ? 'This field cannot be blank'
+                          //     : null,
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // if (_textFieldController.text.isEmpty) {
+                            //   ScaffoldMessenger.of(context).showSnackBar(
+                            //     SnackBar(
+                            //       content: Text('Field cannot be blank'),
+                            //     ),
+                            //   );
+                            //   return;
+                            // }
+                            double enteredValue =
+                                double.tryParse(_textFieldController.text) ??
+                                    0.0;
+                            if (enteredValue < minOdometer &&
+                                _textFieldController.text.isEmpty) {
+                              // Show error message if entered value is less than minOdometer
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Value must be greater than or equal to $minOdometer')),
+                              );
+                            } else {
+                              setState(() {
+                                _containerText1 = _textFieldController.text;
+                              });
+                              Navigator.of(context).pop();
+                            }
+                            // setState(() {
+                            //   _containerText = _textFieldController.text;
+                            // });
+                            // Navigator.of(context).pop();
+                          },
+                          child: Text('OK'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
+
               Future<void> checkIn() async {
                 final url = Uri.parse(
                     '${RestDatasource().BASE_URL}/api/check-in.store');
@@ -268,308 +306,362 @@ class _AttendanceState extends State<Attendance> {
                   : _isCheckedIn = true;
               return Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Center(
-                        child: Container(
-                          width: 180,
-                          height: 180,
-                          child: Image.network(
-                              'https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg'),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 30.0, top: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Hello, ${AppState().name ?? ''}",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 20),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 30.0, top: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text("Van",
-                                style: TextStyle(fontWeight: FontWeight.w500)),
-                            Text(
-                              " ${snapshot.data!.data.van}",
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 30.0, top: 12),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Last Odometer Reading ",
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              "${snapshot.data!.data.lastOdometerIn} | ${snapshot.data!.data.lastOdometerOut}",
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500),
-                            )
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 30.0, top: 12),
-                        child: Text(
-                            "Scheduled ${snapshot.data!.data.sheduled} | Visited ${snapshot.data!.data.vistCustomer} | Not Visited ${snapshot.data!.data.nonVistCustomer} | Pending ${snapshot.data!.data.pending}",
-                            style: TextStyle(fontWeight: FontWeight.w500)),
-                      ),
-                      SizedBox(
-                        height: 40,
-                      ),
-                      // Row(
-                      //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      //   children: [
-                      //     Column(
-                      //       crossAxisAlignment: CrossAxisAlignment.start,
-                      //       children: [
-                      //         Text("Date"),
-                      //         SizedBox(
-                      //           height: 10,
-                      //         ),
-                      //         Text("Time"),
-                      //         SizedBox(
-                      //           height: 10,
-                      //         ),
-                      //         Text("Odometer"),
-                      //         SizedBox(
-                      //           height: 40,
-                      //         ),
-                      //         Text(""),
-                      //       ],
-                      //     ),
-                      //     Column(
-                      //       children: [
-
-                      //         SizedBox(
-                      //           height: 10,
-                      //         ),
-                      //         Row(
-                      //           children: [
-                      //             Container(
-                      //               width: 80,
-                      //               height: 22,
-                      //               decoration: BoxDecoration(
-                      //                 color: _isCheckedIn
-                      //                     ? Colors.grey.shade400
-                      //                     : AppConfig.backgroundColor,
-                      //                 borderRadius: BorderRadius.circular(2),
-                      //                 border: Border.all(),
-                      //               ),
-                      //               child: Center(
-                      //                   child: Text(_isCheckedIn
-                      //                       ? checkInDetails == null
-                      //                           ? ' '
-                      //                           : '${checkInDetails!['chek_in_time']}'
-                      //                       : formattedTime)),
-                      //             ),
-                      //             SizedBox(
-                      //               width: 15,
-                      //             ),
-                      //             Container(
-                      //               width: 80,
-                      //               height: 22,
-                      //               decoration: BoxDecoration(
-                      //                 borderRadius: BorderRadius.circular(2),
-                      //                 color: _isCheckedIn
-                      //                     ? AppConfig.backgroundColor
-                      //                     : Colors.grey.shade400,
-                      //                 border: Border.all(
-                      //                   style: BorderStyle.solid,
-                      //                 ),
-                      //               ),
-                      //               child: Center(
-                      //                   child: Text(
-                      //                       _isCheckedIn ? formattedTime : '')),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //         SizedBox(
-                      //           height: 10,
-                      //         ),
-                      //         Row(
-                      //           children: [
-                      //             GestureDetector(
-                      //               onTap: () {
-                      //                 _isCheckedIn ? null : _showDialog();
-                      //               },
-                      //               child: Container(
-                      //                 width: 80,
-                      //                 height: 22,
-                      //                 decoration: BoxDecoration(
-                      //                   color: _isCheckedIn
-                      //                       ? Colors.grey.shade400
-                      //                       : AppConfig.backgroundColor,
-                      //                   borderRadius: BorderRadius.circular(2),
-                      //                   border: Border.all(),
-                      //                 ),
-                      //                 child: Center(
-                      //                     child: Text(_isCheckedIn
-                      //                         ? checkInDetails == null
-                      //                             ? ' '
-                      //                             : '${checkInDetails!['check_in_odometer']}'
-                      //                         : _containerText)),
-                      //               ),
-                      //             ),
-                      //             SizedBox(
-                      //               width: 15,
-                      //             ),
-                      //             GestureDetector(
-                      //               onTap: () {
-                      //                 _isCheckedIn ? _showDialog1() : null;
-                      //               },
-                      //               child: Container(
-                      //                 width: 80,
-                      //                 height: 22,
-                      //                 decoration: BoxDecoration(
-                      //                   borderRadius: BorderRadius.circular(2),
-                      //                   color: _isCheckedIn
-                      //                       ? AppConfig.backgroundColor
-                      //                       : Colors.grey.shade400,
-                      //                   border: Border.all(
-                      //                     style: BorderStyle.solid,
-                      //                   ),
-                      //                 ),
-                      //                 child: Center(child: Text(_containerText1)),
-                      //               ),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //         SizedBox(
-                      //           height: 10,
-                      //         ),
-                      //         Row(
-                      //           children: [
-                      //             ElevatedButton(
-                      //               onPressed: _isCheckedIn ? null : _checkIn,
-                      //               child: Text(
-                      //                 'Check in',
-                      //                 style: TextStyle(
-                      //                     color: AppConfig.backgroundColor),
-                      //               ),
-                      //               style: ButtonStyle(
-                      //                 backgroundColor:
-                      //                     WidgetStateProperty.resolveWith<Color>(
-                      //                   (Set<WidgetState> states) {
-                      //                     if (states
-                      //                         .contains(WidgetState.disabled)) {
-                      //                       return Colors
-                      //                           .grey; // Color when button is disabled
-                      //                     }
-                      //                     return AppConfig
-                      //                         .colorPrimary; // Color when button is enabled
-                      //                   },
-                      //                 ),
-                      //                 shape: WidgetStatePropertyAll(
-                      //                     RoundedRectangleBorder(
-                      //                         borderRadius:
-                      //                             BorderRadius.circular(3))),
-                      //                 padding: WidgetStateProperty.all(
-                      //                     EdgeInsets.symmetric(
-                      //                         horizontal: 8,
-                      //                         vertical:
-                      //                             4)), // Adjust padding as needed
-                      //
-                      //                 minimumSize: WidgetStateProperty.all(Size(
-                      //                     80,
-                      //                     22)), // Set minimum width and height
-                      //               ),
-                      //             ),
-                      //             SizedBox(
-                      //               width: 15,
-                      //             ),
-                      //             ElevatedButton(
-                      //               onPressed: _isCheckedIn ? _checkOut : null,
-                      //               child: Text(
-                      //                 'Check out',
-                      //                 style: TextStyle(
-                      //                     color: AppConfig.backgroundColor),
-                      //               ),
-                      //               style: ButtonStyle(
-                      //                 backgroundColor:
-                      //                     WidgetStateProperty.resolveWith<Color>(
-                      //                   (Set<WidgetState> states) {
-                      //                     if (states
-                      //                         .contains(WidgetState.disabled)) {
-                      //                       return Colors
-                      //                           .grey; // Color when button is disabled
-                      //                     }
-                      //                     return AppConfig
-                      //                         .colorPrimary; // Color when button is enabled
-                      //                   },
-                      //                 ),
-                      //                 shape: WidgetStatePropertyAll(
-                      //                     RoundedRectangleBorder(
-                      //                         borderRadius:
-                      //                             BorderRadius.circular(3))),
-                      //                 padding: WidgetStateProperty.all(
-                      //                     EdgeInsets.symmetric(
-                      //                         horizontal: 8,
-                      //                         vertical:
-                      //                             4)), // Adjust padding as needed
-                      //
-                      //                 minimumSize: WidgetStateProperty.all(Size(
-                      //                     80,
-                      //                     22)), // Set minimum width and height
-                      //               ),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   ],
-                      // ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Center(
+                    //   child: Container(
+                    //     width: 120,
+                    //     height: 120,
+                    //     child: Image.network(
+                    //         'https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg'),
+                    //   ),
+                    // ),
+                    SizedBox(
+                      height: 40,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 310,
-                            height: 50,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: AppConfig.colorPrimary),
-                            child: Center(
-                                child: Text(
-                              "$formattedDate",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppConfig.backgroundColor),
-                            )),
+                          Text(
+                            "Hello, ${AppState().name ?? ''}",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20),
                           ),
                         ],
                       ),
-                      SizedBox(
-                        height: 40,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Container(
+                          Text("Van",
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            " ${snapshot.data!.data.van}",
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Last Odometer Reading ",
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            "${snapshot.data!.data.lastOdometerIn} | ${snapshot.data!.data.lastOdometerOut}",
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500),
+                          )
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Text(
+                          "Scheduled ${snapshot.data!.data.sheduled} | Visited ${snapshot.data!.data.vistCustomer} | Not Visited ${snapshot.data!.data.nonVistCustomer} | Pending ${snapshot.data!.data.pending}",
+                          style: TextStyle(fontWeight: FontWeight.w500)),
+                    ),
+                    SizedBox(
+                      height: 40,
+                    ),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    //   children: [
+                    //     Column(
+                    //       crossAxisAlignment: CrossAxisAlignment.start,
+                    //       children: [
+                    //         Text("Date"),
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Text("Time"),
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Text("Odometer"),
+                    //         SizedBox(
+                    //           height: 40,
+                    //         ),
+                    //         Text(""),
+                    //       ],
+                    //     ),
+                    //     Column(
+                    //       children: [
+
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Row(
+                    //           children: [
+                    //             Container(
+                    //               width: 80,
+                    //               height: 22,
+                    //               decoration: BoxDecoration(
+                    //                 color: _isCheckedIn
+                    //                     ? Colors.grey.shade400
+                    //                     : AppConfig.backgroundColor,
+                    //                 borderRadius: BorderRadius.circular(2),
+                    //                 border: Border.all(),
+                    //               ),
+                    //               child: Center(
+                    //                   child: Text(_isCheckedIn
+                    //                       ? checkInDetails == null
+                    //                           ? ' '
+                    //                           : '${checkInDetails!['chek_in_time']}'
+                    //                       : formattedTime)),
+                    //             ),
+                    //             SizedBox(
+                    //               width: 15,
+                    //             ),
+                    //             Container(
+                    //               width: 80,
+                    //               height: 22,
+                    //               decoration: BoxDecoration(
+                    //                 borderRadius: BorderRadius.circular(2),
+                    //                 color: _isCheckedIn
+                    //                     ? AppConfig.backgroundColor
+                    //                     : Colors.grey.shade400,
+                    //                 border: Border.all(
+                    //                   style: BorderStyle.solid,
+                    //                 ),
+                    //               ),
+                    //               child: Center(
+                    //                   child: Text(
+                    //                       _isCheckedIn ? formattedTime : '')),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Row(
+                    //           children: [
+                    //             GestureDetector(
+                    //               onTap: () {
+                    //                 _isCheckedIn ? null : _showDialog();
+                    //               },
+                    //               child: Container(
+                    //                 width: 80,
+                    //                 height: 22,
+                    //                 decoration: BoxDecoration(
+                    //                   color: _isCheckedIn
+                    //                       ? Colors.grey.shade400
+                    //                       : AppConfig.backgroundColor,
+                    //                   borderRadius: BorderRadius.circular(2),
+                    //                   border: Border.all(),
+                    //                 ),
+                    //                 child: Center(
+                    //                     child: Text(_isCheckedIn
+                    //                         ? checkInDetails == null
+                    //                             ? ' '
+                    //                             : '${checkInDetails!['check_in_odometer']}'
+                    //                         : _containerText)),
+                    //               ),
+                    //             ),
+                    //             SizedBox(
+                    //               width: 15,
+                    //             ),
+                    //             GestureDetector(
+                    //               onTap: () {
+                    //                 _isCheckedIn ? _showDialog1() : null;
+                    //               },
+                    //               child: Container(
+                    //                 width: 80,
+                    //                 height: 22,
+                    //                 decoration: BoxDecoration(
+                    //                   borderRadius: BorderRadius.circular(2),
+                    //                   color: _isCheckedIn
+                    //                       ? AppConfig.backgroundColor
+                    //                       : Colors.grey.shade400,
+                    //                   border: Border.all(
+                    //                     style: BorderStyle.solid,
+                    //                   ),
+                    //                 ),
+                    //                 child: Center(child: Text(_containerText1)),
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Row(
+                    //           children: [
+                    //             ElevatedButton(
+                    //               onPressed: _isCheckedIn ? null : _checkIn,
+                    //               child: Text(
+                    //                 'Check in',
+                    //                 style: TextStyle(
+                    //                     color: AppConfig.backgroundColor),
+                    //               ),
+                    //               style: ButtonStyle(
+                    //                 backgroundColor:
+                    //                     WidgetStateProperty.resolveWith<Color>(
+                    //                   (Set<WidgetState> states) {
+                    //                     if (states
+                    //                         .contains(WidgetState.disabled)) {
+                    //                       return Colors
+                    //                           .grey; // Color when button is disabled
+                    //                     }
+                    //                     return AppConfig
+                    //                         .colorPrimary; // Color when button is enabled
+                    //                   },
+                    //                 ),
+                    //                 shape: WidgetStatePropertyAll(
+                    //                     RoundedRectangleBorder(
+                    //                         borderRadius:
+                    //                             BorderRadius.circular(3))),
+                    //                 padding: WidgetStateProperty.all(
+                    //                     EdgeInsets.symmetric(
+                    //                         horizontal: 8,
+                    //                         vertical:
+                    //                             4)), // Adjust padding as needed
+                    //
+                    //                 minimumSize: WidgetStateProperty.all(Size(
+                    //                     80,
+                    //                     22)), // Set minimum width and height
+                    //               ),
+                    //             ),
+                    //             SizedBox(
+                    //               width: 15,
+                    //             ),
+                    //             ElevatedButton(
+                    //               onPressed: _isCheckedIn ? _checkOut : null,
+                    //               child: Text(
+                    //                 'Check out',
+                    //                 style: TextStyle(
+                    //                     color: AppConfig.backgroundColor),
+                    //               ),
+                    //               style: ButtonStyle(
+                    //                 backgroundColor:
+                    //                     WidgetStateProperty.resolveWith<Color>(
+                    //                   (Set<WidgetState> states) {
+                    //                     if (states
+                    //                         .contains(WidgetState.disabled)) {
+                    //                       return Colors
+                    //                           .grey; // Color when button is disabled
+                    //                     }
+                    //                     return AppConfig
+                    //                         .colorPrimary; // Color when button is enabled
+                    //                   },
+                    //                 ),
+                    //                 shape: WidgetStatePropertyAll(
+                    //                     RoundedRectangleBorder(
+                    //                         borderRadius:
+                    //                             BorderRadius.circular(3))),
+                    //                 padding: WidgetStateProperty.all(
+                    //                     EdgeInsets.symmetric(
+                    //                         horizontal: 8,
+                    //                         vertical:
+                    //                             4)), // Adjust padding as needed
+                    //
+                    //                 minimumSize: WidgetStateProperty.all(Size(
+                    //                     80,
+                    //                     22)), // Set minimum width and height
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ],
+                    // ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 310,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: AppConfig.colorPrimary),
+                          child: Center(
+                              child: Text(
+                            "$formattedDate",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppConfig.backgroundColor),
+                          )),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 40,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 100,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: _isCheckedIn
+                                ? Colors.lightBlueAccent.shade700
+                                : Colors.lightBlueAccent,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Text('Check-in'),
+                              Text(
+                                _isCheckedIn
+                                    ? checkInDetails == null
+                                        ? ' '
+                                        : '${checkInDetails!['chek_in_time']}'
+                                    : formattedTime,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Container(
+                          height: 100,
+                          width: 150,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: _isCheckedIn
+                                  ? Colors.lightBlueAccent
+                                  : Colors.lightBlueAccent.shade700),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Text('Check-out'),
+                              Text(
+                                _isCheckedIn ? formattedTime : '',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            _isCheckedIn ? null : _showDialog();
+                          },
+                          child: Container(
                             height: 100,
                             width: 150,
                             decoration: BoxDecoration(
@@ -581,22 +673,40 @@ class _AttendanceState extends State<Attendance> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Text('Check-in'),
-                                Text(
-                                  _isCheckedIn
-                                      ? checkInDetails == null
-                                          ? ' '
-                                          : '${checkInDetails!['chek_in_time']}'
-                                      : formattedTime,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                )
+                                Text('Odometer'),
+                                Container(
+                                  width: 80,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: _isCheckedIn
+                                        ? Colors.lightBlueAccent.shade700
+                                        : AppConfig.backgroundColor,
+                                    borderRadius: BorderRadius.circular(2),
+                                    border: _isCheckedIn ? null : Border.all(),
+                                  ),
+                                  child: Center(
+                                      child: Text(
+                                    _isCheckedIn
+                                        ? checkInDetails == null
+                                            ? ' '
+                                            : '${checkInDetails!['check_in_odometer']}'
+                                        : _containerText,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )),
+                                ),
                               ],
                             ),
                           ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Container(
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            _isCheckedIn ? _showDialog1() : null;
+                          },
+                          child: Container(
                             height: 100,
                             width: 150,
                             decoration: BoxDecoration(
@@ -607,177 +717,95 @@ class _AttendanceState extends State<Attendance> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Text('Check-out'),
-                                Text(
-                                  _isCheckedIn ? formattedTime : '',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                )
+                                Text('Odometer'),
+                                Container(
+                                  width: 80,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(2),
+                                    color: _isCheckedIn
+                                        ? AppConfig.backgroundColor
+                                        : Colors.lightBlueAccent.shade700,
+                                    // border:
+                                    //     _isCheckedIn ? Border.all() : null,
+                                  ),
+                                  child: Center(
+                                      child: Text(
+                                    _containerText1,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )),
+                                ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              _isCheckedIn ? null : _showDialog();
-                            },
-                            child: Container(
-                              height: 100,
-                              width: 150,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: _isCheckedIn
-                                    ? Colors.lightBlueAccent.shade700
-                                    : Colors.lightBlueAccent,
-                              ),
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Text('Odometer'),
-                                  Container(
-                                    width: 80,
-                                    height: 22,
-                                    decoration: BoxDecoration(
-                                      color: _isCheckedIn
-                                          ? Colors.lightBlueAccent.shade700
-                                          : AppConfig.backgroundColor,
-                                      borderRadius: BorderRadius.circular(2),
-                                      border:
-                                          _isCheckedIn ? null : Border.all(),
-                                    ),
-                                    child: Center(
-                                        child: Text(
-                                      _isCheckedIn
-                                          ? checkInDetails == null
-                                              ? ' '
-                                              : '${checkInDetails!['check_in_odometer']}'
-                                          : _containerText,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    )),
-                                  ),
-                                ],
-                              ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _isCheckedIn ? null : _checkIn,
+                          child: Text(
+                            'Check in',
+                            style: TextStyle(color: AppConfig.backgroundColor),
+                          ),
+                          style: ButtonStyle(
+                            shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10))),
+                            fixedSize:
+                                const WidgetStatePropertyAll(Size(150, 0)),
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return Colors
+                                      .grey; // Color when button is disabled
+                                }
+                                return AppConfig
+                                    .colorPrimary; // Color when button is enabled
+                              },
                             ),
                           ),
-                          SizedBox(
-                            width: 10,
+                        ),
+                        SizedBox(
+                          width: 15,
+                        ),
+                        ElevatedButton(
+                          onPressed: _isCheckedIn ? _checkOut : null,
+                          child: Text(
+                            'Check out',
+                            style: TextStyle(color: AppConfig.backgroundColor),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              _isCheckedIn ? _showDialog1() : null;
-                            },
-                            child: Container(
-                              height: 100,
-                              width: 150,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: _isCheckedIn
-                                      ? Colors.lightBlueAccent
-                                      : Colors.lightBlueAccent.shade700),
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Text('Odometer'),
-                                  Container(
-                                    width: 80,
-                                    height: 22,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(2),
-                                      color: _isCheckedIn
-                                          ? AppConfig.backgroundColor
-                                          : Colors.lightBlueAccent.shade700,
-                                      // border:
-                                      //     _isCheckedIn ? Border.all() : null,
-                                    ),
-                                    child: Center(
-                                        child: Text(
-                                      _containerText1,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    )),
-                                  ),
-                                ],
-                              ),
+                          style: ButtonStyle(
+                            fixedSize:
+                                const WidgetStatePropertyAll(Size(150, 0)),
+                            shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10))),
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return Colors
+                                      .grey; // Color when button is disabled
+                                }
+                                return AppConfig
+                                    .colorPrimary; // Color when button is enabled
+                              },
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 30,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: _isCheckedIn ? null : _checkIn,
-                            child: Text(
-                              'Check in',
-                              style:
-                                  TextStyle(color: AppConfig.backgroundColor),
-                            ),
-                            style: ButtonStyle(
-                              shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10))),
-                              fixedSize:
-                                  const WidgetStatePropertyAll(Size(150, 0)),
-                              backgroundColor:
-                                  WidgetStateProperty.resolveWith<Color>(
-                                (Set<WidgetState> states) {
-                                  if (states.contains(WidgetState.disabled)) {
-                                    return Colors
-                                        .grey; // Color when button is disabled
-                                  }
-                                  return AppConfig
-                                      .colorPrimary; // Color when button is enabled
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 15,
-                          ),
-                          ElevatedButton(
-                            onPressed: _isCheckedIn ? _checkOut : null,
-                            child: Text(
-                              'Check out',
-                              style:
-                                  TextStyle(color: AppConfig.backgroundColor),
-                            ),
-                            style: ButtonStyle(
-                              fixedSize:
-                                  const WidgetStatePropertyAll(Size(150, 0)),
-                              shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10))),
-                              backgroundColor:
-                                  WidgetStateProperty.resolveWith<Color>(
-                                (Set<WidgetState> states) {
-                                  if (states.contains(WidgetState.disabled)) {
-                                    return Colors
-                                        .grey; // Color when button is disabled
-                                  }
-                                  return AppConfig
-                                      .colorPrimary; // Color when button is enabled
-                                },
-                              ),
 
-                              // Set minimum width and height
-                            ),
+                            // Set minimum width and height
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             } else {
@@ -788,24 +816,22 @@ class _AttendanceState extends State<Attendance> {
       ),
     );
   }
-}
 
-Future<ApiResponse> fetchCheckInOutData(int vanId, int storeId) async {
-  final response = await http.get(Uri.parse(
-      '${RestDatasource().BASE_URL}/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId'));
+  Future<ApiResponse> fetchCheckInOutData(int vanId, int storeId) async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId'));
 
-  if (response.statusCode == 200) {
-    return ApiResponse.fromJson(json.decode(response.body));
-  } else {
-    throw Exception('Failed to load data');
+    if (response.statusCode == 200) {
+      return ApiResponse.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load data');
+    }
   }
 }
 
-String apiUrl =
-    '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}';
-
 Future<Map<String, dynamic>> fetchCheckInDetails() async {
-  final response = await http.get(Uri.parse(apiUrl));
+  final response = await http.get(Uri.parse(
+      '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}'));
 
   if (response.statusCode == 200) {
     return jsonDecode(response.body);

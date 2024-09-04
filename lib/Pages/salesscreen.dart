@@ -530,11 +530,11 @@ class _SalesScreenState extends State<SalesScreen> {
                           onTap: _isDialogOpen
                               ? null
                               : () {
-                            setState(() {
-                              _isDialogOpen = true;
-                            });
-                            showProductDetailsDialog(context, product);
-                          },
+                                  setState(() {
+                                    _isDialogOpen = true;
+                                  });
+                                  showProductDetailsDialog(context, product);
+                                },
                           child: Card(
                             elevation: 1,
                             child: Container(
@@ -1188,7 +1188,8 @@ class _SalesScreenState extends State<SalesScreen> {
           );
         },
       ).then((_) {
-        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+        _isDialogOpen =
+            false; // Reset the flag if the dialog is dismissed by other means
       });
     }
   }

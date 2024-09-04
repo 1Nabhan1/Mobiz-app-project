@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Pages/vanselectproduct.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -36,32 +38,77 @@ class _VanTransferState extends State<VanTransfer> {
   String _remarksText = "";
   String amount = '';
   String quantity = '';
+  bool _isDialogOpen = false;
   final TextEditingController amountctrl = TextEditingController();
-
+  List<Map<String, dynamic>> savedProducts = [];
   @override
   void initState() {
     super.initState();
-    fetchCartItems();
     fetchVans();
+    _loadSavedProducts();
     initializeValues();
   }
 
-  Future<void> fetchCartItems() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? cartItemsJson = prefs.getStringList('vantrans');
+  Future<void> _removeProduct(int index) async {
+    setState(() {
+      savedProducts.removeAt(index);
+      // Recalculate total amount
+      // totalAmount = savedProducts.fold(0.0, (sum, product) {
+      //   final quantity =
+      //       double.tryParse(product['quantity']?.toString() ?? '0') ?? 0.0;
+      //   final amount =
+      //       double.tryParse(product['amount']?.toString() ?? '0') ?? 0.0;
+      //   return sum + (quantity * amount);
+      // });
+    });
 
-    if (cartItemsJson != null) {
-      List<Product> products = cartItemsJson
-          .map((json) => Product.fromJson(jsonDecode(json)))
-          .toList();
+    final prefs = await SharedPreferences.getInstance();
+    final savedProductsStringList =
+        savedProducts.map((product) => jsonEncode(product)).toList();
+    await prefs.setStringList('selected_products', savedProductsStringList);
+  }
 
+  Future<void> _loadSavedProducts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String>? savedProductsStringList =
+        prefs.getStringList('selected_products');
+
+    if (savedProductsStringList != null) {
       setState(() {
-        cartItems = products;
-        selectedProductTypes = List.generate(
-          cartItems.length,
-          (index) => null,
-        );
+        savedProducts = savedProductsStringList
+            .map((productString) =>
+                jsonDecode(productString) as Map<String, dynamic>)
+            .toList();
+
+        // Calculate total amount
+        // totalAmount = savedProducts.fold(0.0, (sum, product) {
+        //   final quantity =
+        //       double.tryParse(product['quantity']?.toString() ?? '0') ?? 0.0;
+        //   final amount =
+        //       double.tryParse(product['amount']?.toString() ?? '0') ?? 0.0;
+        //   return sum + (quantity * amount);
+        // });
       });
+    }
+  }
+
+  Future<void> clearSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
+  Future<void> fetchVans() async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_van_by_store?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonResponse = json.decode(response.body)['data'];
+      setState(() {
+        vans = jsonResponse.map((van) => VanData.fromJson(van)).toList();
+        // initializeValues();
+      });
+    } else {
+      throw Exception('Failed to load vans');
     }
   }
 
@@ -82,895 +129,694 @@ class _VanTransferState extends State<VanTransfer> {
 
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (vans.isNotEmpty && cartItems.isNotEmpty) {
-      setState(() {
-        selectedVan = prefs.getString('selectedVan');
-        selectedVanId = prefs.getInt('selectedVanId');
-        for (int i = 0; i < cartItems.length; i++) {
-          qtys[i] = prefs.getString('qtyvan$i') ?? '1';
-          amounts[i] =
-              prefs.getString('amountvan$i') ?? cartItems[i].price.toString();
-
-          if (cartItems[i].units.isNotEmpty) {
-            cartItems[i].selectedUnitName = prefs.getString('unitNamevan$i') ??
-                cartItems[i].units.first.name;
-          }
-        }
-      });
-    }
+    setState(() {
+      selectedVan = prefs.getString('selectedVan');
+      selectedVanId = prefs.getInt('selectedVanId');
+      // for (int i = 0; i < cartItems.length; i++) {
+      //   qtys[i] = prefs.getString('qtyvan$i') ?? '1';
+      //   amounts[i] =
+      //       prefs.getString('amountvan$i') ?? cartItems[i].price.toString();
+      //
+      //   if (cartItems[i].units.isNotEmpty) {
+      //     cartItems[i].selectedUnitName = prefs.getString('unitNamevan$i') ??
+      //         cartItems[i].units.first.name;
+      //   }
+      // }
+    });
   }
 
-  Future<void> clearSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-  }
-
-  Future<void> removeFromCart(int index) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? cartItemsJson = prefs.getStringList('vantrans');
-
-    if (cartItemsJson != null) {
-      List<Product> products = cartItemsJson
-          .map((json) => Product.fromJson(jsonDecode(json)))
-          .toList();
-
-      products.removeAt(index);
-
-      List<String> updatedCartItemsJson =
-          products.map((product) => jsonEncode(product.toJson())).toList();
-
-      await prefs.setStringList('vantrans', updatedCartItemsJson);
-      setState(() {
-        cartItems = products; // Refresh UI after deletion
-      });
-      fetchCartItems();
-    }
-  }
-
-  Future<void> fetchVans() async {
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_van_by_store?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonResponse = json.decode(response.body)['data'];
-      setState(() {
-        vans = jsonResponse.map((van) => VanData.fromJson(van)).toList();
-        initializeValues();
-      });
-    } else {
-      throw Exception('Failed to load vans');
-    }
+  Future<void> _onBackPressed() async {
+    clearCart();
+    // Your custom function logic here
+    print('Back button pressed');
+    // You can also show a dialog, navigate to another page, etc.
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-            clearSharedPreferences();
-          },
-          child: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppConfig.colorPrimary,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Van Transfer Request',
-              style: TextStyle(color: AppConfig.backgroundColor),
+    return WillPopScope(
+      onWillPop: () async {
+        // Call your custom function here
+        await _onBackPressed();
+        // Return true to allow the page to be popped
+        // Return false to prevent the page from being popped
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              clearSharedPreferences();
+            },
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
             ),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(
-                        context, VanTransferSend.routeName);
-                  },
-                  child: Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(width: 15,),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(
-                        context, VanTransferSend.routeName);
-                  },
-                  child: GestureDetector(
+          ),
+          backgroundColor: AppConfig.colorPrimary,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Van Transfer Request',
+                style: TextStyle(color: AppConfig.backgroundColor),
+              ),
+              Row(
+                children: [
+                  GestureDetector(
                     onTap: () {
                       Navigator.pushReplacementNamed(
-                          context, VanStockReceive.routeName);
+                          context, VanTransferSend.routeName);
                     },
                     child: Icon(
-                      Icons.notifications,
+                      Icons.add,
                       color: Colors.white,
                     ),
                   ),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.deepPurple.shade100,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Transform.flip(
-                            flipX: true,
-                            child: Image.asset(
-                              'Assets/Images/van stock.png',
-                              width: 60,
-                              color: Colors.black,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            'D 87550',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppConfig.colorPrimary,
-                            ),
-                          )
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.person,
-                            size: 30,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text(
-                            ' ${AppState().name}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppConfig.colorPrimary,
-                            ),
-                          )
-                        ],
-                      )
-                    ],
+                  SizedBox(
+                    width: 15,
                   ),
-                ),
-              ),
-            ),
-            Center(
-              child: Container(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Icon(
-                    CupertinoIcons.arrow_right_arrow_left,
-                    color: AppConfig.backgroundColor,
-                  ),
-                ),
-                decoration: BoxDecoration(
-                  color: AppConfig.colorPrimary,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 30),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          .47,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              .03,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          "Select Van to Transfer",
-                                          style: TextStyle(
-                                            color: AppConfig.colorPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          .32,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              .03,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade400,
-                                        border: Border.all(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton<String>(
-                                          isDense: true,
-                                          isExpanded: true,
-                                          style: TextStyle(),
-                                          value: selectedVan,
-                                          hint: Center(
-                                            child: Text(
-                                              'Select here',
-                                            ),
-                                          ),
-                                          items: vans.map((VanData van) {
-                                            return DropdownMenuItem<String>(
-                                              value: van.name,
-                                              child: Center(
-                                                child: Text(
-                                                  van.name ?? '',
-                                                  style: TextStyle(
-                                                      color: Colors.black),
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                          onChanged: (String? newValue) async {
-                                            setState(() {
-                                              selectedVan = newValue;
-                                              selectedVanId = vans
-                                                  .firstWhere((van) =>
-                                                      van.name == newValue)
-                                                  .id;
-                                            });
-                                            await saveToSharedPreferences(
-                                                'selectedVan', newValue);
-                                            await saveToSharedPreferences(
-                                                'selectedVanId', selectedVanId);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(
+                          context, VanTransferSend.routeName);
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(
+                            context, VanStockReceive.routeName);
+                      },
+                      child: Icon(
+                        Icons.notifications,
+                        color: Colors.white,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            children: [
-                              Image.asset(
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.deepPurple.shade100,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Transform.flip(
+                              flipX: true,
+                              child: Image.asset(
                                 'Assets/Images/van stock.png',
                                 width: 60,
                                 color: Colors.black,
                               ),
-                              SizedBox(
-                                width: 10,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              'D 87550',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppConfig.colorPrimary,
                               ),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  selectedVan ?? 'Van no:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppConfig.colorPrimary,
-                                  ),
-                                ),
+                            )
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.person,
+                              size: 30,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              ' ${AppState().name}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppConfig.colorPrimary,
                               ),
-                            ],
-                          ),
-                           Row(
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Center(
+                child: Container(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Icon(
+                      CupertinoIcons.arrow_right_arrow_left,
+                      color: AppConfig.backgroundColor,
+                    ),
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppConfig.colorPrimary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
                             children: [
-                              Icon(
-                                CupertinoIcons.person,
-                                size: 30,
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  'User',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppConfig.colorPrimary,
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 30),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                .47,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                .03,
+                                        decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            "Select Van to Transfer",
+                                            style: TextStyle(
+                                              color: AppConfig.colorPrimary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                .32,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                .03,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade400,
+                                          border:
+                                              Border.all(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                        ),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            isDense: true,
+                                            isExpanded: true,
+                                            style: TextStyle(),
+                                            value: selectedVan,
+                                            hint: Center(
+                                              child: Text(
+                                                'Select here',
+                                              ),
+                                            ),
+                                            items: vans.map((VanData van) {
+                                              return DropdownMenuItem<String>(
+                                                value: van.name,
+                                                child: Center(
+                                                  child: Text(
+                                                    van.name ?? '',
+                                                    style: TextStyle(
+                                                        color: Colors.black),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                            onChanged:
+                                                (String? newValue) async {
+                                              setState(() {
+                                                selectedVan = newValue;
+                                                selectedVanId = vans
+                                                    .firstWhere((van) =>
+                                                        van.name == newValue)
+                                                    .id;
+                                              });
+                                              await saveToSharedPreferences(
+                                                  'selectedVan', newValue);
+                                              await saveToSharedPreferences(
+                                                  'selectedVanId',
+                                                  selectedVanId);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20, horizontal: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Row(
+                              children: [
+                                Image.asset(
+                                  'Assets/Images/van stock.png',
+                                  width: 60,
+                                  color: Colors.black,
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    selectedVan ?? 'Van no:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppConfig.colorPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  CupertinoIcons.person,
+                                  size: 30,
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'User',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppConfig.colorPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Stock Detail',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                // onTap: () {
+                //   transferData();
+                // },
+                child: Container(
+                    height: SizeConfig.blockSizeVertical * 58,
+                    color: Colors.grey.shade300,
+                    child: Scrollbar(
+                      thickness: 10,
+                      thumbVisibility: false,
+                      radius: Radius.circular(5),
+                      child: SingleChildScrollView(
+                        physics: BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.topRight,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      Vanselectproducts.routeName,
+                                    );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                        color: AppConfig.colorPrimary,
+                                        child: Icon(
+                                          Icons.add,
+                                          color: Colors.white,
+                                        )),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            savedProducts.isEmpty
+                                ? Center(child: Text('No saved products'))
+                                : ListView.builder(
+                                    physics: BouncingScrollPhysics(),
+                                    scrollDirection: Axis.vertical,
+                                    shrinkWrap: true,
+                                    itemCount: savedProducts.length,
+                                    itemBuilder: (context, index) {
+                                      final product = savedProducts[index];
+                                      final quantity = double.tryParse(
+                                              product['quantity']?.toString() ??
+                                                  '0') ??
+                                          0.0;
+                                      final amount = double.tryParse(
+                                              product['amount']?.toString() ??
+                                                  '0') ??
+                                          0.0;
+
+                                      final total = quantity * amount;
+                                      return InkWell(
+                                        onTap:
+                                            // _isDialogOpen
+                                            //     ? null
+                                            //     :
+                                            () {
+                                          // setState(() {
+                                          //   _isDialogOpen = true;
+                                          // });
+                                          showProductDetailsDialog(
+                                              context, product);
+                                        },
+                                        child: Card(
+                                          elevation: 1,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(5),
+                                            width:
+                                                SizeConfig.blockSizeHorizontal *
+                                                    90,
+                                            decoration: BoxDecoration(
+                                              color: AppConfig.backgroundColor,
+                                              border: Border.all(
+                                                color: AppConfig
+                                                    .buttonDeactiveColor
+                                                    .withOpacity(0.5),
+                                              ),
+                                              borderRadius:
+                                                  const BorderRadius.all(
+                                                      Radius.circular(10)),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // SizedBox(
+                                                    //   width: 50,
+                                                    //   height: 60,
+                                                    //   child: ClipRRect(
+                                                    //     borderRadius: BorderRadius.circular(10),
+                                                    //     child: FadeInImage(
+                                                    //       image: NetworkImage(
+                                                    //         '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
+                                                    //       ),
+                                                    //       placeholder: const AssetImage(
+                                                    //           'Assets/Images/no_image.jpg'),
+                                                    //       imageErrorBuilder:
+                                                    //           (context, error, stackTrace) {
+                                                    //         return Image.asset(
+                                                    //           'Assets/Images/no_image.jpg',
+                                                    //           fit: BoxFit.fitWidth,
+                                                    //         );
+                                                    //       },
+                                                    //       fit: BoxFit.fitWidth,
+                                                    //     ),
+                                                    //   ),
+                                                    // ),
+                                                    // CommonWidgets.horizontalSpace(1),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            '${product['code']} | ${product['name'].toString().toUpperCase()}',
+                                                            style: TextStyle(
+                                                                fontSize: AppConfig
+                                                                    .textCaption3Size,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    CircleAvatar(
+                                                      backgroundColor: Colors
+                                                          .grey
+                                                          .withOpacity(0.2),
+                                                      radius: 10,
+                                                      child: GestureDetector(
+                                                        onTap: () =>
+                                                            _removeProduct(
+                                                                index),
+                                                        child: const Icon(
+                                                          Icons.close,
+                                                          size: 15,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 5.h),
+                                                Row(
+                                                  children: [
+                                                    Text(product['type_name']),
+                                                    Text(' | '),
+                                                    Text(product['unit_name']),
+                                                    Text(' | '),
+                                                    Text(
+                                                        'Qty: ${product['quantity']}'),
+                                                    Text(' | '),
+                                                    Text(
+                                                        'Rate: ${product['amount']}'),
+                                                    Text(' | '),
+                                                    Text(
+                                                        'Amt: ${total.toStringAsFixed(2)}')
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ],
+                        ),
+                      ),
+                    )),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Remarks",
+                    ),
+                    SizedBox(
+                      width: 2,
+                    ),
+                    InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('Remarks'),
+                              content: TextField(
+                                controller: _remarksController,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _remarksText = value;
+                                  });
+                                },
+                                keyboardType: TextInputType.text,
+                                decoration: const InputDecoration(
+                                  hintText: "Enter your remarks",
+                                ),
+                              ),
+                              actions: <Widget>[
+                                MaterialButton(
+                                  color: AppConfig.colorPrimary,
+                                  textColor: Colors.white,
+                                  child: const Text('OK'),
+                                  onPressed: () {
+                                    setState(() {
+                                      _remarksText = _remarksController.text;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.05,
+                        width: MediaQuery.of(context).size.width * 0.9,
+                        // padding: EdgeInsets.symmetric(
+                        //     horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          border:
+                              Border.all(color: AppConfig.buttonDeactiveColor),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(5)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _remarksText,
+                            style: TextStyle(
+                              color: Colors.black,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Stock Detail',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                ],
+              SizedBox(
+                height: 20,
               ),
-            ),
-            GestureDetector(
-              // onTap: () {
-              //   transferData();
-              // },
-              child: Container(
-                  height: SizeConfig.blockSizeVertical * 58,
-                  color: Colors.grey.shade300,
-                  child: Scrollbar(
-                    thickness: 10,
-                    thumbVisibility: false,
-                    radius: Radius.circular(5),
-                    child: SingleChildScrollView(
-                      physics: BouncingScrollPhysics(),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    Vanselectproducts.routeName,
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Container(
-                                      color: AppConfig.colorPrimary,
-                                      child: Icon(
-                                        Icons.add,
-                                        color: Colors.white,
-                                      )),
-                                ),
-                              ),
-                            ),
-                          ),
-                          ListView.builder(
-                            physics: BouncingScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: cartItems.length,
-                            itemBuilder: (context, index) {
-                              List<String> unitNames = cartItems[index]
-                                  .units
-                                  .where((unit) => unit.name != null)
-                                  .map((unit) => unit.name!)
-                                  .toList();
-                              List<int> unitid = cartItems[index]
-                                  .units
-                                  .where((unit) => unit.unit != null)
-                                  .map((unit) => unit.unit!)
-                                  .toList();
-
-                              if (unitNames.isEmpty) {
-                                return SizedBox.shrink();
-                              }
-
-                              // Ensure each item has its own selected unit name state
-                              String? selectedUnitName =
-                                  cartItems[index].selectedUnitName ??
-                                      unitNames.first;
-                              String quantity = qtys[index] ?? '1';
-                              String rate = amounts[index] ??
-                                  cartItems[index].price.toString();
-                              double ttlamount =
-                                  double.parse(quantity) * double.parse(rate);
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12.0, vertical: 2),
-                                child: Card(
-                                  elevation: 1,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    width: SizeConfig.blockSizeHorizontal * 90,
-                                    decoration: BoxDecoration(
-                                      color: AppConfig.backgroundColor,
-                                      border: Border.all(
-                                        color: AppConfig.buttonDeactiveColor
-                                            .withOpacity(0.5),
-                                      ),
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(10)),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
-                                              width: 50,
-                                              height: 60,
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                child: FadeInImage(
-                                                  image: NetworkImage(
-                                                    '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-                                                  ),
-                                                  placeholder: const AssetImage(
-                                                    'Assets/Images/no_image.jpg',
-                                                  ),
-                                                  imageErrorBuilder: (context,
-                                                      error, stackTrace) {
-                                                    return Image.asset(
-                                                      'Assets/Images/no_image.jpg',
-                                                      fit: BoxFit.fitWidth,
-                                                    );
-                                                  },
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                            CommonWidgets.horizontalSpace(1),
-                                            Column(
-                                              children: [
-                                                CommonWidgets.verticalSpace(1),
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    CommonWidgets
-                                                        .horizontalSpace(1),
-                                                    SizedBox(
-                                                      width: SizeConfig
-                                                              .blockSizeHorizontal *
-                                                          70,
-                                                      child: Text(
-                                                        '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
-                                                        style: TextStyle(
-                                                          fontSize: AppConfig
-                                                              .textCaption3Size,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            CircleAvatar(
-                                              backgroundColor:
-                                                  Colors.grey.withOpacity(0.2),
-                                              radius: 10,
-                                              child: GestureDetector(
-                                                onTap: () async {
-                                                  removeFromCart(index);
-                                                },
-                                                child: const Icon(
-                                                  Icons.close,
-                                                  size: 15,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 20),
-                                          child: Row(
-                                            children: [
-                                              Flexible(
-                                                child:
-                                                    DropdownButtonHideUnderline(
-                                                  child: DropdownButton<String>(
-                                                    isDense: true,
-                                                    alignment: Alignment.center,
-                                                    isExpanded: false,
-                                                    value: selectedUnitName,
-                                                    items: unitNames.map<
-                                                            DropdownMenuItem<
-                                                                String>>(
-                                                        (String value) {
-                                                      return DropdownMenuItem<
-                                                          String>(
-                                                        value: value,
-                                                        child: Center(
-                                                          child: Text(
-                                                            value,
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: AppConfig
-                                                                  .colorPrimary,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
-                                                    onChanged:
-                                                        (String? newValue) {
-                                                      setState(() {
-                                                        cartItems[index]
-                                                                .selectedUnitName =
-                                                            newValue;
-
-                                                        // Find the selected unit and update the rate
-                                                        for (var unit
-                                                            in cartItems[index]
-                                                                .units) {
-                                                          if (unit.name ==
-                                                              newValue) {
-                                                            // Perform validation based on stock
-                                                            if (unit.stock >=
-                                                                int.parse(qtys[
-                                                                        index] ??
-                                                                    '1')) {
-                                                              // Stock is sufficient
-                                                              amounts[index] =
-                                                                  unit.price
-                                                                      .toString();
-                                                            } else {
-                                                              // Stock is insufficient, handle this scenario (e.g., show error message)
-                                                              // For now, setting rate to default or handle as per your app logic
-                                                              amounts[index] =
-                                                                  cartItems[
-                                                                          index]
-                                                                      .price
-                                                                      .toString();
-                                                              // You can show a snackbar or dialog here indicating insufficient stock
-                                                              ScaffoldMessenger
-                                                                      .of(
-                                                                          context)
-                                                                  .showSnackBar(
-                                                                      SnackBar(
-                                                                content: Text(
-                                                                    'Insufficient stock for ${unit.name}'),
-                                                                duration:
-                                                                    Duration(
-                                                                        seconds:
-                                                                            2),
-                                                              ));
-                                                            }
-                                                            saveToSharedPreferences(
-                                                                'amountvan$index',
-                                                                amounts[index]);
-                                                            break;
-                                                          }
-                                                        }
-                                                        saveToSharedPreferences(
-                                                            'unitNamevan$index',
-                                                            newValue);
-                                                      });
-                                                    },
-                                                    icon: SizedBox.shrink(),
-                                                  ),
-                                                ),
-                                              ),
-                                              Text(' | '),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return AlertDialog(
-                                                        title: Text('Quantity'),
-                                                        content: TextField(
-                                                          controller:
-                                                              TextEditingController(
-                                                                  text: qtys[
-                                                                      index]),
-                                                          onChanged: (value) {
-                                                            setState(() {
-                                                              qtys[index] =
-                                                                  value;
-                                                              saveToSharedPreferences(
-                                                                  'qty$index',
-                                                                  value);
-                                                            });
-                                                          },
-                                                          keyboardType:
-                                                              TextInputType
-                                                                  .number,
-                                                        ),
-                                                        actions: <Widget>[
-                                                          MaterialButton(
-                                                            color: AppConfig
-                                                                .colorPrimary,
-                                                            textColor:
-                                                                Colors.white,
-                                                            child: Text('OK'),
-                                                            onPressed: () {
-                                                              // Validate quantity against selected unit stock
-                                                              var selectedUnit =
-                                                                  cartItems[
-                                                                          index]
-                                                                      .units
-                                                                      .firstWhere(
-                                                                        (unit) =>
-                                                                            unit.name ==
-                                                                            selectedUnitName,
-                                                                        // orElse: () => null,
-                                                                      );
-
-                                                              if (selectedUnit !=
-                                                                  null) {
-                                                                int enteredQuantity =
-                                                                    int.tryParse(qtys[index] ??
-                                                                            '1') ??
-                                                                        0;
-                                                                if (enteredQuantity >
-                                                                    selectedUnit
-                                                                        .stock) {
-                                                                  // Quantity entered exceeds available stock
-                                                                  ScaffoldMessenger.of(
-                                                                          context)
-                                                                      .showSnackBar(
-                                                                          SnackBar(
-                                                                    content:
-                                                                        Text(
-                                                                      'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
-                                                                    ),
-                                                                    duration: Duration(
-                                                                        seconds:
-                                                                            2),
-                                                                  ));
-                                                                  // Reset quantity to available stock or handle as per your app logic
-                                                                  setState(() {
-                                                                    qtys[index] =
-                                                                        selectedUnit
-                                                                            .stock
-                                                                            .toString();
-                                                                    saveToSharedPreferences(
-                                                                        'qtyvan$index',
-                                                                        qtys[
-                                                                            index]);
-                                                                  });
-                                                                } else {
-                                                                  Navigator.pop(
-                                                                      context); // Close dialog if validation passed
-                                                                }
-                                                              } else {
-                                                                Navigator.pop(
-                                                                    context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
-                                                              }
-                                                            },
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    Text('Qty: '),
-                                                    Text(
-                                                      '${qtys[index] ?? '1'}',
-                                                      style: TextStyle(
-                                                        color: AppConfig
-                                                            .colorPrimary,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    "Remarks",
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConfig.colorPrimary),
+                  onPressed: (savedProducts.isNotEmpty)
+                      ? () async {
+                          postDataToApi();
+                        }
+                      : null,
+                  child: Text(
+                    'TRANSFER',
+                    style: TextStyle(color: AppConfig.backgroundColor),
                   ),
-                  SizedBox(
-                    width: 2,
-                  ),
-                  InkWell(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text('Remarks'),
-                            content: TextField(
-                              controller: _remarksController,
-                              onChanged: (value) {
-                                setState(() {
-                                  _remarksText = value;
-                                });
-                              },
-                              keyboardType: TextInputType.text,
-                              decoration: const InputDecoration(
-                                hintText: "Enter your remarks",
-                              ),
-                            ),
-                            actions: <Widget>[
-                              MaterialButton(
-                                color: AppConfig.colorPrimary,
-                                textColor: Colors.white,
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  setState(() {
-                                    _remarksText = _remarksController.text;
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    child: Container(
-                      height: MediaQuery.of(context).size.height * 0.05,
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      // padding: EdgeInsets.symmetric(
-                      //     horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        border:
-                            Border.all(color: AppConfig.buttonDeactiveColor),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(5)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _remarksText,
-                          style: TextStyle(
-                            color: Colors.black,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConfig.colorPrimary),
-                onPressed: (cartItems.isNotEmpty)
-                    ? () async {
-                        postDataToApi();
-                      }
-                    : null,
-                child: Text(
-                  'TRANSFER',
-                  style: TextStyle(color: AppConfig.backgroundColor),
                 ),
               ),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-          ],
+              SizedBox(
+                height: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void postDataToApi() async {
-    var url = Uri.parse('http://68.183.92.8:3699/api/vantransfar.store');
-    List<int> quantities = [];
-    List<Object> productTypesList = [];
-    List<int> selectedUnitIds = [];
+    var url = Uri.parse('${RestDatasource().BASE_URL}/api/vantransfar.store');
+    // List<int> quantities = [];
+    // List<Object> productTypesList = [];
+    // List<int> selectedUnitIds = [];
 
-    for (int index = 0; index < cartItems.length; index++) {
-      String? selectedUnitName = cartItems[index].selectedUnitName;
-      int selectedUnitId;
-      if (selectedUnitName != null) {
-        selectedUnitId = cartItems[index]
-            .units
-            .firstWhere((unit) => unit.name == selectedUnitName)
-            .unit!;
-      } else {
-        selectedUnitId = cartItems[index].units.first.unit!;
-      }
-
-      selectedUnitIds.add(selectedUnitId);
-      String? qty = qtys[index];
-      int quantity = qty != null ? int.parse(qty) : 1;
-      quantities.add(quantity);
-
-      ProductType? selectedProductType = selectedProductTypes[index];
-      Object productType =
-          selectedProductType != null ? selectedProductType.id : 1;
-      productTypesList.add(productType);
-    }
+    // for (int index = 0; index < cartItems.length; index++) {
+    //   String? selectedUnitName = cartItems[index].selectedUnitName;
+    //   int selectedUnitId;
+    //   if (selectedUnitName != null) {
+    //     selectedUnitId = cartItems[index]
+    //         .units
+    //         .firstWhere((unit) => unit.name == selectedUnitName)
+    //         .unit!;
+    //   } else {
+    //     selectedUnitId = cartItems[index].units.first.unit!;
+    //   }
+    //
+    //   selectedUnitIds.add(selectedUnitId);
+    //   String? qty = qtys[index];
+    //   int quantity = qty != null ? int.parse(qty) : 1;
+    //   quantities.add(quantity);
+    //
+    //   ProductType? selectedProductType = selectedProductTypes[index];
+    //   Object productType =
+    //       selectedProductType != null ? selectedProductType.id : 1;
+    //   productTypesList.add(productType);
+    // }
+    List<int> unitIds = savedProducts.map<int>((product) {
+      // Assuming product['unit_id'] already contains the selected unit ID
+      return int.parse(product['unit_id']);
+    }).toList();
+    List<int> productIds = savedProducts.map<int>((product) {
+      return product['id'];
+    }).toList();
+    List<double> amounts = savedProducts.map<double>((product) {
+      return double.parse(product['amount'].toString());
+    }).toList();
+    List<double> quantity = savedProducts.map<double>((product) {
+      return double.parse(product['quantity'].toString());
+    }).toList();
     var data = {
       'from_van_id': AppState().vanId,
       'store_id': AppState().storeId,
       'user_id': AppState().userId,
       'to_van_id': selectedVanId,
-      'item_id': cartItems.map((item) => item.id).toList(),
-      'quantity': quantities,
-      'unit': selectedUnitIds,
-      // 'mrp': amounts.entries.map((entry) {
-      //   return double.parse(entry.value);
-      // }).toList(),
-
+      'item_id': productIds,
+      'quantity': quantity,
+      'unit': unitIds,
+      'mrp': amounts,
       'remarks': _remarksText
     };
     var body = json.encode(data);
@@ -995,6 +841,10 @@ class _VanTransferState extends State<VanTransfer> {
             .then(
           (value) {
             clearCart();
+            Navigator.pushReplacementNamed(
+              context,
+              HomeScreen.routeName,
+            );
           },
         );
       }
@@ -1007,9 +857,311 @@ class _VanTransferState extends State<VanTransfer> {
 
   Future<void> clearCart() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('cartItems');
+    await prefs.remove('selected_products');
     setState(() {
-      cartItems.clear();
+      savedProducts.clear();
     });
+  }
+
+  void showProductDetailsDialog(
+      BuildContext context, Map<String, dynamic> product) async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_product_with_units_by_products?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product['id']}'));
+    final typeResponse = await http
+        .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
+
+    if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final units = data['data'] as List?;
+      final lastsale = data['lastsale'];
+      final typeData = jsonDecode(typeResponse.body);
+      final productTypes = typeData['data'] as List;
+      final amountController = TextEditingController();
+      final existingProduct = savedProducts
+          .firstWhere((p) => p['serial_number'] == product['serial_number']);
+      String? amount = existingProduct['amount'];
+      if (amount != null && amount.isNotEmpty) {
+        amountController.text = amount;
+      }
+      double? availableStock;
+      String? selectedUnitId = existingProduct['unit_id'];
+      String? selectedProductTypeId = existingProduct['type_id'];
+      String? quantity = existingProduct['quantity'];
+      bool isQuantityValid(String? value) {
+        final quantityValue = double.tryParse(value ?? '') ?? 0;
+        return value != null &&
+            value.isNotEmpty &&
+            quantityValue > 0 &&
+            quantityValue <= (availableStock ?? 0);
+      }
+
+      Map<String, dynamic>? selectedUnit;
+
+      if (selectedUnitId != null && units != null) {
+        selectedUnit = units.firstWhere(
+            (unit) => unit['id'].toString() == selectedUnitId,
+            orElse: () => null);
+        availableStock =
+            double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: Text('${product['code']} | ${product['name']}'),
+                content: SingleChildScrollView(
+                  child: Form(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Image.network(
+                              '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
+                              height: 100,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset('Assets/Images/no_image.jpg',
+                                    height: 100);
+                              },
+                            ),
+                            lastsale == null || lastsale.isEmpty
+                                ? Text('No last records found')
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Last Sale:',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      Text('Date: ${lastsale['date']}'),
+                                      Text('Unit: ${lastsale['unit']}'),
+                                      Text('Price: ${lastsale['price']}'),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                        SizedBox(height: 5.h),
+                        if (selectedUnit != null) ...[
+                          Text(
+                            'Available Qty: ${selectedUnit!['stock']}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                        if (units != null &&
+                            units.any((unit) => unit != null)) ...[
+                          SizedBox(height: 10.h),
+                          DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Product Type',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.h, horizontal: 10.w),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                            ),
+                            items: productTypes.map((type) {
+                              return DropdownMenuItem<String>(
+                                value: type['id'].toString(),
+                                child: Text(type['name']),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setDialogState(() {
+                                selectedProductTypeId = value;
+
+                                // Check if the selected product type is not "Normal"
+                                final selectedType = productTypes.firstWhere(
+                                  (type) => type['id'].toString() == value,
+                                  orElse: () => null,
+                                );
+
+                                if (selectedType != null &&
+                                    selectedType['name'] != 'Normal') {
+                                  // Set amount to 0 if type is not "Normal"
+                                  amountController.text = '0';
+                                } else if (selectedUnit != null) {
+                                  // Set amount to the selected unit's price if type is "Normal"
+                                  amountController.text =
+                                      selectedUnit?['price']?.toString() ?? '';
+                                }
+                              });
+                            },
+                            value: selectedProductTypeId,
+                            hint: Text('Select Product Type'),
+                          ),
+                          SizedBox(height: 10.h),
+                          DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Unit',
+                              labelStyle:
+                                  TextStyle(fontWeight: FontWeight.bold),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.h, horizontal: 10.w),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.grey.shade300,
+                            ),
+                            items:
+                                units.where((unit) => unit != null).map((unit) {
+                              return DropdownMenuItem<String>(
+                                value: unit['id'].toString(),
+                                child: Text(unit['name']),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setDialogState(() {
+                                selectedUnitId = value;
+                                selectedUnit = units.firstWhere(
+                                    (unit) => unit['id'].toString() == value,
+                                    orElse: () => null);
+                                amountController.text =
+                                    selectedUnit?['price']?.toString() ?? '';
+                                availableStock = double.tryParse(
+                                    selectedUnit?['stock']?.toString() ?? '0');
+                              });
+                            },
+                            value: selectedUnitId,
+                            hint: Text('Select Unit'),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            keyboardType: TextInputType.number,
+                            // initialValue: amount,
+                            controller: amountController,
+                            // onChanged: (value) {
+                            //   amount = amount;
+                            // },
+                            decoration: InputDecoration(
+                                labelText: 'Amount',
+                                labelStyle:
+                                    TextStyle(fontWeight: FontWeight.bold),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 2.h, horizontal: 10.w),
+                                hintText: 'Amt',
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none),
+                                filled: true,
+                                fillColor: Colors.grey.shade300),
+                          ),
+                          SizedBox(height: 10.h),
+                          TextFormField(
+                            keyboardType: TextInputType.number,
+                            initialValue: quantity,
+                            onChanged: (value) {
+                              quantity = value;
+                              setDialogState(() {});
+                            },
+                            decoration: InputDecoration(
+                                labelText: 'Quantity',
+                                labelStyle:
+                                    TextStyle(fontWeight: FontWeight.bold),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 2.h, horizontal: 10.w),
+                                hintText: 'Qty',
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none),
+                                filled: true,
+                                fillColor: Colors.grey.shade300),
+                          ),
+                          SizedBox(height: 10),
+                        ] else ...[
+                          Text('No units available for this product.'),
+                        ],
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    style: TextButton.styleFrom(
+                        backgroundColor: AppConfig.colorPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  if (units != null && units.any((unit) => unit != null)) ...[
+                    TextButton(
+                      style: TextButton.styleFrom(
+                          backgroundColor: isQuantityValid(quantity)
+                              ? AppConfig.colorPrimary
+                              : Colors.grey,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.r))),
+                      child: Text(
+                        'Save',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onPressed: isQuantityValid(quantity)
+                          ? () async {
+                              if (selectedUnitId != null &&
+                                  selectedProductTypeId != null &&
+                                  quantity != null &&
+                                  amountController.text != null) {
+                                final productIndex = savedProducts.indexWhere(
+                                    (p) =>
+                                        p['serial_number'] ==
+                                        product['serial_number']);
+                                if (productIndex != -1) {
+                                  setState(() {
+                                    savedProducts[productIndex]['unit_id'] =
+                                        selectedUnitId;
+                                    savedProducts[productIndex]['type_id'] =
+                                        selectedProductTypeId;
+                                    savedProducts[productIndex]['quantity'] =
+                                        quantity;
+                                    savedProducts[productIndex]['amount'] =
+                                        amountController.text;
+                                    savedProducts[productIndex]['type_name'] =
+                                        productTypes.firstWhere((type) =>
+                                            type['id'].toString() ==
+                                            selectedProductTypeId)['name'];
+                                    savedProducts[productIndex]['unit_name'] =
+                                        selectedUnit?['name'];
+                                    // _updateCalculations();
+                                  });
+
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final savedProductsStringList = savedProducts
+                                      .map((product) => jsonEncode(product))
+                                      .toList();
+                                  await prefs.setStringList('selected_products',
+                                      savedProductsStringList);
+
+                                  Navigator.of(context).pop();
+                                }
+                              }
+                            }
+                          : null,
+                    ),
+                  ],
+                ],
+              );
+            },
+          );
+        },
+      ).then((_) {
+        _isDialogOpen =
+            false; // Reset the flag if the dialog is dismissed by other means
+      });
+    }
   }
 }

@@ -15,9 +15,10 @@ class SOAResponse {
 
   factory SOAResponse.fromJson(Map<String, dynamic> json) {
     return SOAResponse(
-      data: List<List<dynamic>>.from(json['data'].map((item) => List<dynamic>.from(item.map((e) => e)))),
-      opening: (json['opening'] as num).toDouble(),
-      closing: (json['closing'] as num).toDouble(),
+      data: List<List<dynamic>>.from(
+          json['data'].map((item) => List<dynamic>.from(item.map((e) => e)))),
+      opening: (json['opening'] as num?)?.toDouble() ?? 0,
+      closing: (json['closing'] as num?)?.toDouble() ?? 0,
       success: json['success'] as bool,
       messages: List<String>.from(json['messages'].map((x) => x as String)),
     );
@@ -109,7 +110,8 @@ class Transaction {
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     var collectionList = json['collection'] as List<dynamic>;
-    List<Collection> collections = collectionList.map((e) => Collection.fromJson(e)).toList();
+    List<Collection> collections =
+        collectionList.map((e) => Collection.fromJson(e)).toList();
 
     return Transaction(
       id: json['id'],
@@ -136,7 +138,8 @@ class Transaction {
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
       deletedAt: json['deleted_at'],
-      opening: json['opening']?.toDouble(), // Adjusted to handle nullable double
+      opening:
+          json['opening']?.toDouble(), // Adjusted to handle nullable double
       collection: collections,
     );
   }
@@ -186,22 +189,34 @@ class Collection {
   factory Collection.fromJson(Map<String, dynamic> json) {
     return Collection(
       id: json['id'],
-      masterId: json['master_id'] ?? 0, // Default value or adjust as per your logic
-      customerId: json['customer_id'] ?? 0, // Default value or adjust as per your logic
-      goodsOutId: json['goods_out_id'] ?? 0, // Default value or adjust as per your logic
+      masterId:
+          json['master_id'] ?? 0, // Default value or adjust as per your logic
+      customerId:
+          json['customer_id'] ?? 0, // Default value or adjust as per your logic
+      goodsOutId: json['goods_out_id'] ??
+          0, // Default value or adjust as per your logic
       amount: json['amount'] ?? '', // Default value or adjust as per your logic
-      inDate: json['in_date'] ?? '', // Default value or adjust as per your logic
-      inTime: json['in_time'] ?? '', // Default value or adjust as per your logic
-      collectionType: json['collection_type'] ?? '', // Default value or adjust as per your logic
+      inDate:
+          json['in_date'] ?? '', // Default value or adjust as per your logic
+      inTime:
+          json['in_time'] ?? '', // Default value or adjust as per your logic
+      collectionType: json['collection_type'] ??
+          '', // Default value or adjust as per your logic
       bank: json['bank'] ?? '', // Default value or adjust as per your logic
-      chequeDate: json['cheque_date'] ?? '', // Default value or adjust as per your logic
-      chequeNo: json['cheque_no'] ?? '', // Default value or adjust as per your logic
-      voucherNo: json['voucher_no'] ?? '', // Default value or adjust as per your logic
+      chequeDate: json['cheque_date'] ??
+          '', // Default value or adjust as per your logic
+      chequeNo:
+          json['cheque_no'] ?? '', // Default value or adjust as per your logic
+      voucherNo:
+          json['voucher_no'] ?? '', // Default value or adjust as per your logic
       userId: json['user_id'] ?? 0, // Default value or adjust as per your logic
       vanId: json['van_id'] ?? 0, // Default value or adjust as per your logic
-      storeId: json['store_id'] ?? 0, // Default value or adjust as per your logic
-      createdAt: json['created_at'] ?? '', // Default value or adjust as per your logic
-      updatedAt: json['updated_at'] ?? '', // Default value or adjust as per your logic
+      storeId:
+          json['store_id'] ?? 0, // Default value or adjust as per your logic
+      createdAt:
+          json['created_at'] ?? '', // Default value or adjust as per your logic
+      updatedAt:
+          json['updated_at'] ?? '', // Default value or adjust as per your logic
       deletedAt: json['deleted_at'], // Adjust as per your logic
     );
   }

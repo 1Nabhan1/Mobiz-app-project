@@ -250,11 +250,11 @@ class _LoginScreenState extends State<LoginScreen> {
           if (appStateRetrieved == true) {
             sharedPref.removeAll();
           }
-
+          print('letsgop');
           // Save to shared preferences
           sharedPref.save("app_state", appState);
           // Navigation logic based on rol_id
-          if (loginResp.user!.rolId == 2) {
+          if (loginResp.user!.rolId == 2 || loginResp.user!.rolId == 5) {
             // Navigate to current page (assuming it's the same login page)
             if (mounted) {
               Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);

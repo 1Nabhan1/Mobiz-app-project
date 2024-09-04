@@ -176,12 +176,11 @@ class RestDatasource {
           bodyJson['code'],
       'address': bodyJson['address'],
       'contact_number': bodyJson['contact_number'],
-      'location':bodyJson['location'],
+      'location': bodyJson['location'],
       'whatsapp_number': bodyJson['whatsapp_number'],
       'email': bodyJson['email'],
       'trn': bodyJson['trn'],
-      'route_id':
-      bodyJson['route_id'],
+      'route_id': bodyJson['route_id'],
       'id': bodyJson['id'],
       'province_id':
           // 1,

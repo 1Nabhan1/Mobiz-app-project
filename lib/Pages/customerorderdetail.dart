@@ -424,9 +424,53 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                   )
                 : Container(),
             CommonWidgets.horizontalSpace(1),
-            AppState().attendanceState == 'Required'
-                ? Status
-                    ? GestureDetector(
+            AppState().rolId == 5
+                ? GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(
+                              context, SalesSelectProductsorderScreen.routeName,
+                              arguments: {'customerId': id, 'name': name})
+                          .then((value) {
+                        // _initDone = false;
+                        // _getTypes();
+                      });
+                    },
+                    child: Icon(
+                      _search ? Icons.close : Icons.search,
+                      size: 30,
+                      color: AppConfig.backgroundColor,
+                    ),
+                  )
+                : AppState().attendanceState == 'Required'
+                    ? Status
+                        ? GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacementNamed(context,
+                                  SalesSelectProductsorderScreen.routeName,
+                                  arguments: {
+                                    'customerId': id,
+                                    'name': name
+                                  }).then((value) {
+                                // _initDone = false;
+                                // _getTypes();
+                              });
+                            },
+                            child: Icon(
+                              _search ? Icons.close : Icons.search,
+                              size: 30,
+                              color: AppConfig.backgroundColor,
+                            ),
+                          )
+                        : GestureDetector(
+                            onTap: () {
+                              _showWelcomeDialog();
+                            },
+                            child: Text(
+                              'Attendance Req...',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+                    : GestureDetector(
                         onTap: () {
                           Navigator.pushReplacementNamed(
                               context, SalesSelectProductsorderScreen.routeName,
@@ -443,32 +487,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                           size: 30,
                           color: AppConfig.backgroundColor,
                         ),
-                      )
-                    : GestureDetector(
-                        onTap: () {
-                          _showWelcomeDialog();
-                        },
-                        child: Text(
-                          'Attendance Req...',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      )
-                : GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(
-                              context, SalesSelectProductsorderScreen.routeName,
-                              arguments: {'customerId': id, 'name': name})
-                          .then((value) {
-                        // _initDone = false;
-                        // _getTypes();
-                      });
-                    },
-                    child: Icon(
-                      _search ? Icons.close : Icons.search,
-                      size: 30,
-                      color: AppConfig.backgroundColor,
-                    ),
-                  ),
+                      ),
             CommonWidgets.horizontalSpace(3),
           ],
         ),
@@ -1317,7 +1336,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
           );
         },
       ).then((_) {
-        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+        _isDialogOpen =
+            false; // Reset the flag if the dialog is dismissed by other means
       });
     }
   }

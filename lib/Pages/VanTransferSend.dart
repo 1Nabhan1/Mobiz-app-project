@@ -52,54 +52,54 @@ class _VanTransferSendState extends State<VanTransferSend> {
             children: [
               (_initDone && !_nodata)
                   ? SizedBox(
-                height: SizeConfig.blockSizeVertical * 85,
-                child: ListView.separated(
-                  separatorBuilder: (BuildContext context, int index) =>
-                      CommonWidgets.verticalSpace(1),
-                  itemCount: request.data!.length,
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) =>
-                      _requestsTab(index, request.data![index]),
-                ),
-              )
+                      height: SizeConfig.blockSizeVertical * 85,
+                      child: ListView.separated(
+                        separatorBuilder: (BuildContext context, int index) =>
+                            CommonWidgets.verticalSpace(1),
+                        itemCount: request.data!.length,
+                        shrinkWrap: true,
+                        itemBuilder: (context, index) =>
+                            _requestsTab(index, request.data![index]),
+                      ),
+                    )
                   : (_nodata && _initDone)
-                  ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CommonWidgets.verticalSpace(3),
-                    const Center(
-                      child: Text('No Data'),
-                    ),
-                  ])
-                  : Shimmer.fromColors(
-                baseColor:
-                AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                highlightColor: AppConfig.backButtonColor,
-                child: Center(
-                  child: Column(
-                    children: [
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                      CommonWidgets.loadingContainers(
-                          height: SizeConfig.blockSizeVertical * 10,
-                          width: SizeConfig.blockSizeHorizontal * 90),
-                    ],
-                  ),
-                ),
-              ),
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                              CommonWidgets.verticalSpace(3),
+                              const Center(
+                                child: Text('No Data'),
+                              ),
+                            ])
+                      : Shimmer.fromColors(
+                          baseColor:
+                              AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                          highlightColor: AppConfig.backButtonColor,
+                          child: Center(
+                            child: Column(
+                              children: [
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                                CommonWidgets.loadingContainers(
+                                    height: SizeConfig.blockSizeVertical * 10,
+                                    width: SizeConfig.blockSizeHorizontal * 90),
+                              ],
+                            ),
+                          ),
+                        ),
             ],
           ),
         ),
@@ -152,15 +152,15 @@ class _VanTransferSendState extends State<VanTransferSend> {
                           (data.status == 1)
                               ? 'Pending'
                               : (data.status == 2)
-                              ? 'Approved'
-                              : 'Confirmed',
+                                  ? 'Approved'
+                                  : 'Confirmed',
                           style: TextStyle(
                               fontSize: AppConfig.textCaption3Size,
                               color: (data.status == 1)
                                   ? AppConfig.colorWarning
                                   : (data.status == 2)
-                                  ? Colors.orange
-                                  : Colors.green,
+                                      ? Colors.orange
+                                      : Colors.green,
                               fontWeight: AppConfig.headLineWeight),
                         ),
                       ],
@@ -179,156 +179,156 @@ class _VanTransferSendState extends State<VanTransferSend> {
           children: <Widget>[
             (data.status == 2)
                 ? Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CommonWidgets.verticalSpace(1),
-                  Divider(
-                    color: AppConfig.buttonDeactiveColor.withOpacity(0.4),
-                  ),
-                  for (int i = 0; i < data.detail!.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Tooltip(
-                            message: (data.detail![i].productName ?? '')
-                                .toUpperCase(),
-                            child: SizedBox(
-                              width: SizeConfig.blockSizeHorizontal * 80,
-                              child: Text(
-                                '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CommonWidgets.verticalSpace(1),
+                        Divider(
+                          color: AppConfig.buttonDeactiveColor.withOpacity(0.4),
+                        ),
+                        for (int i = 0; i < data.detail!.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Tooltip(
+                                  message: (data.detail![i].productName ?? '')
+                                      .toUpperCase(),
+                                  child: SizedBox(
+                                    width: SizeConfig.blockSizeHorizontal * 80,
+                                    child: Text(
+                                      '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                  ),
+                                ),
+                                CommonWidgets.verticalSpace(1),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${data.detail![i].unit} : ${data.detail![i].approvedQuantity}',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                    CommonWidgets.horizontalSpace(2),
+                                    Text(
+                                      'Requested Qty: ${data.detail![i].quantity}',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                  ],
+                                ),
+                                Divider(
+                                  color: AppConfig.textBlack.withOpacity(0.7),
+                                ),
+                              ],
                             ),
                           ),
-                          CommonWidgets.verticalSpace(1),
-                          Row(
-                            children: [
-                              Text(
-                                '${data.detail![i].unit} : ${data.detail![i].approvedQuantity}',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
-                              CommonWidgets.horizontalSpace(2),
-                              Text(
-                                'Requested Qty: ${data.detail![i].quantity}',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
-                            ],
-                          ),
-                          Divider(
-                            color: AppConfig.textBlack.withOpacity(0.7),
-                          ),
-                        ],
-                      ),
+                        // Center(
+                        //   child: SizedBox(
+                        //     width: SizeConfig.blockSizeHorizontal * 25,
+                        //     height: SizeConfig.blockSizeVertical * 5,
+                        //     child: ElevatedButton(
+                        //       style: ButtonStyle(
+                        //         shape: MaterialStateProperty.all<
+                        //             RoundedRectangleBorder>(
+                        //           RoundedRectangleBorder(
+                        //             borderRadius: BorderRadius.circular(20.0),
+                        //           ),
+                        //         ),
+                        //         backgroundColor: const MaterialStatePropertyAll(
+                        //             AppConfig.colorPrimary),
+                        //       ),
+                        //       onPressed: () {
+                        //         _conformrequest(data.id!);
+                        //       },
+                        //       child: Text(
+                        //         'Confirm',
+                        //         style: TextStyle(
+                        //             fontSize: AppConfig.textCaption3Size,
+                        //             color: AppConfig.backgroundColor,
+                        //             fontWeight: AppConfig.headLineWeight),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
+                        // CommonWidgets.verticalSpace(2),
+                      ],
                     ),
-                  // Center(
-                  //   child: SizedBox(
-                  //     width: SizeConfig.blockSizeHorizontal * 25,
-                  //     height: SizeConfig.blockSizeVertical * 5,
-                  //     child: ElevatedButton(
-                  //       style: ButtonStyle(
-                  //         shape: MaterialStateProperty.all<
-                  //             RoundedRectangleBorder>(
-                  //           RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(20.0),
-                  //           ),
-                  //         ),
-                  //         backgroundColor: const MaterialStatePropertyAll(
-                  //             AppConfig.colorPrimary),
-                  //       ),
-                  //       onPressed: () {
-                  //         _conformrequest(data.id!);
-                  //       },
-                  //       child: Text(
-                  //         'Confirm',
-                  //         style: TextStyle(
-                  //             fontSize: AppConfig.textCaption3Size,
-                  //             color: AppConfig.backgroundColor,
-                  //             fontWeight: AppConfig.headLineWeight),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                  // CommonWidgets.verticalSpace(2),
-                ],
-              ),
-            )
+                  )
                 : Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CommonWidgets.verticalSpace(1),
-                  Divider(
-                      color:
-                      AppConfig.buttonDeactiveColor.withOpacity(0.4)),
-                  for (int i = 0; i < data.detail!.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Tooltip(
-                            message: (data.detail![i].productName ?? '')
-                                .toUpperCase(),
-                            child: SizedBox(
-                              width: SizeConfig.blockSizeHorizontal * 80,
-                              child: Text(
-                                '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CommonWidgets.verticalSpace(1),
+                        Divider(
+                            color:
+                                AppConfig.buttonDeactiveColor.withOpacity(0.4)),
+                        for (int i = 0; i < data.detail!.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Tooltip(
+                                  message: (data.detail![i].productName ?? '')
+                                      .toUpperCase(),
+                                  child: SizedBox(
+                                    width: SizeConfig.blockSizeHorizontal * 80,
+                                    child: Text(
+                                      '${data.detail![i].productCode ?? ''} | ${(data.detail![i].productName ?? '').toUpperCase()}',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                  ),
+                                ),
+                                CommonWidgets.verticalSpace(1),
+                                Row(
+                                  children: [
+                                    Text(
+                                      (data.status == 3)
+                                          ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity}'
+                                          : '${data.detail![i].unit}: ${data.detail![i].quantity}',
+                                      style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                          fontWeight: AppConfig.headLineWeight),
+                                    ),
+                                    CommonWidgets.horizontalSpace(2),
+                                    (data.status == 3)
+                                        ? Text(
+                                            'Requested Qty: ${data.detail![i].quantity}',
+                                            style: TextStyle(
+                                                fontSize:
+                                                    AppConfig.textCaption3Size,
+                                                fontWeight:
+                                                    AppConfig.headLineWeight),
+                                          )
+                                        : const SizedBox(),
+                                  ],
+                                ),
+                                (i == data.detail!.length - 1)
+                                    ? Container()
+                                    : Divider(
+                                        color: AppConfig.buttonDeactiveColor
+                                            .withOpacity(0.4)),
+                              ],
                             ),
                           ),
-                          CommonWidgets.verticalSpace(1),
-                          Row(
-                            children: [
-                              Text(
-                                (data.status == 3)
-                                    ? '${data.detail![i].unit}: ${data.detail![i].approvedQuantity}'
-                                    : '${data.detail![i].unit}: ${data.detail![i].quantity}',
-                                style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight),
-                              ),
-                              CommonWidgets.horizontalSpace(2),
-                              (data.status == 3)
-                                  ? Text(
-                                'Requested Qty: ${data.detail![i].quantity}',
-                                style: TextStyle(
-                                    fontSize:
-                                    AppConfig.textCaption3Size,
-                                    fontWeight:
-                                    AppConfig.headLineWeight),
-                              )
-                                  : const SizedBox(),
-                            ],
-                          ),
-                          (i == data.detail!.length - 1)
-                              ? Container()
-                              : Divider(
-                              color: AppConfig.buttonDeactiveColor
-                                  .withOpacity(0.4)),
-                        ],
-                      ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
           ],
         ),
       ),
@@ -346,7 +346,7 @@ class _VanTransferSendState extends State<VanTransferSend> {
       request = RequestModel.fromJson(resJson);
       if (mounted) {
         setState(
-              () {
+          () {
             _initDone = true;
           },
         );

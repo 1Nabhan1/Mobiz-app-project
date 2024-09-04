@@ -448,6 +448,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       String tax = invoice.data!.totalTax?.toStringAsFixed(2) ?? '0.00';
       String grandTotal =
           invoice.data!.grandTotal?.toStringAsFixed(2) ?? '0.00';
+      String Total = invoice.data!.discounted_amount ?? '0.00';
       String amountInWords =
           "Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal?.toInt() ?? 0).toUpperCase()} ONLY";
       String van = invoice.data!.van![0].name ?? 'N/A';
@@ -584,7 +585,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print totals
-      printAlignedText("Van: $van", "Total: $grandTotal");
+      printAlignedText("Van: $van", "Total: $Total");
       printAlignedText("Salesman: $salesman", "Tax: $tax");
       printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();
@@ -857,6 +858,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   
  
   ''';
+    print('invoice.data!.discounted_amount');
+    print(invoice.data!.discounted_amount);
 
     lastPage.graphics.drawString(
       bottomInvoiceDetails,

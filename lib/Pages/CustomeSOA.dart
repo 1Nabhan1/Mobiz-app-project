@@ -96,7 +96,13 @@ class _SOAState extends State<SOA> {
   //
   //   await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   // }
-
+  void sortDataByDate(List<List<dynamic>> data) {
+    data.sort((a, b) {
+      DateTime dateA = DateTime.parse(a[0]); // Assuming date is in 'yyyy-MM-dd' format
+      DateTime dateB = DateTime.parse(b[0]);
+      return dateA.compareTo(dateB);
+    });
+  }
   Future<void> _generateAndPrintPdf(
       List data, double opening, double closing) async {
     final response = await http.get(Uri.parse(
@@ -519,6 +525,7 @@ class _SOAState extends State<SOA> {
               final data = snapshot.data!.data;
               final opening = snapshot.data!.opening;
               var closing = snapshot.data!.closing;
+              sortDataByDate(data);
 
               return SingleChildScrollView(
                 child: Column(
@@ -1192,7 +1199,7 @@ class _SOAState extends State<SOA> {
               );
             } else if (snapshot.hasError) {
               return Center(
-                child: Text("Something wenty wrong"),
+                child: Text("Something went wrong"),
               );
             }
 

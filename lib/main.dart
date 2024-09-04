@@ -21,6 +21,7 @@ import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanselectproduct.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
+import 'package:mobizapp/printtst.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
@@ -37,6 +38,8 @@ import 'Pages/Schedule_page.dart';
 import 'Pages/Total_sales.dart';
 import 'Pages/VanTransferReceive.dart';
 import 'Pages/VanTransferSend.dart';
+import 'Pages/VanTransfer_option.dart';
+import 'Pages/VanTransfetConfirm.dart';
 import 'Pages/customerorderdetail.dart';
 import 'Pages/customerreturndetails.dart';
 import 'Pages/driver_customer_screen.dart';
@@ -72,7 +75,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
           ),
-          // home: ProductListScreen(),
+          // home: Check(),
           initialRoute: SplashScreen.routeName,
           routes: {
             // '/': (context) => Home(),
@@ -80,6 +83,7 @@ class MyApp extends StatelessWidget {
             Driver_PaymentCollectionScreen.routeName: (context) =>
                 Driver_PaymentCollectionScreen(),
             TotalSales.routeName: (context) => const TotalSales(),
+            VantransferOption.routeName: (context) => const VantransferOption(),
             driver_customer_screen.routeName: (context) =>
                 const driver_customer_screen(),
             HomeScreen.routeName: (context) => const HomeScreen(),
@@ -135,6 +139,7 @@ class MyApp extends StatelessWidget {
                 SelectProductsScreenoff(),
             Vanselectproducts.routeName: (context) => Vanselectproducts(),
             VanTransferSend.routeName: (context) => VanTransferSend(),
+            VanTransferConfirm.routeName: (context) => VanTransferConfirm(),
             VanStockReceive.routeName: (context) => VanStockReceive(),
             ScheduleDriver.routeName: (context) => ScheduleDriver(),
             DriverPage.routeName: (context) => DriverPage(),

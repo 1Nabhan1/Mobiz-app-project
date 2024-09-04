@@ -213,6 +213,7 @@ class ProductType {
     );
   }
 }
+
 class Products {
   final int id;
   final String code;

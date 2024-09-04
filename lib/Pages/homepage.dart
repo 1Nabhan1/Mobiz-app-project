@@ -27,6 +27,7 @@ import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
 import 'Schedule_page.dart';
+import 'VanTransfer_option.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
 import 'offLoadRequest.dart';
@@ -327,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context)
-                              .pushNamed(VanTransfer.routeName);
+                              .pushNamed(VantransferOption.routeName);
                         },
                         child: _iconButtons(
                             image: 'Assets/Images/van stock.png',
@@ -339,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         child: _iconButtons(
                             image: 'Assets/Images/day close.png',
-                            title: 'Day close'),
+                            title: 'Day Close'),
                       )
                     ],
                   )
