@@ -22,6 +22,7 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/printtst.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
@@ -53,6 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Logout failed: $e');
       return false;
     }
+  }
+
+  Future<void> clearSharedPreferences() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 
   @override
@@ -120,8 +126,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),
                   onTap: () {
-                    print(AppState().validate_qtySO);
-                    print(AppState().attendanceState);
+                    print(AppState().routeId);
+                    print(AppState().vanId);
                   },
                 ),
                 ListTile(
@@ -145,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: Text('Log Out'),
                   onTap: () {
                     conformation(context);
+                    clearSharedPreferences();
                   },
                 ),
                 const Divider(),
@@ -545,6 +552,8 @@ class _HomeScreenState extends State<HomeScreen> {
       userData = UserDetailsModel.fromJson(resJson);
       AppState().vanId = userData.data![0].vanId;
       AppState().routeId = userData.data![0].routeId;
+      // print('userData.data![0].vanId');
+      // print(userData.data![0].vanId);
     } else {
       if (mounted) {
         _restrict = true;

@@ -69,7 +69,7 @@ class _DaycloseState extends State<Dayclose> {
 
   Future<Map<String, dynamic>> fetchDayclose() async {
     var apiUrl =
-        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}';
+        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}&user_id=${AppState().userId}';
     final response = await http.get(Uri.parse(apiUrl));
 
     if (response.statusCode == 200) {

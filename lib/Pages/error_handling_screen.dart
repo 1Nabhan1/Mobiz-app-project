@@ -36,7 +36,7 @@ class _ErrorHandlingScreenState extends State<ErrorHandlingScreen> {
 
   void _navigateBasedOnRole() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (AppState().rolId == 2) {
+      if (AppState().rolId == 2 || AppState().rolId == 5) {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
         }

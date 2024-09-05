@@ -556,8 +556,11 @@ class _HomepageDriverState extends State<HomepageDriver> {
     String subUrl = "/api/get_user_detail?user_id=${AppState().userId}";
     dynamic resJson = await api.getDetails(subUrl, AppState().token);
     userData = UserDetailsModel.fromJson(resJson);
+    print('userData.data![0].routeId');
+    print(userData.data![0].routeId);
     // AppState().vanId = userData.data![0].vanId;
     AppState().routeId = userData.data![0].routeId;
+
     // if (resJson['data'] != null) {
     //   userData = UserDetailsModel.fromJson(resJson);
     //   AppState().vanId = userData.data![0].vanId;

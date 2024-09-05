@@ -240,15 +240,17 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
                 ],
               ),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConfig.colorPrimary),
-              onPressed: () => _submitApprovalRequest(data),
-              child: Text(
-                'Approve',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+            (data.status == 3)
+                ? SizedBox.shrink()
+                : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppConfig.colorPrimary),
+                    onPressed: () => _submitApprovalRequest(data),
+                    child: Text(
+                      'Approve',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -264,6 +266,8 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
       // Use the updated quantity from the data.detail list
       'quantity': data.detail!.map((detail) => detail.quantity).toList(),
     };
+    // print('data.detail!.map((detail) => detail.quantity).toList()');
+    // print(data.detail!.map((detail) => detail.quantity).toList());
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -292,7 +296,7 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
     RestDatasource api = RestDatasource();
     stocks = await StockHistory.getStockHistory();
     dynamic resJson = await api.getDetails(
-        '/api/vantransfar.receive.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        '/api/vantransfar.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
         AppState().token);
 
     if (resJson['data'] != null) {

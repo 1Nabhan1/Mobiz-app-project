@@ -119,8 +119,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _whatsappNumberController.text = params['whatsappNumber'] ?? '';
         _trnController.text = params['trn'] ?? '';
         _location = params['location'] ?? 'Click the icon to fetch the data';
-        // _selectPaymentTerms = params['paymentTerms'] ?? '';
-        // _selectedProvinceid = params['provinceId'];
+        _selectPaymentTerms = params['paymentTerms'] ?? '';
+        _selectedProvinceid = params['provinceId'];
         _selectedrouteid = params['routeId'];
         id = params['id'];
         if (params['credit_days'] != null && params['credit_days'] != '') {
