@@ -556,78 +556,86 @@ class _AttendanceState extends State<Attendance> {
                     SizedBox(
                       height: 30,
                     ),
-                    AppState().rolId == 5
-                        ? SizedBox.shrink()
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: _containerText == ''
-                                    ? null
-                                    : _isCheckedIn
-                                        ? null
-                                        : _checkIn,
-                                child: Text(
-                                  'Check in',
-                                  style: TextStyle(
-                                      color: AppConfig.backgroundColor),
-                                ),
-                                style: ButtonStyle(
-                                  shape: WidgetStatePropertyAll(
-                                      RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10))),
-                                  fixedSize: const WidgetStatePropertyAll(
-                                      Size(150, 0)),
-                                  backgroundColor:
-                                      WidgetStateProperty.resolveWith<Color>(
-                                    (Set<WidgetState> states) {
-                                      if (states
-                                          .contains(WidgetState.disabled)) {
-                                        return Colors
-                                            .grey; // Color when button is disabled
-                                      }
-                                      return AppConfig
-                                          .colorPrimary; // Color when button is enabled
-                                    },
-                                  ),
-                                ),
-                              ),
-                              SizedBox(
-                                width: 15,
-                              ),
-                              ElevatedButton(
-                                onPressed: _isCheckedIn ? _checkOut : null,
-                                child: Text(
-                                  'Check out',
-                                  style: TextStyle(
-                                      color: AppConfig.backgroundColor),
-                                ),
-                                style: ButtonStyle(
-                                  fixedSize: const WidgetStatePropertyAll(
-                                      Size(150, 0)),
-                                  shape: WidgetStatePropertyAll(
-                                      RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10))),
-                                  backgroundColor:
-                                      WidgetStateProperty.resolveWith<Color>(
-                                    (Set<WidgetState> states) {
-                                      if (states
-                                          .contains(WidgetState.disabled)) {
-                                        return Colors
-                                            .grey; // Color when button is disabled
-                                      }
-                                      return AppConfig
-                                          .colorPrimary; // Color when button is enabled
-                                    },
-                                  ),
-
-                                  // Set minimum width and height
-                                ),
-                              ),
-                            ],
+                    // AppState().rolId == 5
+                    //     ? SizedBox.shrink()
+                    //     :
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: AppState().rolId == 5
+                              ? _isCheckedIn
+                                  ? null
+                                  : _checkIn
+                              : _containerText == ''
+                                  ? null
+                                  : _isCheckedIn
+                                      ? null
+                                      : _checkIn,
+                          child: Text(
+                            'Check in',
+                            style: TextStyle(color: AppConfig.backgroundColor),
                           ),
+                          style: ButtonStyle(
+                            shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10))),
+                            fixedSize:
+                                const WidgetStatePropertyAll(Size(150, 0)),
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return Colors
+                                      .grey; // Color when button is disabled
+                                }
+                                return AppConfig
+                                    .colorPrimary; // Color when button is enabled
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 15,
+                        ),
+                        ElevatedButton(
+                          onPressed: AppState().rolId == 5
+                              ? _isCheckedIn
+                                  ? _checkOut
+                                  : null
+                              : _containerText1 == ''
+                                  ? null
+                                  : _isCheckedIn
+                                      ? _checkOut
+                                      : null,
+                          // _isCheckedIn ? _checkOut : null,
+                          child: Text(
+                            'Check out',
+                            style: TextStyle(color: AppConfig.backgroundColor),
+                          ),
+                          style: ButtonStyle(
+                            fixedSize:
+                                const WidgetStatePropertyAll(Size(150, 0)),
+                            shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10))),
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return Colors
+                                      .grey; // Color when button is disabled
+                                }
+                                return AppConfig
+                                    .colorPrimary; // Color when button is enabled
+                              },
+                            ),
+
+                            // Set minimum width and height
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               );
