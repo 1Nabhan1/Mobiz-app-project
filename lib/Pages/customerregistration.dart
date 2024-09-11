@@ -120,7 +120,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _trnController.text = params['trn'] ?? '';
         _location = params['location'] ?? 'Click the icon to fetch the data';
         _selectPaymentTerms = params['paymentTerms'];
-        // _selectedProvinceid = params['provinceId'];
+        _selectedProvinceid =
+            params['provinceId'] == 0 ? null : params['provinceId'];
         _selectedrouteid = params['routeId'];
         id = params['id'];
         if (params['credit_days'] != null && params['credit_days'] != '') {
@@ -132,6 +133,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _emailController.text = params['email'] ?? '';
         _isUpdate = true;
       }
+      // print('object');
+      // print(_selectedProvinceid);
     });
     namefocus = FocusNode();
     addressfocus = FocusNode();
@@ -560,6 +563,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                       _selectedProvinceid =
                                           selectedProvince!['id'];
                                     });
+                                    // print(_selectedProvinceid);
                                   },
                                   hint: 'Select Province',
                                   label: 'Province',
@@ -634,7 +638,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     if (value == null || value.isEmpty) {
       return 'Please enter $fieldName';
     }
-    final numberRegex = RegExp(r'^[0-9]+$');
+    final numberRegex = RegExp(r'^\+?[0-9]+$');
     if (!numberRegex.hasMatch(value)) {
       return 'Please enter a valid $fieldName';
     }

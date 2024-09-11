@@ -32,7 +32,7 @@ class _ExpensespageState extends State<Expensespage> {
 
   Future<List<ExpenseDetail>> fetchExpenseDetails(int storeId) async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_expense_detail?store_id=$storeId'));
+        '${RestDatasource().BASE_URL}/api/get_expense_detail?store_id=${storeId}&user_id=${AppState().userId}'));
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);

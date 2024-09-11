@@ -21,7 +21,8 @@ class SalesSelectProductsorderScreen extends StatefulWidget {
 }
 
 // int? id;
-// String? name;
+String? name;
+
 class _SalesSelectProductsorderScreenState
     extends State<SalesSelectProductsorderScreen> {
   List<Products> products = [];
@@ -106,7 +107,7 @@ class _SalesSelectProductsorderScreenState
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      // name = params!['name'];
+      name = params!['name'];
       id = params!['customerId'];
     }
     return WillPopScope(
@@ -119,6 +120,13 @@ class _SalesSelectProductsorderScreenState
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(
+                    context, Customerorderdetail.routeName,
+                    arguments: {'name': name, 'customerId': id});
+              },
+              icon: Icon(Icons.arrow_back)),
           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
           title: const Text(
             'Select Products',
@@ -235,14 +243,14 @@ class _SalesSelectProductsorderScreenState
                     return Card(
                       elevation: 3,
                       child: InkWell(
-                        onTap:  _isDialogOpen
+                        onTap: _isDialogOpen
                             ? null
                             : () {
-                          setState(() {
-                            _isDialogOpen = true;
-                          });
-                          showProductDetailsDialog(context, product);
-                        },
+                                setState(() {
+                                  _isDialogOpen = true;
+                                });
+                                showProductDetailsDialog(context, product);
+                              },
                         child: Container(
                           width: SizeConfig.blockSizeHorizontal * 90,
                           decoration: BoxDecoration(
@@ -670,7 +678,8 @@ class _SalesSelectProductsorderScreenState
           );
         },
       ).then((_) {
-        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+        _isDialogOpen =
+            false; // Reset the flag if the dialog is dismissed by other means
       });
     }
   }

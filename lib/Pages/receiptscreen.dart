@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
@@ -8,6 +9,7 @@ import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:typed_data';
@@ -29,13 +31,53 @@ class ReceiptScreen extends StatefulWidget {
 class _ReceiptScreenState extends State<ReceiptScreen> {
   bool _initDone = false;
   bool _noData = false;
+  bool _connected = false;
+  BluetoothDevice? _selectedDevice;
 
   ReceiptsData receiptsData = ReceiptsData();
-
+  List<BluetoothDevice> _devices = [];
+  BlueThermalPrinter printer = BlueThermalPrinter.instance;
   @override
   void initState() {
     super.initState();
     _getRecentData();
+    _initPrinter();
+  }
+
+  void _initPrinter() async {
+    bool? isConnected = await printer.isConnected;
+    if (isConnected!) {
+      setState(() {
+        _connected = true;
+      });
+    }
+    _getBluetoothDevices();
+  }
+
+  Future<void> _connect() async {
+    if (_selectedDevice != null) {
+      await printer.connect(_selectedDevice!);
+      setState(() {
+        _connected = true;
+      });
+    }
+  }
+
+  void _getBluetoothDevices() async {
+    List<BluetoothDevice> devices = await printer.getBondedDevices();
+    BluetoothDevice? defaultDevice;
+    final prefs = await SharedPreferences.getInstance();
+    final savedDeviceAddress = prefs.getString('selected_device_address');
+    for (BluetoothDevice device in devices) {
+      if (device.address == savedDeviceAddress) {
+        defaultDevice = device;
+        break;
+      }
+    }
+    setState(() {
+      _devices = devices;
+      _selectedDevice = defaultDevice;
+    });
   }
 
   Future<void> generatePdf(Data data) async {
@@ -149,121 +191,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   ],
                 ),
                 pw.SizedBox(height: 10),
-                // pw.Divider(color: PdfColors.grey, height: 1, thickness: .5),
                 pw.SizedBox(height: 10),
-                pw.Table(
-                  border: pw.TableBorder(
-                    top: pw.BorderSide.none,
-                    bottom: pw.BorderSide.none,
-                    left: pw.BorderSide.none,
-                    right: pw.BorderSide.none,
-                    horizontalInside: pw.BorderSide.none,
-                    verticalInside: pw.BorderSide.none,
-                  ),
-                  columnWidths: {
-                    0: pw.FractionColumnWidth(0.1),
-                    1: pw.FractionColumnWidth(0.3),
-                    2: pw.FractionColumnWidth(0.3),
-                    3: pw.FractionColumnWidth(0.3),
-                  },
-                  children: [
-                    pw.TableRow(
-                      decoration: pw.BoxDecoration(
-                          border: pw.Border.symmetric(
-                              horizontal:
-                                  pw.BorderSide(color: PdfColors.grey))),
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8.0),
-                          child: pw.Text(
-                            'SI NO',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                          ),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8.0),
-                          child: pw.Text(
-                            'Reference No',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                          ),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8.0),
-                          child: pw.Text(
-                            'Type',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                          ),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8.0),
-                          child: pw.Text(
-                            'Amount',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // pw.Divider(color: PdfColors.grey, height: 1, thickness: .5),
-                    ...data.sales!.asMap().entries.map((entry) {
-                      final index = entry.key + 1;
-                      final sale = entry.value;
-                      return pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8.0),
-                            child: pw.Text(
-                              '$index',
-                              style: pw.TextStyle(
-                                  fontSize: AppConfig.textCaption3Size),
-                            ),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8.0),
-                            child: pw.Text(
-                              sale.invoiceNo ?? 'N/A',
-                              style: pw.TextStyle(
-                                  fontSize: AppConfig.textCaption3Size),
-                            ),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8.0),
-                            child: pw.Text(
-                              sale.invoiceType ?? 'N/A',
-                              style: pw.TextStyle(
-                                  fontSize: AppConfig.textCaption3Size),
-                            ),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8.0),
-                            child: pw.Text(
-                              sale.amount?.toString() ?? 'N/A',
-                              style: pw.TextStyle(
-                                  fontSize: AppConfig.textCaption3Size),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ],
-                ),
-                pw.SizedBox(height: 20),
-                pw.Text('Van: ${data.vanId}'),
-                pw.SizedBox(width: 20),
-                pw.Text('Salesman: N/A'),
               ],
             ),
+            // Add the table separately to ensure it starts at the current position and paginates properly
+            _buildSalesTable(data.sales!),
+            pw.SizedBox(height: 20),
+            pw.Text('Van: ${data.vanId}'),
+            pw.SizedBox(width: 20),
+            pw.Text('Salesman: N/A'),
           ],
         ),
       );
@@ -275,6 +211,33 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     } else {
       throw Exception('Failed to load store details');
     }
+  }
+
+// Separate function to build the sales table with proper pagination
+  pw.Widget _buildSalesTable(List<Sales> sales) {
+    return pw.Table.fromTextArray(
+      border: pw.TableBorder.all(color: PdfColors.white),
+      headers: ['SI NO', 'Reference No', 'Type', 'Amount'],
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+      headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+      cellAlignment: pw.Alignment.center,
+      columnWidths: {
+        0: pw.FractionColumnWidth(0.1),
+        1: pw.FractionColumnWidth(0.2),
+        2: pw.FractionColumnWidth(0.2),
+        3: pw.FractionColumnWidth(0.2),
+      },
+      data: sales.asMap().entries.map((entry) {
+        final index = entry.key + 1;
+        final sale = entry.value;
+        return [
+          '$index',
+          sale.invoiceNo ?? 'N/A',
+          sale.invoiceType ?? 'N/A',
+          sale.amount?.toString() ?? 'N/A',
+        ];
+      }).toList(),
+    );
   }
 
   @override
@@ -379,7 +342,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
-                      onTap: () => generatePdf(data),
+                      onTap: () => _print(data),
                       child: Icon(Icons.print, color: Colors.blueAccent)),
                   SizedBox(width: 10),
                   GestureDetector(
@@ -484,6 +447,67 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     );
   }
 
+  void _print(Data data) async {
+    if (_connected) {
+      // Print Store Details Header
+      String companyName =
+          'Test Company'; // Example, replace with store name from your data
+      printer.printCustom(companyName, 3, 1); // Large font, center aligned
+      printer.printNewLine();
+
+      printer.printLeftRight('TRN: N/A', 'Receipt Voucher', 1);
+      printer.printNewLine();
+      printer.printCustom('---------------------------', 1, 0);
+
+      // Print Customer Details
+      if (data.customer != null && data.customer!.isNotEmpty) {
+        printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
+        printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
+        printer.printLeftRight('TRN: ${data.customer![0].trn}', '', 1);
+      }
+      printer.printNewLine();
+
+      // Print Sales Details
+      printer.printLeftRight(
+          'Reference:', '${data.sales![0].voucherNo ?? 'N/A'}', 1);
+      printer.printLeftRight('Date:', '${data.sales![0].inDate}', 1);
+      printer.printLeftRight('Due Date:', '${data.sales![0].inDate}', 1);
+      printer.printNewLine();
+
+      // Collection Information
+      printer.printLeftRight('Collection Type:', '${data.collectionType}', 1);
+      printer.printLeftRight('Bank Name:', '${data.bank}', 1);
+      printer.printLeftRight('Cheque No:', '${data.chequeNo}', 1);
+      printer.printLeftRight('Cheque Date:', '${data.chequeDate}', 1);
+      printer.printLeftRight('Amount:', '${data.totalAmount}', 1);
+      printer.printNewLine();
+
+      // Sales List Header
+      printer.printCustom('SI NO   Ref No   Type   Amount', 1, 0);
+      printer.printCustom('---------------------------', 1, 0);
+
+      // Iterate and print each sales item
+      for (var i = 0; i < data.sales!.length; i++) {
+        var sale = data.sales![i];
+        printer.printCustom(
+            '${i + 1}   ${sale.invoiceNo ?? 'N/A'}   ${sale.invoiceType ?? 'N/A'}   ${sale.amount ?? 'N/A'}',
+            1,
+            0);
+      }
+
+      printer.printNewLine();
+      printer.printLeftRight('Van:', '${data.vanId}', 1);
+      printer.printLeftRight('Salesman:', 'N/A', 1);
+      printer.printNewLine();
+
+      printer.paperCut(); // Cut paper after printing
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Printer not connected')),
+      );
+    }
+  }
+
   Future _getRecentData() async {
     RestDatasource api = RestDatasource();
     Map<String, dynamic> response = await api.getDetails(
@@ -495,6 +519,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       setState(() {
         _initDone = true;
       });
+    }
+    if (_selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default device not found')),
+      );
+      return;
+    }
+    if (!_connected) {
+      await _connect();
     } else {
       setState(() {
         _initDone = true;

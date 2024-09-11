@@ -21,7 +21,8 @@ class SalesSelectProductsScreen extends StatefulWidget {
       _SalesSelectProductsScreenState();
 }
 
-// String? name;
+String? name;
+
 class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   List<Products> products = [];
   int currentPage = 1;
@@ -100,6 +101,12 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      name = params!['name'];
+      id = params!['customerId'];
+    }
     return WillPopScope(
       onWillPop: () async {
         // Call your custom function here
@@ -110,6 +117,12 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: GestureDetector(
+              onTap: () {
+                Navigator.pushReplacementNamed(context, SalesScreen.routeName,
+                    arguments: {'name': name, 'customerId': id});
+              },
+              child: Icon(Icons.arrow_back)),
           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
           title: const Text(
             'Select Products',
@@ -226,11 +239,11 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                         onTap: _isDialogOpen
                             ? null
                             : () {
-                          setState(() {
-                            _isDialogOpen = true;
-                          });
-                          showProductDetailsDialog(context, product);
-                        },
+                                setState(() {
+                                  _isDialogOpen = true;
+                                });
+                                showProductDetailsDialog(context, product);
+                              },
                         child: Container(
                           width: SizeConfig.blockSizeHorizontal * 90,
                           decoration: BoxDecoration(
@@ -599,7 +612,8 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
           );
         },
       ).then((_) {
-        _isDialogOpen = false; // Reset the flag if the dialog is dismissed by other means
+        _isDialogOpen =
+            false; // Reset the flag if the dialog is dismissed by other means
       });
     }
   }
