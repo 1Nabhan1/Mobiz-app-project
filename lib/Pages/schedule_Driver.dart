@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:horizontal_week_calendar/horizontal_week_calendar.dart';
+import 'package:table_calendar/table_calendar.dart'; // Updated import
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,10 +30,12 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
   CustomerData customer = CustomerData();
   bool _initDone = false;
   bool _nodata = false;
+  late CalendarFormat _calendarFormat;
 
   @override
   void initState() {
     super.initState();
+    _calendarFormat = CalendarFormat.week;
     getCustomerDetails();
   }
 
@@ -91,14 +93,14 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                       data: Theme.of(context).copyWith(
                         colorScheme: ColorScheme.light(
                           primary:
-                              AppConfig.colorPrimary, // header background color
+                          AppConfig.colorPrimary, // header background color
                           onPrimary: Colors.white, // header text color
                           onSurface: AppConfig.colorPrimary, // body text color
                         ),
                         textButtonTheme: TextButtonThemeData(
                           style: TextButton.styleFrom(
                             foregroundColor:
-                                Colors.deepPurple, // button text color
+                            Colors.deepPurple, // button text color
                           ),
                         ),
                       ),
@@ -113,89 +115,101 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                   });
                 }
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8.0,
+              child: TableCalendar(
+                firstDay: DateTime(2023, 12, 31),
+                lastDay: DateTime(2028, 1, 31),
+                focusedDay: selectedDate,
+                selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    selectedDate = selectedDay;
+                    getCustomerDetails();
+                  });
+                },
+                calendarFormat: _calendarFormat,
+                availableCalendarFormats: const {CalendarFormat.week: 'Week'},
+                calendarStyle: CalendarStyle(
+                  selectedDecoration: BoxDecoration(
+                    color: AppConfig.colorPrimary,
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.deepPurple.withOpacity(.3),
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  selectedTextStyle: const TextStyle(color: Colors.white),
+                  todayTextStyle: const TextStyle(color: Colors.white),
+                  outsideDaysVisible: false,
                 ),
-                child: HorizontalWeekCalendar(
-                  key:
-                      ValueKey(selectedDate), // Use ValueKey to trigger rebuild
-                  minDate: DateTime(2023, 12, 31),
-                  maxDate: DateTime(2028, 1, 31),
-                  initialDate: selectedDate,
-                  onDateChange: (date) {
-                    setState(() {
-                      selectedDate = date;
-                      getCustomerDetails();
-                    });
-                  },
-                  showTopNavbar: false,
-                  monthFormat: "MMMM yyyy",
-                  showNavigationButtons: true,
-                  weekStartFrom: WeekStartFrom.Monday,
-                  borderRadius: BorderRadius.circular(7),
-                  activeBackgroundColor: AppConfig.colorPrimary,
-                  activeTextColor: Colors.white,
-                  inactiveBackgroundColor: Colors.deepPurple.withOpacity(.3),
-                  inactiveTextColor: Colors.white,
-                  disabledTextColor: Colors.grey,
-                  disabledBackgroundColor: Colors.grey.withOpacity(.3),
-                  activeNavigatorColor: Colors.deepPurple,
-                  inactiveNavigatorColor: Colors.grey,
-                  monthColor: AppConfig.colorPrimary,
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: TextStyle(
+                    color: AppConfig.colorPrimary,
+                  ),
+                  leftChevronIcon: const Icon(
+                    Icons.chevron_left,
+                    color: Colors.deepPurple,
+                  ),
+                  rightChevronIcon: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.deepPurple,
+                  ),
                 ),
               ),
             ),
             (_initDone && !_nodata)
                 ? SizedBox(
-                    height: SizeConfig.blockSizeVertical * 78,
-                    child: ListView.separated(
-                      separatorBuilder: (BuildContext context, int index) =>
-                          CommonWidgets.verticalSpace(1),
-                      itemCount: customer.data!.length!,
-                      shrinkWrap: true,
-                      itemBuilder: (context, index) =>
-                          _customersCard(customer.data![index]),
-                    ),
-                  )
+              height: SizeConfig.blockSizeVertical * 78,
+              child: ListView.separated(
+                separatorBuilder: (BuildContext context, int index) =>
+                    CommonWidgets.verticalSpace(1),
+                itemCount: customer.data!.length!,
+                shrinkWrap: true,
+                itemBuilder: (context, index) =>
+                    _customersCard(customer.data![index]),
+              ),
+            )
                 : (_nodata && _initDone)
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                            CommonWidgets.verticalSpace(3),
-                            const Center(
-                              child: Text('No Data'),
-                            ),
-                          ])
-                    : Shimmer.fromColors(
-                        baseColor:
-                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                        highlightColor: AppConfig.backButtonColor,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                            ],
-                          ),
-                        ),
-                      ),
+                ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CommonWidgets.verticalSpace(3),
+                  const Center(
+                    child: Text('No Data'),
+                  ),
+                ])
+                : Shimmer.fromColors(
+              baseColor:
+              AppConfig.buttonDeactiveColor.withOpacity(0.1),
+              highlightColor: AppConfig.backButtonColor,
+              child: Center(
+                child: Column(
+                  children: [
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -206,7 +220,7 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
     void _openGoogleMaps(String data) async {
       if (data.isEmpty) {
         Fluttertoast.showToast(
-          msg: "Location are not available",
+          msg: "Location is not available",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.CENTER,
           timeInSecForIosWeb: 1,
@@ -230,7 +244,7 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
 
       if (coordinates.isEmpty) {
         Fluttertoast.showToast(
-          msg: "Location are not available",
+          msg: "Location is not available",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.CENTER,
           timeInSecForIosWeb: 1,
@@ -297,7 +311,7 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                       image: const NetworkImage(
                           'https://www.vecteezy.com/vector-art/5337799-icon-image-not-found-vector'),
                       placeholder:
-                          const AssetImage('Assets/Images/no_image.jpg'),
+                      const AssetImage('Assets/Images/no_image.jpg'),
                       imageErrorBuilder: (context, error, stackTrace) {
                         return Image.asset('Assets/Images/no_image.jpg',
                             fit: BoxFit.fitWidth);
@@ -325,19 +339,16 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                         SizedBox(
                           width: SizeConfig.blockSizeHorizontal * 60,
                           child: Text(
-                            'Address:${data.address ?? ''}',
+                            'Address: ${data.address ?? ''}',
                             style:
-                                TextStyle(fontSize: AppConfig.textCaption3Size),
+                            TextStyle(fontSize: AppConfig.textCaption3Size),
                           ),
                         ),
                         const Spacer(),
                         GestureDetector(
                           onTap: () {
                             _openGoogleMaps(data.location ?? '');
-                            // print('gggggggggggggggggggggggggggggg');
-                            // print(AppState().userId);
                           },
-                          // _openMapScreen,
                           child: Image.asset(
                             'Assets/Images/vecteezy_google-maps-icon_16716478.png',
                             fit: BoxFit.cover,
@@ -351,9 +362,9 @@ class _ScheduleDriverState extends State<ScheduleDriver> {
                       child: Row(
                         children: [
                           Text(
-                            'Contact:${data.contactNumber}',
+                            'Contact: ${data.contactNumber}',
                             style:
-                                TextStyle(fontSize: AppConfig.textCaption3Size),
+                            TextStyle(fontSize: AppConfig.textCaption3Size),
                           ),
                           Spacer(),
                           Text(data.visit ?? '')
