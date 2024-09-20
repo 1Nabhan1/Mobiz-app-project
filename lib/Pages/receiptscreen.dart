@@ -471,103 +471,143 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       //     print('Failed to load image: ${response.statusCode}');
       //   }
       // }
-      void printAlignedText(String leftText, String rightText) {
-        const int maxLineLength =
-            68;
-        int leftTextLength = leftText.length;
-        int rightTextLength = rightText.length;
+      final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
+      if (response.statusCode == 200) {
+        // Parse JSON response into StoreDetail object
+        StoreDetail storeDetail =
+        StoreDetail.fromJson(json.decode(response.body));
+        final String api =
+            '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
+        final logoResponse = await http.get(Uri.parse(api));
+        if (logoResponse.statusCode != 200) {
+          throw Exception('Failed to load logo image');
+        }
 
-        // Calculate padding to ensure rightText is right-aligned
-        int spaceLength = maxLineLength - (leftTextLength + rightTextLength);
-        String spaces = ' ' * spaceLength;
+        void printAlignedText(String leftText, String rightText) {
+          const int maxLineLength =
+          68;
+          int leftTextLength = leftText.length;
+          int rightTextLength = rightText.length;
 
-        printer.printCustom(
-            '$leftText$spaces$rightText', 1, 0); // Print with left-aligned text
-      }
+          // Calculate padding to ensure rightText is right-aligned
+          int spaceLength = maxLineLength - (leftTextLength + rightTextLength);
+          String spaces = ' ' * spaceLength;
 
-      printer.printNewLine();
-      String companyName =
-          'Test Company'; // Example, replace with store name from your data
-      printer.printCustom(companyName, 3, 1); // Large font, center aligned
-      printer.printNewLine();
+          printer.printCustom(
+              '$leftText$spaces$rightText', 1,
+              0); // Print with left-aligned text
+        }
+        String logoUrl =
+            'http://68.183.92.8:3697/uploads/store/${storeDetail.logos}';
+        if (logoUrl.isNotEmpty) {
+          final response = await http.get(Uri.parse(logoUrl));
+          if (response.statusCode == 200) {
+            Uint8List imageBytes = response.bodyBytes;
 
-      printer.printLeftRight('TRN: N/A', 'Receipt Voucher', 1);
-      printer.printNewLine();
-      printer.printCustom("-" * 72, 1, 1); // Centered
+            // Decode image and convert to monochrome bitmap if needed
+            img.Image originalImage = img.decodeImage(imageBytes)!;
+            img.Image monoLogo = img.grayscale(originalImage);
 
-      // Print Customer Details
-      if (data.customer != null && data.customer!.isNotEmpty) {
-        printAlignedText('Customer: ${data.customer![0].name}',
-            'Reference: ${data.sales![0].voucherNo ?? 'N/A'}');
-        // printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
-        printAlignedText('Market:  ${data.customer![0].address}',
-            'Date: ${data.sales![0].inDate}');
-        // printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
-        printAlignedText('TRN: ${data.customer![0].trn}',
-            'Due Date: ${data.sales![0].inDate}');
-        // printer.printLeftRight('TRN: ${data.customer![0].trn}', '', 1);
-      }
-      printer.printNewLine();
-      printer.printCustom("-" * 72, 1, 1); // Centered
+            // Encode the image to the required format (e.g., PNG)
+            Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
 
-      // Print Sales Details
-      // printer.printLeftRight(
-      //     'Reference:', '${data.sales![0].voucherNo ?? 'N/A'}', 1);
-      // printer.printLeftRight('Date:', '${data.sales![0].inDate}', 1);
-      // printer.printLeftRight('Due Date:', '${data.sales![0].inDate}', 1);
-      // printer.printNewLine();
+            // Print the logo image
+            printer.printImageBytes(logoBytes);
+          } else {
+            print('Failed to load image: ${response.statusCode}');
+          }
+        }
 
-      // Collection Information
-      printAlignedText('Collection Type: ${data.collectionType}', ' ');
-      printAlignedText('Bank Name: ${data.bank}', ' ');
-      printAlignedText('Cheque No: ${data.chequeNo}', '');
-      printAlignedText('Cheque Date: ${data.chequeDate}', ' ');
-      printAlignedText('Amount: ${data.totalAmount}', ' ');
-      // printer.printLeftRight('Collection Type:', '${data.collectionType}', 1);
-      // printer.printLeftRight('Bank Name:', '${data.bank}', 1);
-      // printer.printLeftRight('Cheque No:', '${data.chequeNo}', 1);
-      // printer.printLeftRight('Cheque Date:', '${data.chequeDate}', 1);
-      // printer.printLeftRight('Amount:', '${data.totalAmount}', 1);
-      printer.printNewLine();
-      printer.printCustom("-" * 72, 1, 1);
-      const int columnWidth0 = 4;
-      const int columnWidth1 = 14; // S.No
-      const int columnWidth2 = 20; // Product Description
-      const int columnWidth3 = 14; // Unit
-      const int columnWidth4 = 5;
-      String line;
-      String headers = "${''.padRight(columnWidth0)}"
-          "${'SI.NO'.padRight(columnWidth1)}"
-          " ${'Reference NO'.padRight(columnWidth2)}"
-          " ${'Type'.padRight(columnWidth3)}"
-          "${'Amount'.padRight(columnWidth4)}";
-      printer.printCustom(headers, 1, 0);
-      printer.printCustom("-" * 72, 1, 1);
-      // Sales List Header
-      // printer.printCustom('SI NO   Reference No   Type   Amount', 1, 0);
-      // printer.printCustom('---------------------------', 1, 0);
 
-      // Iterate and print each sales item
-      for (var i = 0; i < data.sales!.length; i++) {
-        var sale = data.sales![i];
-        line=
+        printer.printNewLine();
+        String companyName =
+            '${storeDetail.name}'; // Example, replace with store name from your data
+        printer.printCustom(companyName, 3, 1); // Large font, center aligned
+        printer.printNewLine();
+
+        printer.printCustom("TRN: ${storeDetail.trn ?? "N/A"}", 1, 1);
+        printer.printCustom("RECEIPT VOUCHER", 3, 1);
+        printer.printNewLine();
+        printer.printCustom("-" * 72, 1, 1); // Centered
+
+        // Print Customer Details
+        if (data.customer != null && data.customer!.isNotEmpty) {
+          printAlignedText('Customer: ${data.customer![0].name}',
+              'Reference: ${data.sales![0].voucherNo ?? 'N/A'}');
+          // printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
+          printAlignedText('Market:  ${data.customer![0].address}',
+              'Date: ${data.sales![0].inDate}');
+          // printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
+          printAlignedText('TRN: ${data.customer![0].trn}',
+              'Due Date: ${data.sales![0].inDate}');
+          // printer.printLeftRight('TRN: ${data.customer![0].trn}', '', 1);
+        }
+        printer.printNewLine();
+        printer.printCustom("-" * 72, 1, 1); // Centered
+
+        // Print Sales Details
+        // printer.printLeftRight(
+        //     'Reference:', '${data.sales![0].voucherNo ?? 'N/A'}', 1);
+        // printer.printLeftRight('Date:', '${data.sales![0].inDate}', 1);
+        // printer.printLeftRight('Due Date:', '${data.sales![0].inDate}', 1);
+        // printer.printNewLine();
+
+        // Collection Information
+        printAlignedText('Collection Type: ${data.collectionType}', ' ');
+        printAlignedText('Bank Name: ${data.bank}', ' ');
+        printAlignedText('Cheque No: ${data.chequeNo}', '');
+        printAlignedText('Cheque Date: ${data.chequeDate}', ' ');
+        printAlignedText('Amount: ${data.totalAmount}', ' ');
+        // printer.printLeftRight('Collection Type:', '${data.collectionType}', 1);
+        // printer.printLeftRight('Bank Name:', '${data.bank}', 1);
+        // printer.printLeftRight('Cheque No:', '${data.chequeNo}', 1);
+        // printer.printLeftRight('Cheque Date:', '${data.chequeDate}', 1);
+        // printer.printLeftRight('Amount:', '${data.totalAmount}', 1);
+        printer.printNewLine();
+        printer.printCustom("-" * 72, 1, 1);
+        const int columnWidth0 = 4;
+        const int columnWidth1 = 14; // S.No
+        const int columnWidth2 = 20; // Product Description
+        const int columnWidth3 = 14; // Unit
+        const int columnWidth4 = 5;
+        String line;
+        String headers = "${''.padRight(columnWidth0)}"
+            "${'SI.NO'.padRight(columnWidth1)}"
+            " ${'Reference NO'.padRight(columnWidth2)}"
+            " ${'Type'.padRight(columnWidth3)}"
+            "${'Amount'.padRight(columnWidth4)}";
+        printer.printCustom(headers, 1, 0);
+        printer.printCustom("-" * 72, 1, 1);
+        // Sales List Header
+        // printer.printCustom('SI NO   Reference No   Type   Amount', 1, 0);
+        // printer.printCustom('---------------------------', 1, 0);
+
+        // Iterate and print each sales item
+        for (var i = 0; i < data.sales!.length; i++) {
+          var sale = data.sales![i];
+          line =
           "${('').padRight(columnWidth0)}"
-            "${(i + 1).toString().padRight(columnWidth1)}"
-            " ${sale.invoiceNo?.padRight(columnWidth2) ?? 'N/A'.padRight(columnWidth2)}"
-            "${sale.invoiceType?.padRight(columnWidth3) ?? 'N/A'.padRight(columnWidth3)}"
-            "${sale.amount?.padRight(columnWidth4) ?? 'N/A'.padRight(columnWidth4)}";
-        printer.printCustom(line, 1, 0);
-      }
+              "${(i + 1).toString().padRight(columnWidth1)}"
+              " ${sale.invoiceNo?.padRight(columnWidth2) ??
+              'N/A'.padRight(columnWidth2)}"
+              "${sale.invoiceType?.padRight(columnWidth3) ??
+              'N/A'.padRight(columnWidth3)}"
+              "${sale.amount?.padRight(columnWidth4) ??
+              'N/A'.padRight(columnWidth4)}";
+          printer.printCustom(line, 1, 0);
+        }
 
-      printer.printNewLine();
-      printer.printCustom("-" * 72, 1, 1);
-      printAlignedText("Van: ${data.vanId}", "");
-      printAlignedText("Salesman: N/A", "");
-      // printer.printLeftRight('Van:', '${data.vanId}', 1);
-      // printer.printLeftRight('Salesman:', 'N/A', 1);
-      printer.printNewLine();
+        printer.printNewLine();
+        printer.printCustom("-" * 72, 1, 1);
+        printAlignedText("Van: ${data.vanId}", "");
+        printAlignedText("Salesman: N/A", "");
+        // printer.printLeftRight('Van:', '${data.vanId}', 1);
+        // printer.printLeftRight('Salesman:', 'N/A', 1);
+        printer.printNewLine();
 
-      printer.paperCut(); // Cut paper after printing
+        printer.paperCut();
+      }// Cut paper after printing
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Printer not connected')),

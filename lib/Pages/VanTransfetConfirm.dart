@@ -296,10 +296,12 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
     RestDatasource api = RestDatasource();
     stocks = await StockHistory.getStockHistory();
     dynamic resJson = await api.getDetails(
-        '/api/vantransfar.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        '/api/vantransfar.receive.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
         AppState().token);
-
+    // print(AppState().storeId);
+    // print(AppState().vanId);
     if (resJson['data'] != null) {
+
       request = RequestModel.fromJson(resJson);
       if (mounted) {
         setState(
