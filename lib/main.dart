@@ -23,6 +23,7 @@ import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/printtst.dart';
 import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
 import 'package:mobizapp/selectproduct.dart';
@@ -75,7 +76,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
           ),
-          // home: Check(),
+          // home: PlaceSearchApp(),
           initialRoute: SplashScreen.routeName,
           routes: {
             // '/': (context) => Home(),

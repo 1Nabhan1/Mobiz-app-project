@@ -90,10 +90,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (value.isNotEmpty) {
         double amount = double.parse(value);
         String invoiceType = invoices[index].invoiceType.toLowerCase();
-        if (invoiceType == "sales") {
+        if (invoiceType == "sales" || invoiceType == "balance") {
           return amount;
         } else if (invoiceType == "salesreturn" ||
-            invoiceType == "payment_voucher") {
+            invoiceType == "payment_voucher" ||
+            invoiceType == "balance_minus") {
           return -amount;
         }
       }
@@ -110,10 +111,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (value.isNotEmpty) {
         double amount = double.parse(value);
         String invoiceType = invoices[index].invoiceType.toLowerCase();
-        if (invoiceType == "sales") {
+        if (invoiceType == "sales" || invoiceType == "balance") {
           return -amount;
         } else if (invoiceType == "salesreturn" ||
-            invoiceType == "payment_voucher") {
+            invoiceType == "payment_voucher" ||
+            invoiceType == "balance_minus") {
           return amount;
         }
       }

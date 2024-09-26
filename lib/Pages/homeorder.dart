@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/main.dart';
 import 'package:number_to_words/number_to_words.dart';
 import 'package:printing/printing.dart';
 import 'package:shimmer/shimmer.dart';
@@ -228,11 +229,29 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
                   message: data.invoiceNo!,
                   child: SizedBox(
                     width: SizeConfig.blockSizeHorizontal * 70,
-                    child: Text(
-                      '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
-                      style: TextStyle(
-                        fontSize: AppConfig.textCaption3Size,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                          ),
+                        ),
+                        SizedBox(width:40),
+                        Text(
+                          data.status == 0 ? "Canceled"
+                              : data.status == 1 ? "Pending"
+                              : "Confirmed",
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                            fontWeight: AppConfig.headLineWeight,
+                            color: data.status == 0 ? Colors.red
+                                : data.status == 1 ? Colors.orange
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -415,7 +434,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
   Future<void> _getProducts() async {
     RestDatasource api = RestDatasource();
     dynamic resJson = await api.getDetails(
-        '/api/vansales_order.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
+        '/api/vansales_order.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}',
         AppState().token); //
     if (resJson['data'] != null) {
       products = VanSaleProducts.fromJson(resJson);

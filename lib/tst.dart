@@ -1,240 +1,142 @@
-// Future<void> generatePdf(Data data) async {
-//   final response = await http.get(Uri.parse(
-//       '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
-//   if (response.statusCode == 200) {
-//     // Parse JSON response into StoreDetail object
-//     StoreDetail storeDetail =
-//     StoreDetail.fromJson(json.decode(response.body));
-//
-//     final pdf = pw.Document();
-//     final String api =
-//         '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
-//     final logoResponse = await http.get(Uri.parse(api));
-//     if (logoResponse.statusCode != 200) {
-//       throw Exception('Failed to load logo image');
-//     }
-//     final Uint8List logoBytes = logoResponse.bodyBytes;
-//
-//     pdf.addPage(
-//       pw.MultiPage(
-//         build: (pw.Context context) => [
-//           pw.Column(
-//             crossAxisAlignment: pw.CrossAxisAlignment.start,
-//             children: [
-//               pw.Center(
-//                 child: pw.Column(
-//                   children: [
-//                     pw.Image(
-//                       pw.MemoryImage(logoBytes),
-//                       height: 100,
-//                       width: 100,
-//                       fit: pw.BoxFit.cover,
-//                     ),
-//                     pw.SizedBox(height: 10),
-//                     pw.Text(
-//                       storeDetail.name,
-//                       style: pw.TextStyle(
-//                         fontSize: 18,
-//                         fontWeight: pw.FontWeight.bold,
-//                       ),
-//                     ),
-//                     pw.SizedBox(height: 3),
-//                     pw.Text('${storeDetail.address ?? 'N/A'}'),
-//                     pw.SizedBox(height: 3),
-//                     pw.Text('TRN: ${storeDetail.trn ?? 'N/A'}'),
-//                     pw.SizedBox(height: 3),
-//                     pw.Text(
-//                       'RECEIPT VOUCHER',
-//                       style: pw.TextStyle(
-//                         fontSize: 16,
-//                         fontWeight: pw.FontWeight.bold,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               pw.SizedBox(height: 20),
-//               pw.Divider(color: PdfColors.grey, height: 1, thickness: 1),
-//               pw.SizedBox(height: 20),
-//               pw.Row(
-//                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   pw.Column(
-//                     crossAxisAlignment: pw.CrossAxisAlignment.start,
-//                     children: [
-//                       pw.Text('Customer:',
-//                           style:
-//                           pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-//                       pw.Text(
-//                         (data.customer!.isNotEmpty)
-//                             ? data.customer![0].code ?? ''
-//                             : '',
-//                         style: pw.TextStyle(
-//                           fontSize: AppConfig.textCaption3Size,
-//                           fontWeight: pw.FontWeight.bold,
-//                         ),
-//                       ),
-//                       pw.SizedBox(height: 3),
-//                       pw.Text('${data.customer![0].name}'),
-//                       pw.SizedBox(height: 3),
-//                       pw.Text('Market: ${data.customer![0].address}'),
-//                       pw.SizedBox(height: 3),
-//                       pw.Text('TRN: ${data.customer![0].trn}'),
-//                     ],
-//                   ),
-//                   pw.Column(
-//                     crossAxisAlignment: pw.CrossAxisAlignment.start,
-//                     children: [
-//                       pw.Text(
-//                         'Reference: ${data.sales![0].voucherNo ?? 'N/A'}',
-//                         style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-//                       ),
-//                       pw.Text('Date: ${data.sales![0].inDate}'),
-//                       pw.Text('Due Date: ${data.sales![0].inDate}'),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//               pw.SizedBox(height: 10),
-//               pw.Divider(color: PdfColors.grey, height: 1, thickness: .5),
-//               pw.SizedBox(height: 10),
-//               pw.Column(
-//                 crossAxisAlignment: pw.CrossAxisAlignment.start,
-//                 children: [
-//                   pw.Text('Collection Type: ${data.collectionType}'),
-//                   pw.Text('Bank Name: ${data.bank}'),
-//                   pw.Text('Cheque No: ${data.chequeNo}'),
-//                   pw.Text('Cheque Date: ${data.chequeDate}'),
-//                   pw.Text('Amount: ${data.totalAmount}'),
-//                 ],
-//               ),
-//               pw.SizedBox(height: 10),
-//               pw.SizedBox(height: 10),
-//               // Use Flexible, Wrap, or other suitable widget to handle table pagination correctly
-//               pw.Flexible(
-//                 child: pw.Table(
-//                   border: pw.TableBorder(
-//                     top: pw.BorderSide.none,
-//                     bottom: pw.BorderSide.none,
-//                     left: pw.BorderSide.none,
-//                     right: pw.BorderSide.none,
-//                     horizontalInside: pw.BorderSide.none,
-//                     verticalInside: pw.BorderSide.none,
-//                   ),
-//                   columnWidths: {
-//                     0: pw.FractionColumnWidth(0.1),
-//                     1: pw.FractionColumnWidth(0.3),
-//                     2: pw.FractionColumnWidth(0.3),
-//                     3: pw.FractionColumnWidth(0.3),
-//                   },
-//                   children: [
-//                     pw.TableRow(
-//                       decoration: pw.BoxDecoration(
-//                           border: pw.Border.symmetric(
-//                               horizontal:
-//                               pw.BorderSide(color: PdfColors.grey))),
-//                       children: [
-//                         pw.Padding(
-//                           padding: const pw.EdgeInsets.all(8.0),
-//                           child: pw.Text(
-//                             'SI NO',
-//                             style: pw.TextStyle(
-//                               fontWeight: pw.FontWeight.bold,
-//                               fontSize: AppConfig.textCaption3Size,
-//                             ),
-//                           ),
-//                         ),
-//                         pw.Padding(
-//                           padding: const pw.EdgeInsets.all(8.0),
-//                           child: pw.Text(
-//                             'Reference No',
-//                             style: pw.TextStyle(
-//                               fontWeight: pw.FontWeight.bold,
-//                               fontSize: AppConfig.textCaption3Size,
-//                             ),
-//                           ),
-//                         ),
-//                         pw.Padding(
-//                           padding: const pw.EdgeInsets.all(8.0),
-//                           child: pw.Text(
-//                             'Type',
-//                             style: pw.TextStyle(
-//                               fontWeight: pw.FontWeight.bold,
-//                               fontSize: AppConfig.textCaption3Size,
-//                             ),
-//                           ),
-//                         ),
-//                         pw.Padding(
-//                           padding: const pw.EdgeInsets.all(8.0),
-//                           child: pw.Text(
-//                             'Amount',
-//                             style: pw.TextStyle(
-//                               fontWeight: pw.FontWeight.bold,
-//                               fontSize: AppConfig.textCaption3Size,
-//                             ),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                     // pw.Divider(color: PdfColors.grey, height: 1, thickness: .5),
-//                     ...data.sales!.asMap().entries.map((entry) {
-//                       final index = entry.key + 1;
-//                       final sale = entry.value;
-//                       return pw.TableRow(
-//                         children: [
-//                           pw.Padding(
-//                             padding: const pw.EdgeInsets.all(8.0),
-//                             child: pw.Text(
-//                               '$index',
-//                               style: pw.TextStyle(
-//                                   fontSize: AppConfig.textCaption3Size),
-//                             ),
-//                           ),
-//                           pw.Padding(
-//                             padding: const pw.EdgeInsets.all(8.0),
-//                             child: pw.Text(
-//                               sale.invoiceNo ?? 'N/A',
-//                               style: pw.TextStyle(
-//                                   fontSize: AppConfig.textCaption3Size),
-//                             ),
-//                           ),
-//                           pw.Padding(
-//                             padding: const pw.EdgeInsets.all(8.0),
-//                             child: pw.Text(
-//                               sale.invoiceType ?? 'N/A',
-//                               style: pw.TextStyle(
-//                                   fontSize: AppConfig.textCaption3Size),
-//                             ),
-//                           ),
-//                           pw.Padding(
-//                             padding: const pw.EdgeInsets.all(8.0),
-//                             child: pw.Text(
-//                               sale.amount?.toString() ?? 'N/A',
-//                               style: pw.TextStyle(
-//                                   fontSize: AppConfig.textCaption3Size),
-//                             ),
-//                           ),
-//                         ],
-//                       );
-//                     }).toList(),
-//                   ],
-//                 ),
-//               ),
-//               pw.SizedBox(height: 20),
-//               pw.Text('Van: ${data.vanId}'),
-//               pw.SizedBox(width: 20),
-//               pw.Text('Salesman: N/A'),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//
-//     final output = await getTemporaryDirectory();
-//     final file = File('${output.path}/receipt_report.pdf');
-//     await file.writeAsBytes(await pdf.save());
-//     await OpenFile.open(file.path);
-//   } else {
-//     throw Exception('Failed to load store details');
-//   }
-// }
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() {
+  runApp(PlaceSearchApp());
+}
+
+class PlaceSearchApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: PlaceSearchPage(),
+    );
+  }
+}
+
+class PlaceSearchPage extends StatefulWidget {
+  @override
+  _PlaceSearchPageState createState() => _PlaceSearchPageState();
+}
+
+class _PlaceSearchPageState extends State<PlaceSearchPage> {
+  TextEditingController _placeController = TextEditingController();
+  String latitude = '';
+  String longitude = '';
+  bool isLoading = false;
+
+  // Function to fetch latitude and longitude based on a place name
+  Future<void> fetchLatLong(String place) async {
+    final String apiKey = 'AIzaSyD3t6H9yoFcwZV9a9_uQsKy7WAJjViZGrs'; // Replace with your Google API Key
+    final String url =
+        'https://maps.googleapis.com/maps/api/geocode/json?address=$place&key=$apiKey';
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['status'] == 'OK') {
+          final lat = data['results'][0]['geometry']['location']['lat'];
+          final lng = data['results'][0]['geometry']['location']['lng'];
+
+          setState(() {
+            latitude = lat.toString();
+            longitude = lng.toString();
+          });
+        } else {
+          print('Error: ${data['status']}');
+          setState(() {
+            latitude = 'Not Found';
+            longitude = 'Not Found';
+          });
+        }
+      } else {
+        print('Failed to get response from API');
+        setState(() {
+          latitude = 'Error';
+          longitude = 'Error';
+        });
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+      setState(() {
+        latitude = 'Error';
+        longitude = 'Error';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Search Location'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Text field for place input
+            TextField(
+              controller: _placeController,
+              decoration: InputDecoration(
+                labelText: 'Enter place',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16.0),
+
+            // Search button
+            ElevatedButton(
+              onPressed: () {
+                if (_placeController.text.isNotEmpty) {
+                  fetchLatLong(_placeController.text);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Please enter a place name')),
+                  );
+                }
+              },
+              child: isLoading
+                  ? CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )
+                  : Text('Search'),
+            ),
+            SizedBox(height: 20),
+
+            // Display latitude and longitude
+            if (latitude.isNotEmpty && longitude.isNotEmpty)
+              Column(
+                children: [
+                  Text(
+                    'Latitude: $latitude',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Longitude: $longitude',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
