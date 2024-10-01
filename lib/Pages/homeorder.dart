@@ -240,7 +240,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
                         ),
                         SizedBox(width:40),
                         Text(
-                          data.status == 0 ? "Canceled"
+                          data.status == 0 ? "Cancelled"
                               : data.status == 1 ? "Pending"
                               : "Confirmed",
                           style: TextStyle(

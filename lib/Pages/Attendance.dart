@@ -41,8 +41,8 @@ class _AttendanceState extends State<Attendance> {
     super.initState();
     fetchData();
 
-    futureApiResponse =
-        fetchCheckInOutData(AppState().vanId!, AppState().storeId!);
+    futureApiResponse = fetchCheckInOutData(
+        AppState().vanId!, AppState().storeId!, AppState().userId!);
     _timer = Timer.periodic(Duration(minutes: 1), (timer) {
       setState(() {
         _currentTime = DateTime.now();
@@ -168,7 +168,7 @@ class _AttendanceState extends State<Attendance> {
                   context: context,
                   builder: (context) {
                     final double minOdometer = double.parse(
-                        snapshot.data!.data.lastOdometerOut ?? '0');
+                        snapshot.data!.data.lastOdometerOut?.toString() ?? '0');
                     print(minOdometer);
                     return AlertDialog(
                       title: Text('Enter Text'),
@@ -353,31 +353,32 @@ class _AttendanceState extends State<Attendance> {
                               ],
                             ),
                           ),
-                    AppState().rolId == 5
-                        ? SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.only(left: 30.0, top: 12),
-                            child: Row(
-                              children: [
-                                Text(
-                                  "Last Odometer Reading ",
-                                  style: TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  "${snapshot.data!.data.lastOdometerIn} | ${snapshot.data!.data.lastOdometerOut}",
-                                  style: TextStyle(
-                                      color: Colors.grey,
-                                      fontWeight: FontWeight.w500),
-                                )
-                              ],
-                            ),
-                          ),
+                    // AppState().rolId == 5
+                    //     ? SizedBox.shrink()
+                    //     :
                     Padding(
                       padding: const EdgeInsets.only(left: 30.0, top: 12),
-                      child: Text(
-                          "Scheduled ${snapshot.data!.data.sheduled} | Visited ${snapshot.data!.data.vistCustomer} | Not Visited ${snapshot.data!.data.nonVistCustomer} | Pending ${snapshot.data!.data.pending}",
-                          style: TextStyle(fontWeight: FontWeight.w500)),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Last Odometer Reading ",
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            "${snapshot.data!.data.lastOdometerIn} | ${snapshot.data!.data.lastOdometerOut}",
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500),
+                          )
+                        ],
+                      ),
                     ),
+                    // Padding(
+                    //   padding: const EdgeInsets.only(left: 30.0, top: 12),
+                    //   child: Text(
+                    //       "Scheduled ${snapshot.data!.data.sheduled} | Visited ${snapshot.data!.data.vistCustomer} | Not Visited ${snapshot.data!.data.nonVistCustomer} | Pending ${snapshot.data!.data.pending}",
+                    //       style: TextStyle(fontWeight: FontWeight.w500)),
+                    // ),
                     SizedBox(
                       height: 40,
                     ),
@@ -457,102 +458,98 @@ class _AttendanceState extends State<Attendance> {
                     SizedBox(
                       height: 10,
                     ),
-                    AppState().rolId == 5
-                        ? SizedBox.shrink()
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  _isCheckedIn ? null : _showDialog();
-                                },
-                                child: Container(
-                                  height: 100,
-                                  width: 150,
+                    // AppState().rolId == 5
+                    //     ? SizedBox.shrink()
+                    //     :
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            _isCheckedIn ? null : _showDialog();
+                          },
+                          child: Container(
+                            height: 100,
+                            width: 150,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: _isCheckedIn
+                                  ? Colors.lightBlueAccent.shade700
+                                  : Colors.lightBlueAccent,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Text('Odometer'),
+                                Container(
+                                  width: 80,
+                                  height: 22,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
                                     color: _isCheckedIn
                                         ? Colors.lightBlueAccent.shade700
-                                        : Colors.lightBlueAccent,
+                                        : AppConfig.backgroundColor,
+                                    borderRadius: BorderRadius.circular(2),
+                                    border: _isCheckedIn ? null : Border.all(),
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Text('Odometer'),
-                                      Container(
-                                        width: 80,
-                                        height: 22,
-                                        decoration: BoxDecoration(
-                                          color: _isCheckedIn
-                                              ? Colors.lightBlueAccent.shade700
-                                              : AppConfig.backgroundColor,
-                                          borderRadius:
-                                              BorderRadius.circular(2),
-                                          border: _isCheckedIn
-                                              ? null
-                                              : Border.all(),
-                                        ),
-                                        child: Center(
-                                            child: Text(
-                                          _isCheckedIn
-                                              ? checkInDetails == null
-                                                  ? ' '
-                                                  : '${checkInDetails!['check_in_odometer']}'
-                                              : _containerText,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        )),
-                                      ),
-                                    ],
+                                  child: Center(
+                                    child: Text(
+                                      _isCheckedIn
+                                          ? checkInDetails == null
+                                              ? ' '
+                                              : '${checkInDetails!['check_in_odometer']}'
+                                          : _containerText,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  _isCheckedIn ? _showDialog1() : null;
-                                },
-                                child: Container(
-                                  height: 100,
-                                  width: 150,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: _isCheckedIn
-                                          ? Colors.lightBlueAccent
-                                          : Colors.lightBlueAccent.shade700),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Text('Odometer'),
-                                      Container(
-                                        width: 80,
-                                        height: 22,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(2),
-                                          color: _isCheckedIn
-                                              ? AppConfig.backgroundColor
-                                              : Colors.lightBlueAccent.shade700,
-                                          // border:
-                                          //     _isCheckedIn ? Border.all() : null,
-                                        ),
-                                        child: Center(
-                                            child: Text(
-                                          _containerText1,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        )),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            _isCheckedIn ? _showDialog1() : null;
+                          },
+                          child: Container(
+                            height: 100,
+                            width: 150,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: _isCheckedIn
+                                    ? Colors.lightBlueAccent
+                                    : Colors.lightBlueAccent.shade700),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Text('Odometer'),
+                                Container(
+                                  width: 80,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(2),
+                                    color: _isCheckedIn
+                                        ? AppConfig.backgroundColor
+                                        : Colors.lightBlueAccent.shade700,
+                                    // border:
+                                    //     _isCheckedIn ? Border.all() : null,
+                                  ),
+                                  child: Center(
+                                      child: Text(
+                                    _containerText1,
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(
                       height: 30,
                     ),
@@ -563,11 +560,13 @@ class _AttendanceState extends State<Attendance> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: AppState().rolId == 5
-                              ? _isCheckedIn
-                                  ? null
-                                  : _checkIn
-                              : _containerText == ''
+                          onPressed:
+                          // AppState().rolId == 5
+                          //     ? _isCheckedIn
+                          //         ? null
+                          //         : _checkIn
+                          //     :
+                          _containerText == ''
                                   ? null
                                   : _isCheckedIn
                                       ? null
@@ -599,11 +598,13 @@ class _AttendanceState extends State<Attendance> {
                           width: 15,
                         ),
                         ElevatedButton(
-                          onPressed: AppState().rolId == 5
-                              ? _isCheckedIn
-                                  ? _checkOut
-                                  : null
-                              : _containerText1 == ''
+                          onPressed:
+                          // AppState().rolId == 5
+                          //     ? _isCheckedIn
+                          //         ? _checkOut
+                          //         : null
+                          //     :
+                          _containerText1 == ''
                                   ? null
                                   : _isCheckedIn
                                       ? _checkOut
@@ -624,10 +625,10 @@ class _AttendanceState extends State<Attendance> {
                               (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.disabled)) {
                                   return Colors
-                                      .grey; // Color when button is disabled
+                                      .grey;
                                 }
                                 return AppConfig
-                                    .colorPrimary; // Color when button is enabled
+                                    .colorPrimary;
                               },
                             ),
 
@@ -648,9 +649,10 @@ class _AttendanceState extends State<Attendance> {
     );
   }
 
-  Future<ApiResponse> fetchCheckInOutData(int vanId, int storeId) async {
+  Future<ApiResponse> fetchCheckInOutData(
+      int vanId, int storeId, int userId) async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId'));
+        '${RestDatasource().BASE_URL}/api/get_today_check_in_and_out?van_id=$vanId&store_id=$storeId&user_id=$userId'));
 
     if (response.statusCode == 200) {
       return ApiResponse.fromJson(json.decode(response.body));
@@ -662,7 +664,7 @@ class _AttendanceState extends State<Attendance> {
 
 Future<Map<String, dynamic>> fetchCheckInDetails() async {
   final response = await http.get(Uri.parse(
-      '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}'));
+      '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}'));
 
   if (response.statusCode == 200) {
     return jsonDecode(response.body);

@@ -21,12 +21,8 @@ import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanselectproduct.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
-import 'package:mobizapp/printtst.dart';
-import 'package:mobizapp/sales_screen.dart';
-import 'package:mobizapp/tst.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
-import 'package:mobizapp/selectproduct.dart';
 import 'Pages/CustomeSOA.dart';
 import 'Pages/Day_closeReport.dart';
 import 'Pages/DriverDetailsPage.dart';
@@ -94,8 +90,7 @@ class MyApp extends StatelessWidget {
                 const Driver_customer_detail_screen(),
             HomepageDriver.routeName: (context) => const HomepageDriver(),
             ProductsScreen.routeName: (context) => ProductsScreen(),
-            ErrorHandlingScreen.routeName: (context) =>
-                const ErrorHandlingScreen(),
+            ErrorHandlingScreen.routeName: (context) => const ErrorHandlingScreen(),
             VanStockRequestsScreen.routeName: (context) =>
                 const VanStockRequestsScreen(),
             VanStocks.routeName: (context) => VanStocks(),

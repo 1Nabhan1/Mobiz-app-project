@@ -416,7 +416,20 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                                               fontSize:
                                                   AppConfig.textCaption3Size,
                                             ),
-                                          )
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Text(
+                                            product.units != null &&
+                                                product.units.length > 2
+                                                ? '${product.units[2].name}:${product.units[2].stock}'
+                                                : '',
+                                            style: TextStyle(
+                                              fontSize:
+                                              AppConfig.textCaption3Size,
+                                            ),
+                                          ),
                                         ],
                                       )
                                     ],

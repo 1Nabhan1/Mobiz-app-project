@@ -76,18 +76,42 @@ class _SalesSelectProductsorderScreenState
     }
   }
 
-  void _filterProducts(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredProducts = List.from(products);
-      } else {
-        filteredProducts = products
-            .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+  void _filterProducts(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        if (query.isEmpty) {
+          filteredProducts = List.from(products);
+        } else {
+          filteredProducts = products
+              .where((product) =>
+                  product.name!.toLowerCase().contains(query.toLowerCase()) ||
+                  product.code!.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        }
+      });
+    } else {
+      final String searchUrl =
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query';
+
+      try {
+        final response = await http.get(Uri.parse(searchUrl));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final List<Products> searchedProducts = (data['data'] as List)
+              .map((json) => Products.fromJson(json))
+              .toList();
+
+          setState(() {
+            filteredProducts = searchedProducts;
+          });
+        } else {
+          throw Exception('Failed to fetch searched products');
+        }
+      } catch (e) {
+        print('Error fetching search results: $e');
       }
-    });
+    }
   }
 
   Future<void> clearCart() async {
@@ -332,7 +356,21 @@ class _SalesSelectProductsorderScreenState
                                                     fontSize: AppConfig
                                                         .textCaption3Size,
                                                   ),
-                                                )
+                                                ),
+                                                SizedBox(
+                                                  width: 10,
+                                                ),
+                                                Text(
+                                                  product.units != null &&
+                                                          product.units.length >
+                                                              2
+                                                      ? '${product.units[2].name}:${product.units[2].stock}'
+                                                      : '',
+                                                  style: TextStyle(
+                                                    fontSize: AppConfig
+                                                        .textCaption3Size,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             // if (product.lastdate != '' &&

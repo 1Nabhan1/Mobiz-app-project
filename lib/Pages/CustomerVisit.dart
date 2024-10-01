@@ -324,6 +324,7 @@ class _CustomerVisitState extends State<CustomerVisit> {
   void postData() async {
     var url = Uri.parse('${RestDatasource().BASE_URL}/api/customervisit.store');
     var response = await http.post(url, body: {
+      'user_id':AppState().userId.toString(),
       'van_id': AppState().vanId.toString(),
       'store_id': AppState().storeId.toString(),
       'vistit_type': isSelected ? 'visit' : 'non-visit',
