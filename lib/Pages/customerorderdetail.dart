@@ -252,7 +252,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
 
   Future<void> fetchCheckInDetail() async {
     final String url =
-        '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}';
+        '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -441,7 +441,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                       color: AppConfig.backgroundColor,
                     ),
                   )
-                : AppState().attendanceState == 'Required'
+                :
+            AppState().attendanceState == 'Required'
                     ? Status
                         ? GestureDetector(
                             onTap: () {

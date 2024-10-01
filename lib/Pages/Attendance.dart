@@ -25,6 +25,7 @@ class Attendance extends StatefulWidget {
 
 class _AttendanceState extends State<Attendance> {
   Map<String, dynamic>? checkInDetails;
+  bool _isLoading = false;
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
   String formattedTime = DateFormat('hh:mm a').format(DateTime.now());
@@ -242,7 +243,7 @@ class _AttendanceState extends State<Attendance> {
                 });
 
                 final response =
-                    await http.post(url, headers: headers, body: body);
+                await http.post(url, headers: headers, body: body);
 
                 if (response.statusCode == 200) {
                   print('Check-in successful!');
@@ -275,16 +276,16 @@ class _AttendanceState extends State<Attendance> {
                 });
 
                 final response =
-                    await http.post(url, headers: headers, body: body);
+                await http.post(url, headers: headers, body: body);
 
                 if (response.statusCode == 200) {
                   if (mounted) {
                     CommonWidgets.showDialogueBox(
-                            context: context,
-                            title: "",
-                            msg: "Data Inserted Successfully")
+                        context: context,
+                        title: "",
+                        msg: "Data Inserted Successfully")
                         .then((value) =>
-                            Navigator.pushNamed(context, HomeScreen.routeName));
+                        Navigator.pushNamed(context, HomeScreen.routeName));
                   }
                   print('Check-out successful!');
                 } else {
@@ -336,7 +337,8 @@ class _AttendanceState extends State<Attendance> {
                     ),
                     AppState().rolId == 5
                         ? SizedBox.shrink()
-                        : Padding(
+                        :
+                    Padding(
                             padding: const EdgeInsets.only(left: 30.0, top: 12),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -379,6 +381,26 @@ class _AttendanceState extends State<Attendance> {
                     //       "Scheduled ${snapshot.data!.data.sheduled} | Visited ${snapshot.data!.data.vistCustomer} | Not Visited ${snapshot.data!.data.nonVistCustomer} | Pending ${snapshot.data!.data.pending}",
                     //       style: TextStyle(fontWeight: FontWeight.w500)),
                     // ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, top: 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Current Status: ",
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            checkInDetails != null && checkInDetails!['check_out'] != null && checkInDetails!['check_out'] != 1
+                                ? "Check Out"
+                                : "Check In",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     SizedBox(
                       height: 40,
                     ),
@@ -427,7 +449,7 @@ class _AttendanceState extends State<Attendance> {
                                         : '${checkInDetails!['chek_in_time']}'
                                     : formattedTime,
                                 style: TextStyle(fontWeight: FontWeight.bold),
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -495,8 +517,8 @@ class _AttendanceState extends State<Attendance> {
                                     child: Text(
                                       _isCheckedIn
                                           ? checkInDetails == null
-                                              ? ' '
-                                              : '${checkInDetails!['check_in_odometer']}'
+                                          ? ' '
+                                          : '${checkInDetails!['check_in_odometer']}'
                                           : _containerText,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
@@ -539,10 +561,10 @@ class _AttendanceState extends State<Attendance> {
                                   ),
                                   child: Center(
                                       child: Text(
-                                    _containerText1,
-                                    style:
+                                        _containerText1,
+                                        style:
                                         TextStyle(fontWeight: FontWeight.bold),
-                                  )),
+                                      )),
                                 ),
                               ],
                             ),
@@ -567,10 +589,10 @@ class _AttendanceState extends State<Attendance> {
                           //         : _checkIn
                           //     :
                           _containerText == ''
-                                  ? null
-                                  : _isCheckedIn
-                                      ? null
-                                      : _checkIn,
+                              ? null
+                              : _isCheckedIn
+                              ? null
+                              : _checkIn,
                           child: Text(
                             'Check in',
                             style: TextStyle(color: AppConfig.backgroundColor),
@@ -580,10 +602,10 @@ class _AttendanceState extends State<Attendance> {
                                 RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10))),
                             fixedSize:
-                                const WidgetStatePropertyAll(Size(150, 0)),
+                            const WidgetStatePropertyAll(Size(150, 0)),
                             backgroundColor:
-                                WidgetStateProperty.resolveWith<Color>(
-                              (Set<WidgetState> states) {
+                            WidgetStateProperty.resolveWith<Color>(
+                                  (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.disabled)) {
                                   return Colors
                                       .grey; // Color when button is disabled
@@ -605,10 +627,10 @@ class _AttendanceState extends State<Attendance> {
                           //         : null
                           //     :
                           _containerText1 == ''
-                                  ? null
-                                  : _isCheckedIn
-                                      ? _checkOut
-                                      : null,
+                              ? null
+                              : _isCheckedIn
+                              ? _checkOut
+                              : null,
                           // _isCheckedIn ? _checkOut : null,
                           child: Text(
                             'Check out',
@@ -616,13 +638,13 @@ class _AttendanceState extends State<Attendance> {
                           ),
                           style: ButtonStyle(
                             fixedSize:
-                                const WidgetStatePropertyAll(Size(150, 0)),
+                            const WidgetStatePropertyAll(Size(150, 0)),
                             shape: WidgetStatePropertyAll(
                                 RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10))),
                             backgroundColor:
-                                WidgetStateProperty.resolveWith<Color>(
-                              (Set<WidgetState> states) {
+                            WidgetStateProperty.resolveWith<Color>(
+                                  (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.disabled)) {
                                   return Colors
                                       .grey;

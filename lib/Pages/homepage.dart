@@ -21,6 +21,7 @@ import 'package:mobizapp/Utilities/sharepref.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/printtst.dart';
+import 'package:mobizapp/tst.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,6 +44,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<Map<String, dynamic>> savedCartItems = [];
   bool _restrict = false;
   String _appVersion = 'Loading...';
   bool performLogout() {
@@ -146,6 +148,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         ));
                   },
                 ),
+
+                // ListTile(
+                //   leading: Icon(Icons.print),
+                //   title: const Text('Cart'),
+                //   onTap: () {
+                //     Navigator.push(
+                //         context,
+                //         MaterialPageRoute(
+                //           builder: (context) => CartPage(savedCartItems: [],),
+                //         ));
+                //   },
+                // ),
+
                 ListTile(
                   leading: Icon(Icons.logout),
                   title: Text('Log Out'),
