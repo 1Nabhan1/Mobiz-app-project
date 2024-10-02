@@ -243,7 +243,7 @@ class _AttendanceState extends State<Attendance> {
                 });
 
                 final response =
-                await http.post(url, headers: headers, body: body);
+                    await http.post(url, headers: headers, body: body);
 
                 if (response.statusCode == 200) {
                   print('Check-in successful!');
@@ -276,16 +276,16 @@ class _AttendanceState extends State<Attendance> {
                 });
 
                 final response =
-                await http.post(url, headers: headers, body: body);
+                    await http.post(url, headers: headers, body: body);
 
                 if (response.statusCode == 200) {
                   if (mounted) {
                     CommonWidgets.showDialogueBox(
-                        context: context,
-                        title: "",
-                        msg: "Data Inserted Successfully")
+                            context: context,
+                            title: "",
+                            msg: "Data Inserted Successfully")
                         .then((value) =>
-                        Navigator.pushNamed(context, HomeScreen.routeName));
+                            Navigator.pushNamed(context, HomeScreen.routeName));
                   }
                   print('Check-out successful!');
                 } else {
@@ -301,8 +301,11 @@ class _AttendanceState extends State<Attendance> {
                 });
               }
 
+// if(checkInDetails == null){_isCheckedIn = false;}
               // int id = checkInDetails!['id'];
-              checkInDetails == null
+              checkInDetails == null ||
+                      checkInDetails != null &&
+                          checkInDetails!['check_out'] == 1
                   ? _isCheckedIn = false
                   : _isCheckedIn = true;
               return Padding(
@@ -337,8 +340,7 @@ class _AttendanceState extends State<Attendance> {
                     ),
                     AppState().rolId == 5
                         ? SizedBox.shrink()
-                        :
-                    Padding(
+                        : Padding(
                             padding: const EdgeInsets.only(left: 30.0, top: 12),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -390,7 +392,9 @@ class _AttendanceState extends State<Attendance> {
                             style: TextStyle(fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            checkInDetails != null && checkInDetails!['check_out'] != null && checkInDetails!['check_out'] != 1
+                            checkInDetails != null &&
+                                    checkInDetails!['check_out'] != null &&
+                                    checkInDetails!['check_out'] != 1
                                 ? "Check Out"
                                 : "Check In",
                             style: TextStyle(
@@ -517,8 +521,8 @@ class _AttendanceState extends State<Attendance> {
                                     child: Text(
                                       _isCheckedIn
                                           ? checkInDetails == null
-                                          ? ' '
-                                          : '${checkInDetails!['check_in_odometer']}'
+                                              ? ' '
+                                              : '${checkInDetails!['check_in_odometer']}'
                                           : _containerText,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
@@ -561,10 +565,10 @@ class _AttendanceState extends State<Attendance> {
                                   ),
                                   child: Center(
                                       child: Text(
-                                        _containerText1,
-                                        style:
+                                    _containerText1,
+                                    style:
                                         TextStyle(fontWeight: FontWeight.bold),
-                                      )),
+                                  )),
                                 ),
                               ],
                             ),
@@ -583,16 +587,16 @@ class _AttendanceState extends State<Attendance> {
                       children: [
                         ElevatedButton(
                           onPressed:
-                          // AppState().rolId == 5
-                          //     ? _isCheckedIn
-                          //         ? null
-                          //         : _checkIn
-                          //     :
-                          _containerText == ''
-                              ? null
-                              : _isCheckedIn
-                              ? null
-                              : _checkIn,
+                              // AppState().rolId == 5
+                              //     ? _isCheckedIn
+                              //         ? null
+                              //         : _checkIn
+                              //     :
+                              _containerText == ''
+                                  ? null
+                                  : _isCheckedIn
+                                      ? null
+                                      : _checkIn,
                           child: Text(
                             'Check in',
                             style: TextStyle(color: AppConfig.backgroundColor),
@@ -602,10 +606,10 @@ class _AttendanceState extends State<Attendance> {
                                 RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10))),
                             fixedSize:
-                            const WidgetStatePropertyAll(Size(150, 0)),
+                                const WidgetStatePropertyAll(Size(150, 0)),
                             backgroundColor:
-                            WidgetStateProperty.resolveWith<Color>(
-                                  (Set<WidgetState> states) {
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.disabled)) {
                                   return Colors
                                       .grey; // Color when button is disabled
@@ -621,16 +625,16 @@ class _AttendanceState extends State<Attendance> {
                         ),
                         ElevatedButton(
                           onPressed:
-                          // AppState().rolId == 5
-                          //     ? _isCheckedIn
-                          //         ? _checkOut
-                          //         : null
-                          //     :
-                          _containerText1 == ''
-                              ? null
-                              : _isCheckedIn
-                              ? _checkOut
-                              : null,
+                              // AppState().rolId == 5
+                              //     ? _isCheckedIn
+                              //         ? _checkOut
+                              //         : null
+                              //     :
+                              _containerText1 == ''
+                                  ? null
+                                  : _isCheckedIn
+                                      ? _checkOut
+                                      : null,
                           // _isCheckedIn ? _checkOut : null,
                           child: Text(
                             'Check out',
@@ -638,19 +642,17 @@ class _AttendanceState extends State<Attendance> {
                           ),
                           style: ButtonStyle(
                             fixedSize:
-                            const WidgetStatePropertyAll(Size(150, 0)),
+                                const WidgetStatePropertyAll(Size(150, 0)),
                             shape: WidgetStatePropertyAll(
                                 RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10))),
                             backgroundColor:
-                            WidgetStateProperty.resolveWith<Color>(
-                                  (Set<WidgetState> states) {
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.disabled)) {
-                                  return Colors
-                                      .grey;
+                                  return Colors.grey;
                                 }
-                                return AppConfig
-                                    .colorPrimary;
+                                return AppConfig.colorPrimary;
                               },
                             ),
 
