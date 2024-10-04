@@ -25,7 +25,7 @@ class CheckInOutData {
       nonVistCustomer: json['non_vist_customer'],
       pending: json['pending'],
       lastOdometerIn: json['last_odometer_in'],
-      lastOdometerOut: json['last_odometer_out'],
+      lastOdometerOut: json['last_odo_meter_out'],
     );
   }
 }

@@ -25,6 +25,7 @@ class Customerorderdetail extends StatefulWidget {
 int? id;
 
 class _CustomerorderdetailState extends State<Customerorderdetail> {
+  var attendanceData;
   List<Map<String, dynamic>> savedProducts = [];
   final TextEditingController _remarksController = TextEditingController();
   bool _isPercentage = false;
@@ -59,7 +60,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
-            'Attendence Required',
+            'Attendance Required',
             style: TextStyle(color: Colors.red),
           ),
           content: Row(
@@ -261,9 +262,12 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
         final Map<String, dynamic> data = json.decode(response.body);
 
         setState(() {
+          attendanceData = json.decode(response.body);
           Status = data['success'] == true;
           AppState().attendanceState == 'Required'
-              ? Status
+              ? Status &&
+                      attendanceData != null &&
+                      attendanceData['data']['check_out'] == 0
                   ? SizedBox.shrink()
                   : WidgetsBinding.instance.addPostFrameCallback((_) {
                       _showWelcomeDialog();
@@ -424,26 +428,28 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                   )
                 : Container(),
             CommonWidgets.horizontalSpace(1),
-            AppState().rolId == 5
-                ? GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(
-                              context, SalesSelectProductsorderScreen.routeName,
-                              arguments: {'customerId': id, 'name': name})
-                          .then((value) {
-                        // _initDone = false;
-                        // _getTypes();
-                      });
-                    },
-                    child: Icon(
-                      _search ? Icons.close : Icons.search,
-                      size: 30,
-                      color: AppConfig.backgroundColor,
-                    ),
-                  )
-                :
+            // AppState().rolId == 5
+            //     ? GestureDetector(
+            //         onTap: () {
+            //           Navigator.pushReplacementNamed(
+            //                   context, SalesSelectProductsorderScreen.routeName,
+            //                   arguments: {'customerId': id, 'name': name})
+            //               .then((value) {
+            //             // _initDone = false;
+            //             // _getTypes();
+            //           });
+            //         },
+            //         child: Icon(
+            //           _search ? Icons.close : Icons.search,
+            //           size: 30,
+            //           color: AppConfig.backgroundColor,
+            //         ),
+            //       )
+            //     :
             AppState().attendanceState == 'Required'
-                    ? Status
+                    ? Status &&
+                            attendanceData != null &&
+                            attendanceData['data']['check_out'] == 0
                         ? GestureDetector(
                             onTap: () {
                               Navigator.pushReplacementNamed(context,

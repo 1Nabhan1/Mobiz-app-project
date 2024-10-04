@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/saleinvoices.dart';
+import 'package:mobizapp/Pages/salesselectproductorder.dart';
 import 'package:mobizapp/Pages/salesselectproducts.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,6 +39,8 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _search = false;
   int _ifVat = 1;
   String? name;
+  bool Status = false;
+  var attendanceData;
 
   String roundoff = '';
   @override
@@ -45,6 +48,43 @@ class _SalesScreenState extends State<SalesScreen> {
     super.initState();
     _loadSavedProducts();
     fetchProductTypes();
+    fetchCheckInDetail();
+  }
+
+  void _showWelcomeDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Attendance Required',
+            style: TextStyle(color: Colors.red),
+          ),
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Please Check-IN',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              style:
+                  TextButton.styleFrom(backgroundColor: AppConfig.colorPrimary),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                'OK',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _removeProduct(int index) async {
@@ -139,6 +179,37 @@ class _SalesScreenState extends State<SalesScreen> {
     setState(() {
       savedProducts.clear();
     });
+  }
+
+  Future<void> fetchCheckInDetail() async {
+    final String url =
+        '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        setState(() {
+          attendanceData = json.decode(response.body);
+          Status = data['success'] == true;
+          AppState().attendanceState == 'Required'
+              ? Status &&
+                      attendanceData != null &&
+                      attendanceData['data']['check_out'] == 0
+                  ? SizedBox.shrink()
+                  : WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _showWelcomeDialog();
+                    })
+              : SizedBox.shrink();
+        });
+      } else {
+        print('Failed to load data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
   }
 
   Future<void> fetchProductTypes() async {
@@ -359,21 +430,50 @@ class _SalesScreenState extends State<SalesScreen> {
                   )
                 : Container(),
             CommonWidgets.horizontalSpace(1),
-            GestureDetector(
-              onTap: () {
-                Navigator.pushReplacementNamed(
-                    context, SalesSelectProductsScreen.routeName,
-                    arguments: {'customerId': id, 'name': name}).then((value) {
-                  // _initDone = false;
-                  // _getTypes();
-                });
-              },
-              child: Icon(
-                _search ? Icons.close : Icons.search,
-                size: 30,
-                color: AppConfig.backgroundColor,
-              ),
-            ),
+            AppState().attendanceState == 'Required'
+                ? Status &&
+                        attendanceData != null &&
+                        attendanceData['data']['check_out'] == 0
+                    ? GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacementNamed(
+                              context, SalesSelectProductsScreen.routeName,
+                              arguments: {'customerId': id, 'name': name}).then((value) {
+                            // _initDone = false;
+                            // _getTypes();
+                          });
+                        },
+                        child: Icon(
+                          _search ? Icons.close : Icons.search,
+                          size: 30,
+                          color: AppConfig.backgroundColor,
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: () {
+                          _showWelcomeDialog();
+                        },
+                        child: Text(
+                          'Attendance Req...',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+                : GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(
+                              context, SalesSelectProductsorderScreen.routeName,
+                              arguments: {'customerId': id, 'name': name})
+                          .then((value) {
+                        // _initDone = false;
+                        // _getTypes();
+                      });
+                    },
+                    child: Icon(
+                      _search ? Icons.close : Icons.search,
+                      size: 30,
+                      color: AppConfig.backgroundColor,
+                    ),
+                  ),
             CommonWidgets.horizontalSpace(3),
           ],
         ),
@@ -918,6 +1018,7 @@ class _SalesScreenState extends State<SalesScreen> {
       String? quantity = existingProduct['quantity'];
       bool isQuantityValid(String? value) {
         final quantityValue = double.tryParse(value ?? '') ?? 0;
+
         return value != null &&
             value.isNotEmpty &&
             quantityValue > 0 &&

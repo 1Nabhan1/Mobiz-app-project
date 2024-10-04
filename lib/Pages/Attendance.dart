@@ -25,7 +25,8 @@ class Attendance extends StatefulWidget {
 
 class _AttendanceState extends State<Attendance> {
   Map<String, dynamic>? checkInDetails;
-  bool _isLoading = false;
+  Map<String, dynamic>? odometerData = {};
+  bool isLoading = true;
   late Timer _timer;
   DateTime _currentTime = DateTime.now();
   String formattedTime = DateFormat('hh:mm a').format(DateTime.now());
@@ -41,6 +42,7 @@ class _AttendanceState extends State<Attendance> {
   void initState() {
     super.initState();
     fetchData();
+    _getOdometerReading();
 
     futureApiResponse = fetchCheckInOutData(
         AppState().vanId!, AppState().storeId!, AppState().userId!);
@@ -112,6 +114,22 @@ class _AttendanceState extends State<Attendance> {
     );
   }
 
+  Future<void> _getOdometerReading() async {
+    Map<String, dynamic>? data = await fetchOdometerReading();
+
+    setState(() {
+      odometerData = data;
+      isLoading = false; // Stop loading after data is fetched
+    });
+
+    if (odometerData != null) {
+      print('ID: ${odometerData!['id']}');
+      print('Last Odometer Reading: ${odometerData!['last_odometer_reading']}');
+    } else {
+      print('Failed to fetch data.');
+    }
+  }
+
   @override
   void dispose() {
     _timer.cancel();
@@ -168,9 +186,14 @@ class _AttendanceState extends State<Attendance> {
                 showDialog(
                   context: context,
                   builder: (context) {
-                    final double minOdometer = double.parse(
-                        snapshot.data!.data.lastOdometerOut?.toString() ?? '0');
-                    print(minOdometer);
+                    final double minOdometer = odometerData != null && odometerData!['last_odometer_reading'] != null
+                        ? double.tryParse(odometerData!['last_odometer_reading'].toString()) ?? 0.0
+                        : 0.0;
+
+
+                    // Remove print statement if no longer needed
+                    // print(checkInDetails!['last_odometer_out']);
+
                     return AlertDialog(
                       title: Text('Enter Text'),
                       content: TextField(
@@ -178,9 +201,6 @@ class _AttendanceState extends State<Attendance> {
                         controller: _textFieldController,
                         decoration: InputDecoration(
                           hintText: 'Enter value',
-                          // errorText: _textFieldController.text.isEmpty
-                          //     ? 'This field cannot be blank'
-                          //     : null,
                         ),
                       ),
                       actions: [
@@ -192,23 +212,17 @@ class _AttendanceState extends State<Attendance> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // if (_textFieldController.text.isEmpty) {
-                            //   ScaffoldMessenger.of(context).showSnackBar(
-                            //     SnackBar(
-                            //       content: Text('Field cannot be blank'),
-                            //     ),
-                            //   );
-                            //   return;
-                            // }
                             double enteredValue =
                                 double.tryParse(_textFieldController.text) ??
                                     0.0;
+
                             if (_textFieldController.text.isEmpty ||
                                 (enteredValue < minOdometer)) {
                               // Show error message if entered value is less than minOdometer
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text('Enter a valid Odometer')),
+                                    content: Text(
+                                        'Value must be greater than or equal to $minOdometer')),
                               );
                             } else {
                               setState(() {
@@ -216,10 +230,6 @@ class _AttendanceState extends State<Attendance> {
                               });
                               Navigator.of(context).pop();
                             }
-                            // setState(() {
-                            //   _containerText = _textFieldController.text;
-                            // });
-                            // Navigator.of(context).pop();
                           },
                           child: Text('OK'),
                         ),
@@ -246,6 +256,7 @@ class _AttendanceState extends State<Attendance> {
                     await http.post(url, headers: headers, body: body);
 
                 if (response.statusCode == 200) {
+                  await fetchOdometerReading();
                   print('Check-in successful!');
                 } else {
                   print('Failed to check-in: ${response.statusCode}');
@@ -362,20 +373,15 @@ class _AttendanceState extends State<Attendance> {
                     //     :
                     Padding(
                       padding: const EdgeInsets.only(left: 30.0, top: 12),
-                      child: Row(
+                      child:isLoading?
+                          CircularProgressIndicator():
+                      Row(
                         children: [
                           Text(
-                            "Last Odometer Reading ",
-                            style: TextStyle(fontWeight: FontWeight.w500),
+                            'Last Odometer Reading: ${odometerData != null ? (odometerData!['last_odometer_reading'] ?? 'N/A') : 'N/A'}',
                           ),
-                          Text(
-                            "${snapshot.data!.data.lastOdometerIn} | ${snapshot.data!.data.lastOdometerOut}",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500),
-                          )
                         ],
-                      ),
+                      )
                     ),
                     // Padding(
                     //   padding: const EdgeInsets.only(left: 30.0, top: 12),
@@ -395,11 +401,11 @@ class _AttendanceState extends State<Attendance> {
                             checkInDetails != null &&
                                     checkInDetails!['check_out'] != null &&
                                     checkInDetails!['check_out'] != 1
-                                ? "Check Out"
-                                : "Check In",
+                                ? "Check In"
+                                : "Check Out",
                             style: TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w700,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
@@ -684,15 +690,49 @@ class _AttendanceState extends State<Attendance> {
       throw Exception('Failed to load data');
     }
   }
-}
 
-Future<Map<String, dynamic>> fetchCheckInDetails() async {
-  final response = await http.get(Uri.parse(
-      '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}'));
+  Future<Map<String, dynamic>> fetchCheckInDetails() async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}'));
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception('Failed to load data');
+    if (response.statusCode == 200) {
+      print(response.body);
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchOdometerReading() async {
+    final String url =
+        '${RestDatasource().BASE_URL}/api/getLastOdometerReading?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        // odometerData = json.decode(response.body);
+        if (jsonData['success']) {
+          setState(() {
+            odometerData = jsonData['data'];
+          });
+          return jsonData['data']; // Return the 'data' map directly
+        } else {
+          print('Error: ${jsonData['message']}');
+          return null;
+        }
+      } else {
+        print('Error: Server responded with ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return null;
+    }
   }
 }
+
+
+
+
