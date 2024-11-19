@@ -220,11 +220,33 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                   message: data.invoiceNo!,
                   child: SizedBox(
                     width: SizeConfig.blockSizeHorizontal * 70,
-                    child: Text(
-                      '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
-                      style: TextStyle(
-                        fontSize: AppConfig.textCaption3Size,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                          ),
+                        ),
+                        SizedBox(width: 14,),
+                        Text(
+                          data.status == 0
+                              ? "Cancelled"
+                              : data.status == 1
+                              ? "Confirmed"
+                              : "",
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                            fontWeight: AppConfig.headLineWeight,
+                            color: data.status == 0
+                                ? Colors.red  // Color for Cancelled
+                                : data.status == 1
+                                ? Colors.green  // Color for Confirmed
+                                : Colors.grey,  // Default color for unknown status
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -431,11 +453,20 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
   void _print(Invoice.InvoiceData invoice, bool isPrint) async {
     if (_connected) {
+      String cusAddress= invoice.data!.customer![0].address ?? 'N/A';
       String companyName = invoice.data!.store![0].name ?? 'N/A';
       String companyAddress = invoice.data!.store![0].address ?? 'N/A';
+      String companyMail = invoice.data!.store![0].email??'N/A';
       String companyTRN = "TRN: ${invoice.data!.store![0].trn ?? 'N/A'}";
       String billtype = "Tax Invoice";
       String customerName = "${invoice.data!.customer![0].name}";
+      List<String> nameWords = customerName.split(' ');
+      String firstLine = customerName;
+      String secondLine = "";
+      if (nameWords.length > 7) {
+        firstLine = nameWords.sublist(0, 7).join(' ');
+        secondLine = nameWords.sublist(7).join(' ');
+      }
       String customerEmail = invoice.data!.customer![0].email ?? 'N/A';
       String customerContact =
           invoice.data!.customer![0].contactNumber ?? 'N/A';
@@ -445,10 +476,19 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           .format(DateTime.parse(invoice.data!.inDate!));
       String dueDate = DateFormat('dd MMMM yyyy')
           .format(DateTime.parse(invoice.data!.inDate!));
+      String Total = invoice.data!.total?.toStringAsFixed(2)??'0.00';
       String tax = invoice.data!.totalTax?.toStringAsFixed(2) ?? '0.00';
       String grandTotal =
           invoice.data!.grandTotal?.toStringAsFixed(2) ?? '0.00';
-      String Total = invoice.data!.discounted_amount ?? '0.00';
+      String Discount;
+      if (invoice.data!.discount != null &&
+          double.tryParse(invoice.data!.discount!.toString()) != null &&
+          double.parse(invoice.data!.discount!.toString()) > 0) {
+
+        Discount = "Discount: ${double.parse(invoice.data!.discount!.toString()).toStringAsFixed(2)}";
+      } else {
+        Discount = '';
+      }
       String amountInWords =
           "Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal?.toInt() ?? 0).toUpperCase()} ONLY";
       String van = invoice.data!.van![0].name ?? 'N/A';
@@ -492,18 +532,24 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printNewLine();
       printer.printCustom(companyName, 3, 1); // Centered
       printer.printCustom(companyAddress, 1, 1); // Centered
+      printer.printCustom(companyMail, 1, 1);
       printer.printCustom(companyTRN, 1, 1); // Centered
       printer.printCustom(billtype, 1, 1); // Centered
       printer.printNewLine();
 
-      // Print horizontal line
       printer.printCustom("-" * 72, 1, 1); // Centered
-
+      printAlignedText("Invoice No: ${invoiceNumber}","Date: ${invoiceDate}");
+      // printer.printCustom("Invoice No: ${invoiceNumber} | Date: ${invoiceDate}", 1, 1);
+      printer.printNewLine();
       // Print customer details
-      printAlignedText(
-          "Customer: $customerName", "Invoice No: $invoiceNumber      ");
-      printAlignedText("Email: $customerEmail", "Date: $invoiceDate    ");
-      printAlignedText("Contact No: $customerContact", "Due Date: $dueDate");
+      printAlignedText("Customer: $firstLine","");
+
+      if (secondLine.isNotEmpty) {
+        printAlignedText("         $secondLine", ""); // Aligns the second line under the first line
+      }
+      printAlignedText("$cusAddress", " ");
+      // printAlignedText("Email: $customerEmail", "");
+      printAlignedText("Contact No: $customerContact", "");
       printAlignedText("TRN: $customerTRN", " ");
       printer.printNewLine();
 
@@ -512,21 +558,25 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
       // Define column widths for table
       const int columnWidth1 = 5; // S.No
-      const int columnWidth2 = 30; // Product Description
+      const int columnWidth2 = 22; // Product Description
       const int columnWidth3 = 5; // Unit
-      const int columnWidth4 = 8; // Rate
-      const int columnWidth5 = 4; // Qty
-      const int columnWidth6 = 4; // Tax
-      const int columnWidth7 = 8; // Amount
+      const int columnWidth4 = 4; // Qty
+      const int columnWidth5 = 7; // Type
+      const int columnWidth6 = 8; // Rate
+      const int columnWidth7 = 8; // Total
+      // const int columnWidth8 = 4; // Tax
+      const int columnWidth9 = 6; // Amount
 
       // Print table headers
       String headers = "${'S.No'.padRight(columnWidth1)}"
           " ${'Product'.padRight(columnWidth2)}"
           " ${'Unit'.padRight(columnWidth3)}"
-          "${'Rate'.padRight(columnWidth4)}"
-          "${'Qty'.padRight(columnWidth5)}"
-          "${'Tax'.padRight(columnWidth6)}"
-          " ${'Amount'.padLeft(columnWidth7)}";
+          "${'Qty'.padRight(columnWidth4)}"
+          "${'Type'.padRight(columnWidth5)}"
+          "${'Rate'.padRight(columnWidth6)}"
+          "${'Amount'.padRight(columnWidth7)}"
+          // "${'Vat'.padRight(columnWidth8)}"
+          " ${'Total'.padLeft(columnWidth9)}";
       printer.printCustom(headers, 1, 0); // Left aligned
 
       // Function to split text into lines of a given width
@@ -544,15 +594,14 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       for (int i = 0; i < invoice.data!.detail!.length; i++) {
         String productDescription = invoice.data!.detail![i].name ?? 'N/A';
         String productUnit = invoice.data!.detail![i].unit ?? 'N/A';
-        String productRate =
-            invoice.data!.detail![i].mrp?.toStringAsFixed(2) ?? '0.00';
-        String productQty =
-            invoice.data!.detail![i].quantity?.toString() ?? '0';
-        String productTax =
-            invoice.data!.detail![i].taxable?.toStringAsFixed(2) ?? '0.00';
-        String productTotal =
-            (invoice.data!.detail![i].mrp! * invoice.data!.detail![i].quantity!)
-                .toStringAsFixed(2);
+        String productQty = invoice.data!.detail![i].quantity?.toString() ?? '0';
+        String productType= invoice.data!.detail![i].productType?.toString()??'0';
+        String productRate = invoice.data!.detail![i].mrp?.toStringAsFixed(2) ?? '0.00';
+        String productTotal = invoice.data!.detail![i].taxable?.toStringAsFixed(2) ?? '0.00';
+        // String productTax = tax.toString();
+        String productAmount =invoice.data!.detail![i].amount?.toStringAsFixed(2)??'0.00';
+            // (invoice.data!.detail![i].mrp! * invoice.data!.detail![i].quantity!)
+            //     .toStringAsFixed(2);
 
         // Split the product description if it exceeds the column width
         List<String> descriptionLines =
@@ -565,10 +614,12 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
             line = "${(i + 1).toString().padRight(columnWidth1)}"
                 "${descriptionLines[j].padRight(columnWidth2)}"
                 "  ${productUnit.padRight(columnWidth3)}"
-                "${productRate.padRight(columnWidth4)}"
-                "${productQty.padRight(columnWidth5)}"
-                "${productTax.padRight(columnWidth6)}"
-                "${productTotal.padLeft(columnWidth7)}";
+                "${productQty.padRight(columnWidth4)}"
+                "${productType.padRight(columnWidth5)}"
+                "${productRate.padRight(columnWidth6)}"
+                "${productTotal.padRight(columnWidth7)}"
+                // "${productTax.padRight(columnWidth8)}"
+                "${productAmount.padLeft(columnWidth9)}";
           } else {
             // For subsequent lines, only include the description, leaving other columns blank
             line = "${''.padRight(columnWidth1)}"
@@ -578,6 +629,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                 "${''.padRight(columnWidth5)}"
                 "${''.padRight(columnWidth6)}"
                 "${''.padRight(columnWidth7)}";
+                // "${''.padRight(columnWidth8)}";
+                "${''.padRight(columnWidth9)}";
           }
           printer.printCustom(line, 1, 0); // Left aligned
         }
@@ -585,8 +638,14 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom("-" * 70, 1, 1); // Centered
 
       // Print totals
-      printAlignedText("Van: $van", "Total: $Total");
-      printAlignedText("Salesman: $salesman", "Tax: $tax");
+      if (Discount.isNotEmpty) {
+        print(Discount);
+        printAlignedText("Van: $van", "$Discount");
+      } else {
+        printAlignedText("Van: $van", ""); // Skip printing Total
+      }
+      printAlignedText("Salesman: $salesman", "Total: $Total");
+      printer.printCustom("Vat: $tax", 1, 2);
       printer.printCustom("Grand Total: $grandTotal", 1, 2); // Right aligned
       printer.printNewLine();
       printer.printCustom(amountInWords, 1, 0); // Centered
@@ -675,12 +734,24 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           addresstextSize.width, addresstextSize.height),
     );
 
+    final String email = '${invoice.data!.store![0].email ?? 'N/A'}';
+    final PdfFont emailfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
+    final Size emailtextSize= emailfont.measureString(email);
+    final double emailxPosition = (pageWidth - emailtextSize.width) / 2.0;
+    final double emailyposition = 135;
+    page.graphics.drawString(
+      email,
+      emailfont,
+      bounds: Rect.fromLTWH(emailxPosition, emailyposition,
+          emailtextSize.width, emailtextSize.height),
+    );
+
     final String trn = 'TRN:${invoice.data!.store![0].trn ?? 'N/A'}';
     final PdfFont trnfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
 
     final Size trntextSize = trnfont.measureString(trn);
     final double trnxPosition = (pageWidth - trntextSize.width) / 2.1;
-    final double trnyPosition = 135;
+    final double trnyPosition = 150;
 
     page.graphics.drawString(
       trn,
@@ -699,7 +770,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     // Calculate the center position for the text
     final double xPosition = (pageWidth - textSize.width) / 2;
     final double yPosition =
-        150; // Adjust this as needed for vertical positioning
+        165; // Adjust this as needed for vertical positioning
 
     // Draw the centered text
     page.graphics.drawString(
@@ -755,43 +826,48 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
     // Create a table without grid lines.
     final PdfGrid grid = PdfGrid();
-    grid.columns.add(count: 8);
+    grid.columns.add(count: 9);
     // Set column widths.
     grid.columns[0].width = 30; // Sl.No
     grid.columns[1].width = 180; // Product
-    grid.columns[2].width = 60; // Unit
-    grid.columns[3].width = 60; // Rate
-    grid.columns[4].width = 40; // Qty
-    grid.columns[5].width = 40; // Foc
-    grid.columns[6].width = 50; // Vat
-    grid.columns[7].width = 60;
+    grid.columns[2].width = 40; // Unit
+    grid.columns[3].width = 40; // Rate
+    grid.columns[4].width = 50; // Qty
+    grid.columns[5].width = 50;
+    grid.columns[6].width = 40;
+    grid.columns[7].width = 50; // Vat
+    grid.columns[8].width = 100;
 
     // Add headers.
     final PdfGridRow headerRow = grid.headers.add(1)[0];
     headerRow.cells[0].value = 'Sl.No';
     headerRow.cells[1].value = 'Product';
     headerRow.cells[2].value = 'Unit';
-    headerRow.cells[3].value = 'Rate';
-    headerRow.cells[4].value = 'Qty';
-    headerRow.cells[5].value = 'Foc';
-    headerRow.cells[6].value = 'Vat';
-    headerRow.cells[7].value = 'Amount';
+    headerRow.cells[3].value = 'Qty';
+    headerRow.cells[4].value = 'Type';
+    headerRow.cells[5].value = 'Rate';
+    headerRow.cells[6].value = 'Total';
+    headerRow.cells[7].value = 'Vat';
+    headerRow.cells[8].value = 'Amount';
 
     for (int k = 0; k < invoice.data!.detail!.length; k++) {
       final PdfGridRow row = grid.rows.add();
       row.cells[0].value = '${k + 1}';
       row.cells[1].value = '${invoice.data!.detail![k].name}';
       row.cells[2].value = '${invoice.data!.detail![k].unit}';
-      row.cells[3].value =
-          '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
-      row.cells[4].value = '${invoice.data!.detail![k].quantity}';
+      row.cells[3].value = '${invoice.data!.detail![k].quantity}';
+      row.cells[4].value =
+      (invoice.data!.detail![k].productType!.toLowerCase() == "foc" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "FOC" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "Change")
+          ? 'Normal' : 'Normal';
       row.cells[5].value =
-          (invoice.data!.detail![k].productType!.toLowerCase() == "foc")
-              ? '1'
-              : '0';
+      '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
       row.cells[6].value =
-          '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      '${invoice.data!.detail![k].taxable?.toStringAsFixed(2)}';
       row.cells[7].value =
+          '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      row.cells[8].value =
           '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
 
@@ -850,9 +926,12 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     );
 
     // Draw invoice details at the bottom right.
+
+    // ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount?.toStringAsFixed(2)}' : '\t'}
+
     String bottomInvoiceDetails = '''
-  ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount?.toStringAsFixed(2)}' : '\t'}
-  Total: ${invoice.data!.discounted_amount ?? ''} 
+    ${invoice.data!.discount != null && invoice.data!.discount! > 0 ? 'Discount: ${invoice.data!.discount!.toStringAsFixed(2)}' : '\t'}
+  Total: ${invoice.data!.total ?? ''} 
   Vat: ${invoice.data!.totalTax?.toStringAsFixed(2)}
   ${'${invoice.data!.roundOff}' != 0 ? 'Round off:${double.parse(invoice.data!.roundOff ?? '').toStringAsFixed(2)}\nGrand Total: ${invoice.data!.grandTotal?.toStringAsFixed(2)}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
   

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:mobizapp/Models/appstate.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:http/http.dart' as http;
-import '../Models/sales_model.dart';
+import '../Models/appstate.dart';
+// import '../Models/sales_model.dart';
 import '../Models/stockData.dart';
 import '../Models/vanstockdata.dart';
 import '../Models/vanstockquandity.dart' as Qty;
@@ -12,6 +12,8 @@ import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 import '../Components/commonwidgets.dart';
+import '../Models/VanStockDataModel.dart';
+
 
 class VanStockScreen extends StatefulWidget {
   static const routeName = "/VanStockScreen";
@@ -27,8 +29,8 @@ class _VanStockScreenState extends State<VanStockScreen>
 
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
-  List<Product> _products1 = [];
-  List<Product> _filteredProducts1 = [];
+  List<Product12> _products1 = [];
+  List<Product12> _filteredProducts1 = [];
 
   late TabController _tabController;
   Qty.VanStockQuandity qunatityData = Qty.VanStockQuandity();
@@ -36,7 +38,7 @@ class _VanStockScreenState extends State<VanStockScreen>
   bool _search = false;
 
   final ScrollController _scrollControllerProducts = ScrollController();
-  final ScrollController _scrollControllerReturns = ScrollController();
+  // final ScrollController _scrollControllerReturns = ScrollController();
 
   int _currentPageProducts = 1;
   bool _isLoadingProducts = false;
@@ -61,14 +63,14 @@ class _VanStockScreenState extends State<VanStockScreen>
       }
     });
 
-    _scrollControllerReturns.addListener(() {
-      if (_scrollControllerReturns.position.pixels ==
-              _scrollControllerReturns.position.maxScrollExtent &&
-          _hasMoreReturns &&
-          !_isLoadingReturns) {
-        _fetchReturns();
-      }
-    });
+    // _scrollControllerReturns.addListener(() {
+    //   if (_scrollControllerReturns.position.pixels ==
+    //           _scrollControllerReturns.position.maxScrollExtent &&
+    //       _hasMoreReturns &&
+    //       !_isLoadingReturns) {
+    //     _fetchReturns();
+    //   }
+    // });
 
     _tabController = TabController(length: 2, vsync: this);
     _searchData.addListener(() {
@@ -81,28 +83,21 @@ class _VanStockScreenState extends State<VanStockScreen>
       _isLoadingProducts = true;
     });
 
-    List<Product> allProducts = [];
-
     try {
-      while (_hasMoreProducts) {
-        final productData = await _getProducts(_currentPageProducts);
+      // Fetch all products in one call
+      final productData = await _getProducts();
 
-        // Filter products with non-zero stock
-        final filteredProducts = productData.data.products
-            .where((product) =>
-                product.units.isNotEmpty && product.units[0].stock > 0)
-            .toList();
+      // Filter products with non-zero stock
+      final filteredProducts = productData.data
+          .where((product) =>
+      product.units.isNotEmpty && product.units[0].stock > 0)
+          .toList();
 
-        allProducts.addAll(filteredProducts);
-
-        setState(() {
-          _products = allProducts;
-          _filteredProducts =
-              List.from(_products); // Update filtered products list
-          _currentPageProducts++;
-          _hasMoreProducts = _currentPageProducts <= productData.data.lastPage;
-        });
-      }
+      // Set the products once
+      setState(() {
+        _products = filteredProducts;
+        _filteredProducts = List.from(_products); // Update filtered products list
+      });
     } catch (e) {
       print('Error: $e');
     } finally {
@@ -112,18 +107,21 @@ class _VanStockScreenState extends State<VanStockScreen>
     }
   }
 
+
   Future<void> _fetchReturns() async {
     setState(() {
       _isLoadingReturns = true;
     });
 
     try {
-      final productData = await _getReturns(_currentPageReturns);
+       final productData = await _getReturns();
+      final filteredProducts1 = productData.products
+          .where((product) =>
+      product.units.isNotEmpty && product.units[0].stock > 0)
+          .toList();
       setState(() {
-        _products1.addAll(productData.data.products);
-        _filteredProducts1 = List.from(_products1);
-        _currentPageReturns++;
-        _hasMoreReturns = _currentPageReturns <= productData.data.lastPage;
+        _products1=filteredProducts1;
+        _filteredProducts1= List.from(_products1);
       });
     } catch (e) {
       print('Error: $e');
@@ -133,6 +131,8 @@ class _VanStockScreenState extends State<VanStockScreen>
       });
     }
   }
+
+
 
   Future<void> _searchProducts(String query) async {
     setState(() {
@@ -168,7 +168,7 @@ class _VanStockScreenState extends State<VanStockScreen>
   void dispose() {
     _tabController.dispose();
     _scrollControllerProducts.dispose();
-    _scrollControllerReturns.dispose();
+    // _scrollControllerReturns.dispose();
     _searchData.dispose();
 
     super.dispose();
@@ -254,7 +254,8 @@ class _VanStockScreenState extends State<VanStockScreen>
                     Container(
                       child: Column(
                         children: [
-                          _isLoadingProducts && _products.isEmpty
+                          _isLoadingProducts
+                              // && _products.isEmpty
                               ? Shimmer.fromColors(
                                   baseColor: AppConfig.buttonDeactiveColor
                                       .withOpacity(0.1),
@@ -293,9 +294,8 @@ class _VanStockScreenState extends State<VanStockScreen>
                                     )
                                   : Expanded(
                                       child: ListView.builder(
-                                        controller: _scrollControllerProducts,
-                                        itemCount: _filteredProducts.length +
-                                            (_hasMoreProducts ? 1 : 0),
+                                        // controller: _scrollControllerProducts,
+                                        itemCount: _filteredProducts.length,
                                         itemBuilder: (context, index) {
                                           if (index ==
                                               _filteredProducts.length) {
@@ -428,177 +428,132 @@ class _VanStockScreenState extends State<VanStockScreen>
                     Container(
                       child: Column(
                         children: [
-                          _isLoadingReturns && _products1.isEmpty
+                          _isLoadingReturns
                               ? Shimmer.fromColors(
-                                  baseColor: AppConfig.buttonDeactiveColor
-                                      .withOpacity(0.1),
-                                  highlightColor: AppConfig.backButtonColor,
-                                  child: Center(
-                                    child: Column(
-                                      children: [
-                                        CommonWidgets.loadingContainers(
-                                            height:
-                                                SizeConfig.blockSizeVertical *
-                                                    10,
-                                            width:
-                                                SizeConfig.blockSizeHorizontal *
-                                                    90),
-                                        CommonWidgets.loadingContainers(
-                                            height:
-                                                SizeConfig.blockSizeVertical *
-                                                    10,
-                                            width:
-                                                SizeConfig.blockSizeHorizontal *
-                                                    90),
-                                        CommonWidgets.loadingContainers(
-                                            height:
-                                                SizeConfig.blockSizeVertical *
-                                                    10,
-                                            width:
-                                                SizeConfig.blockSizeHorizontal *
-                                                    90),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : _products1.isEmpty
-                                  ? Center(
-                                      child: Text('No products found'),
-                                    )
-                                  : Expanded(
-                                      child: ListView.builder(
-                                        controller: _scrollControllerReturns,
-                                        itemCount: _filteredProducts1.length +
-                                            (_hasMoreReturns ? 1 : 0),
-                                        itemBuilder: (context, index) {
-                                          if (index ==
-                                              _filteredProducts1.length) {
-                                            return SizedBox.shrink();
-                                          }
-                                          final product =
-                                              _filteredProducts1[index];
-                                          return Card(
-                                            elevation: 3,
-                                            child: Container(
-                                              width: SizeConfig
-                                                      .blockSizeHorizontal *
-                                                  90,
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                    color:
-                                                        // selectedItems.contains(index)
-                                                        //     ? AppConfig.colorPrimary
-                                                        //     :
-                                                        Colors.transparent),
-                                                color:
-                                                    AppConfig.backgroundColor,
-                                                borderRadius:
-                                                    const BorderRadius.all(
-                                                  Radius.circular(10),
-                                                ),
-                                              ),
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(5.0),
-                                                child: Row(
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 50,
-                                                      height: 50,
-                                                      child: ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(15.0),
-                                                        child: FadeInImage(
-                                                          image: NetworkImage(
-                                                              '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                                          placeholder:
-                                                              const AssetImage(
-                                                                  'Assets/Images/no_image.jpg'),
-                                                          imageErrorBuilder:
-                                                              (context, error,
-                                                                  stackTrace) {
-                                                            return Image.asset(
-                                                                'Assets/Images/no_image.jpg',
-                                                                fit: BoxFit
-                                                                    .fitWidth);
-                                                          },
-                                                          fit: BoxFit.fitWidth,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    CommonWidgets
-                                                        .horizontalSpace(3),
-                                                    Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Tooltip(
-                                                          message: product.name!
-                                                              .toUpperCase(),
-                                                          child: SizedBox(
-                                                            width: SizeConfig
-                                                                    .blockSizeHorizontal *
-                                                                70,
-                                                            child: Text(
-                                                              '${product.code} | ${product.name!.toUpperCase()}',
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      AppConfig
-                                                                          .textCaption2Size),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            // for (int i = data.productDetail!.length - 1;
-                                                            //     i >= 0;
-                                                            //     i--)
-                                                            Text(
-                                                              product.units !=
-                                                                          null &&
-                                                                      product.units
-                                                                              .length >
-                                                                          0
-                                                                  ? '${product.units[0].name}:${product.units[0].stock}'
-                                                                  : '',
-                                                              style: TextStyle(
-                                                                fontSize: AppConfig
-                                                                    .textCaption3Size,
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              width: 10,
-                                                            ),
-                                                            Text(
-                                                              product.units !=
-                                                                          null &&
-                                                                      product.units
-                                                                              .length >
-                                                                          1
-                                                                  ? '${product.units[1].name}:${product.units[1].stock}'
-                                                                  : '',
-                                                              style: TextStyle(
-                                                                fontSize: AppConfig
-                                                                    .textCaption3Size,
-                                                              ),
-                                                            )
-                                                          ],
-                                                        )
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
+                            baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                            highlightColor: AppConfig.backButtonColor,
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width: SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width: SizeConfig.blockSizeHorizontal * 90),
+                                  CommonWidgets.loadingContainers(
+                                      height: SizeConfig.blockSizeVertical * 10,
+                                      width: SizeConfig.blockSizeHorizontal * 90),
+                                ],
+                              ),
+                            ),
+                          )
+                              : _filteredProducts1.isEmpty
+                              ? Center(
+                            child: Text(
+                                _products1.isEmpty ? 'No products found' : 'No stock found'),
+                          )
+                              : Expanded(
+                            child: ListView.builder(
+                              // controller: _scrollControllerReturns,
+                              scrollDirection: Axis.vertical,
+                              itemCount: _filteredProducts1.length,
+                              itemBuilder: (context, index) {
+                                if (index ==
+                                    _filteredProducts1.length) {
+                                  return SizedBox.shrink();
+                                }
+                                final product = _filteredProducts1[index];
+                                return Card(
+                                  elevation: 3,
+                                  child: Container(
+                                    width: SizeConfig.blockSizeHorizontal * 90,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.transparent,
+                                      ),
+                                      color: AppConfig.backgroundColor,
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(10),
                                       ),
                                     ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 50,
+                                            height: 50,
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(15.0),
+                                              child: FadeInImage(
+                                                image: NetworkImage(
+                                                    '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                                placeholder: const AssetImage(
+                                                    'Assets/Images/no_image.jpg'),
+                                                imageErrorBuilder:
+                                                    (context, error, stackTrace) {
+                                                  return Image.asset(
+                                                      'Assets/Images/no_image.jpg',
+                                                      fit: BoxFit.fitWidth);
+                                                },
+                                                fit: BoxFit.fitWidth,
+                                              ),
+                                            ),
+                                          ),
+                                          CommonWidgets.horizontalSpace(3),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Tooltip(
+                                                message: product.name.toUpperCase(),
+                                                child: SizedBox(
+                                                  width: SizeConfig.blockSizeHorizontal * 70,
+                                                  child: Text(
+                                                    '${product.code} | ${product.name.toUpperCase()}',
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                        AppConfig.textCaption2Size),
+                                                  ),
+                                                ),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    product.units.isNotEmpty
+                                                        ? '${product.units[0].name}:${product.units[0].stock}'
+                                                        : '',
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                      AppConfig.textCaption3Size,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    product.units.length > 1
+                                                        ? '${product.units[1].name}:${product.units[1].stock}'
+                                                        : '',
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                      AppConfig.textCaption3Size,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ],
                       ),
-                    ),
+                    )
+
                   ],
                 ),
               ),
@@ -617,25 +572,125 @@ class _VanStockScreenState extends State<VanStockScreen>
   //   );
   // }
 
-  Future<ProductDataModel> _getProducts(int page) async {
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_van_stock?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$page'));
+  Future<ApiResponse> _getProducts() async {
+    final response = await http.get(Uri.parse('${RestDatasource().BASE_URL}/api/get_van_stock?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
 
     if (response.statusCode == 200) {
-      return ProductDataModel.fromJson(json.decode(response.body));
+      final data = json.decode(response.body);
+      ApiResponse apiResponse = ApiResponse.fromJson(data);
+      apiResponse.data = apiResponse.data.where((product) {
+        return product.units.any((unit) => unit.stock > 0);
+      }).toList();
+
+      return apiResponse;
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+  Future<VanStockReturnResponse> _getReturns() async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_van_stock_return?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      VanStockReturnResponse apiResponse = VanStockReturnResponse.fromJson(data);
+      // Return products without filtering (filtering is handled in _fetchReturns)
+      return apiResponse;
     } else {
       throw Exception('Failed to load products');
     }
   }
 
-  Future<ProductDataModel> _getReturns(int page) async {
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_van_stock_return?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$page'));
+}
 
-    if (response.statusCode == 200) {
-      return ProductDataModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to load products');
-    }
+class ApiResponse {
+  List<Product> data;
+  bool success;
+  List<String> messages;
+
+  ApiResponse({
+    required this.data,
+    required this.success,
+    required this.messages,
+  });
+
+  factory ApiResponse.fromJson(Map<String, dynamic> json) {
+    return ApiResponse(
+      // Correctly mapping the data to a List<Product>
+      data: List<Product>.from(json['data'].map((x) => Product.fromJson(x)).toList()),
+      success: json['success'],
+      messages: List<String>.from(json['messages']),
+    );
   }
 }
+
+
+class Product {
+  int id;
+  String code;
+  String name;
+  String proImage;
+  double taxPercentage;
+  double price;
+  int storeId;
+  int status;
+  List<Unit> units;
+
+  Product({
+    required this.id,
+    required this.code,
+    required this.name,
+    required this.proImage,
+    required this.taxPercentage,
+    required this.price,
+    required this.storeId,
+    required this.status,
+    required this.units,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      code: json['code'],
+      name: json['name'],
+      proImage: json['pro_image'],
+      taxPercentage: json['tax_percentage'].toDouble(),
+      price: json['price'].toDouble(),
+      storeId: json['store_id'],
+      status: json['status'],
+      units: List<Unit>.from(json['units'].map((x) => Unit.fromJson(x))),
+    );
+  }
+}
+
+class Unit {
+  int unit;
+  int id;
+  String name;
+  double price;
+  double minPrice;
+  int stock;
+
+  Unit({
+    required this.unit,
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.minPrice,
+    required this.stock,
+  });
+
+  factory Unit.fromJson(Map<String, dynamic> json) {
+    return Unit(
+      unit: json['unit'],
+      id: json['id'],
+      name: json['name'],
+      price: double.parse(json['price']),
+      minPrice: double.parse(json['min_price']),
+      stock: json['stock'],
+    );
+  }
+}
+
+

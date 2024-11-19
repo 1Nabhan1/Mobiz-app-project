@@ -73,19 +73,43 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
     }
   }
 
-  void _filterProducts(String query) {
-    setState(() {
-      if (query.isEmpty) {
+  void _filterProducts(String query) async {
+    if (query.isEmpty) {
+      setState(() {
         filteredProducts = List.from(products);
-      } else {
-        filteredProducts = products
-            .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
     });
+
+    try {
+      final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<Products> fetchedProducts = (data['data'] as List)
+            .map((json) => Products.fromJson(json))
+            .toList();
+
+        setState(() {
+          isLoading = false;
+          filteredProducts = fetchedProducts; // Update the filtered products with the search results
+        });
+      } else {
+        throw Exception('Failed to load search results');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Error fetching search results: $e');
+    }
   }
+
 
   Future<void> clearCart() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -316,6 +340,10 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      print(AppState().storeId);
+      print(AppState().vanId);
+      print(product.id);
+      print(id);
       final data = jsonDecode(response.body);
       final units = data['data'] as List?;
       final lastsale = data['lastsale'];

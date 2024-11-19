@@ -82,6 +82,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   String? _selectPaymentTerms;
   String? _customercode;
   String? _location;
+  String? img;
   int? id;
   String? _selectedRoute;
   String? _selectCuCode;
@@ -118,10 +119,12 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _contactNumberController.text = params['phone'] ?? '';
         _whatsappNumberController.text = params['whatsappNumber'] ?? '';
         _trnController.text = params['trn'] ?? '';
+        img = params['cust_image'];
         _location = params['location'] ?? 'Click the icon to fetch the data';
-        _selectPaymentTerms = params['paymentTerms'];
-        _selectedProvinceid =
-            params['provinceId'] == 0 ? null : params['provinceId'];
+        _selectPaymentTerms = params['paymentTerms'] == '' ? null : params['paymentTerms'];
+        _selectedProvinceid = params['provinceId'] == 0 ? null : params['provinceId'];
+        print('object');
+        print(params['provinceId']);
         _selectedrouteid = params['routeId'];
         id = params['id'];
         if (params['credit_days'] != null && params['credit_days'] != '') {
@@ -133,8 +136,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _emailController.text = params['email'] ?? '';
         _isUpdate = true;
       }
-      // print('object');
-      // print(_selectedProvinceid);
+
     });
     namefocus = FocusNode();
     addressfocus = FocusNode();
@@ -147,6 +149,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     _getRoutes()
         .then((value) => _getProvince().then((value) => _getCodeData()));
     // _getProvince();
+    // print(_selectPaymentTerms);
   }
 
   @override
@@ -258,19 +261,39 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          color: Colors.grey, width: 2),
+                                        color: Colors.grey,
+                                        width: 2,
+                                      ),
                                       image: _image != null
                                           ? DecorationImage(
                                               image: FileImage(_image!),
                                               fit: BoxFit.cover,
                                             )
-                                          : null,
+                                          : null, // Set image only when _image is available
                                     ),
                                     child: _image == null
-                                        ? const Center(
-                                            child: Text('Select Image'),
-                                          )
-                                        : null,
+                                        ? (img != null && img!.isNotEmpty)
+                                            ? ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                child: Image.network(
+                                                  'http://68.183.92.8:3696/uploads/customer/cust_image/$img',
+                                                  width: 150,
+                                                  height: 150,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return const Center(
+                                                      child:
+                                                          Text('Select Image'),
+                                                    );
+                                                  },
+                                                ),
+                                              )
+                                            : const Center(
+                                                child: Text('Select Image'),
+                                              )
+                                        : null, // Display 'Select Image' only if no image is selected or no image URL
                                   ),
                                   if (_image != null)
                                     Positioned(
@@ -568,6 +591,23 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                   hint: 'Select Province',
                                   label: 'Province',
                                 ),
+                                // CustomDropdown(
+                                //   items: provinces,
+                                //   selectedValue: _selectedProvinceid != null
+                                //       ? provinces.firstWhere(
+                                //         (element) => element['id'] == _selectedProvinceid,
+                                //     orElse: () => {'id': null, 'name': 'Unknown'}, // Return a default map
+                                //   )
+                                //       : {'id': null, 'name': 'Select a province'}, // Default value when null
+                                //   onChanged: (selectedProvince) {
+                                //     setState(() {
+                                //       _selectedProvinceid = selectedProvince!['id'];
+                                //     });
+                                //     // print(_selectedProvinceid);
+                                //   },
+                                //   hint: 'Select Province',
+                                //   label: 'Province',
+                                // ),
                                 const SizedBox(height: 16),
                                 SizedBox(
                                   width: SizeConfig.blockSizeHorizontal * 35,
@@ -686,6 +726,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         '/api/get_route?store_id=${AppState().storeId}', AppState().token);
     route = RouteDataModel.fromJson(resJson);
     if (route.data != null) {
+      print(resJson);
       routes.clear();
       for (var i in route.data!) {
         routes.add({'id': i.id, 'name': i.name});

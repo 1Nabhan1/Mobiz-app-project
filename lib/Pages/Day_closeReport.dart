@@ -8,6 +8,7 @@ import '../Models/Day_close.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import '../tsts.dart';
 import 'Day_expand.dart';
 
 class DaycloseReport extends StatefulWidget {
@@ -122,7 +123,7 @@ class _DaycloseReportState extends State<DaycloseReport> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => Dayexpanding(
+                                    builder: (context) => DayClosePagessss(
                                       id: dayClose1.id,
                                       invoiceNo: dayClose1.invoiceNo,
                                     ),

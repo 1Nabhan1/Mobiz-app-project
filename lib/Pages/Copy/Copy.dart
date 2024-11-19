@@ -2,27 +2,30 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Pages/Copy/CopySelectProducts.dart';
 import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesselectproductorder.dart';
 import 'package:mobizapp/Pages/salesselectproducts.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Models/sales_model.dart';
-import '../Components/commonwidgets.dart';
-import '../Utilities/rest_ds.dart';
-import '../confg/appconfig.dart';
-import '../confg/sizeconfig.dart';
+import '../../Models/sales_model.dart';
+import '../../Components/commonwidgets.dart';
+import '../../Utilities/rest_ds.dart';
+import '../../confg/appconfig.dart';
+import '../../confg/sizeconfig.dart';
 import 'package:http/http.dart' as http;
 
-class SalesScreen extends StatefulWidget {
-  static const routeName = "/ScalesScreen";
+import '../customerreturndetails.dart';
+
+class CopyScreen extends StatefulWidget {
+  static const routeName = "/CopyScreen";
   @override
-  _SalesScreenState createState() => _SalesScreenState();
+  _CopyScreenState createState() => _CopyScreenState();
 }
 
 int? id;
 
-class _SalesScreenState extends State<SalesScreen> {
+class _CopyScreenState extends State<CopyScreen> {
   List<Map<String, dynamic>> savedProducts = [];
   final TextEditingController _remarksController = TextEditingController();
   bool _isPercentage = false;
@@ -39,7 +42,12 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _search = false;
   int _ifVat = 1;
   String? name;
+  String? code;
+  String? paymentTerms;
+  String? paydata;
+  int? pricegroupId;
   bool Status = false;
+  bool isAvailable = false;
   var attendanceData;
 
   String roundoff = '';
@@ -279,37 +287,14 @@ class _SalesScreenState extends State<SalesScreen> {
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params['name'];
+      pricegroupId = params['price_group_id'];
+      code = params['code'];
+      paymentTerms = params['paymentTerms'];
+      paydata = params['outstandamt'];
+      print("Siuu: $paydata");
     }
     void postDataToApi() async {
       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
-
-      // for (int index = 0; index < savedProducts.length; index++) {
-      //   String? selectedUnitName = savedProducts[index].selectedUnitName;
-      //   int selectedUnitId;
-      //   // if (selectedUnitName != null) {
-      //   //   selectedUnitId = savedProducts[index]
-      //   //       .units
-      //   //       .firstWhere((unit) => unit.name == selectedUnitName)
-      //   //       .unit!;
-      //   // } else {
-      //   //   selectedUnitId = savedProducts[index].units.first.unit!;
-      //   // }
-      //
-      //   // selectedUnitIds.add(selectedUnitId);
-      //   // String? qty = qtys[index];
-      //   // int quantity = qty != null ? int.parse(qty) : 1;
-      //   // quantities.add(quantity);
-      //
-      //   ProductType? selectedProductType = selectedProductTypes[index];
-      //   Object productType =
-      //       selectedProductType != null ? selectedProductType.id : 1;
-      //   productTypesList.add(productType);
-      // }
-      // List<double> amountsList = amounts.entries.map((entry) {
-      //   return double.parse(entry.value);
-      // }).toList();
-
-      // int jsonAmounts = jsonEncode(amountsList);
       List<int> productIds = savedProducts.map<int>((product) {
         return product['id'];
       }).toList();
@@ -327,7 +312,14 @@ class _SalesScreenState extends State<SalesScreen> {
       List<int> productTypes = savedProducts.map<int>((product) {
         return int.parse(product['type_id']);
       }).toList();
-      // print(productIds);
+
+      List<List<String>> serialNumbers =
+          savedProducts.map<List<String>>((product) {
+        return product['serial_numbers'] != null &&
+                product['serial_numbers'] is List
+            ? List<String>.from(product['serial_numbers'])
+            : [];
+      }).toList();
       var data = {
         'van_id': AppState().vanId,
         'store_id': AppState().storeId,
@@ -345,7 +337,8 @@ class _SalesScreenState extends State<SalesScreen> {
         "total": totalAmount,
         "round_off": roundOffValue,
         "grand_total": roundedGrandTotal,
-        'remarks': _remarksText
+        'remarks': _remarksText,
+        'serial_numbers': serialNumbers
       };
       var body = json.encode(data);
 
@@ -358,11 +351,12 @@ class _SalesScreenState extends State<SalesScreen> {
       );
 
       if (response.statusCode == 200) {
-        // print(_isPercentage ? '1' : '0');
-        // print('fjnvjksdnvsbjvnsjkvhSDhv');
-        // print(cartItems.map((item) => item.price).toList());
-        // print(AppState().storeId);
+        var responseBody = json.decode(response.body);
+        int dataId = responseBody['data']['id'];
         print('Post successful');
+        print('$data');
+        print(serialNumbers);
+        print(response.body);
         if (mounted) {
           CommonWidgets.showDialogueBox(
                   context: context, title: "Alert", msg: "Created Successfully")
@@ -370,9 +364,17 @@ class _SalesScreenState extends State<SalesScreen> {
             (value) {
               clearCart();
               Navigator.pushReplacementNamed(
-                context,
-                SaleInvoiceScrreen.routeName,
-              );
+                  context, Customerreturndetail.routeName,
+                  arguments: {
+                    'name': name,
+                    'dataId': dataId,
+                    'customerId': id,
+                    'code': code,
+                    'paymentTerms': paymentTerms,
+                    'outstandamt': paydata
+                  });
+              print("Copyyyyyyyyyy");
+              print(dataId);
             },
           );
         }
@@ -397,12 +399,15 @@ class _SalesScreenState extends State<SalesScreen> {
               onTap: () {
                 Navigator.pop(context);
                 // clearSharedPreferences();
-                clearCart();
+                if (!isAvailable) {
+                  clearCart();
+                  print("Avail:$isAvailable");
+                }
               },
               child: Icon(Icons.arrow_back_rounded)),
           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
           title: const Text(
-            'Sales',
+            'Sale',
             style: TextStyle(color: AppConfig.backgroundColor),
           ),
           backgroundColor: AppConfig.colorPrimary,
@@ -437,8 +442,15 @@ class _SalesScreenState extends State<SalesScreen> {
                     ? GestureDetector(
                         onTap: () {
                           Navigator.pushReplacementNamed(
-                              context, SalesSelectProductsScreen.routeName,
-                              arguments: {'customerId': id, 'name': name}).then((value) {
+                              context, CopySelectProduct.routeName,
+                              arguments: {
+                                'customerId': id,
+                                'name': name,
+                                'price_group_id': pricegroupId,
+                                'outstandamt': paydata,
+                                'code': code,
+                                'paymentTerms': paymentTerms,
+                              }).then((value) {
                             // _initDone = false;
                             // _getTypes();
                           });
@@ -461,9 +473,15 @@ class _SalesScreenState extends State<SalesScreen> {
                 : GestureDetector(
                     onTap: () {
                       Navigator.pushReplacementNamed(
-                              context, SalesSelectProductsScreen.routeName,
-                              arguments: {'customerId': id, 'name': name})
-                          .then((value) {
+                          context, CopySelectProduct.routeName,
+                          arguments: {
+                            'customerId': id,
+                            'name': name,
+                            'price_group_id': pricegroupId,
+                            'outstandamt': paydata,
+                            'code': code,
+                            'paymentTerms': paymentTerms,
+                          }).then((value) {
                         // _initDone = false;
                         // _getTypes();
                       });
@@ -983,6 +1001,50 @@ class _SalesScreenState extends State<SalesScreen> {
                         Text('Grand Total: '
                             '${roundedGrandTotal.toStringAsFixed(2)}'
                             ''),
+                        ElevatedButton(
+                          style: ButtonStyle(
+                            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7.0),
+                              ),
+                            ),
+                            backgroundColor: MaterialStateProperty.all(AppConfig.colorPrimary),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isAvailable = true; // Change the state
+                            });
+                            print(isAvailable);
+
+                            // Show the dialog
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Success'),
+                                  content: Text('Saved to cart.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close the dialog
+                                      },
+                                      child: Text('OK'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: Text(
+                            'Save to cart',
+                            style: TextStyle(
+                              fontSize: AppConfig.textCaption3Size,
+                              color: AppConfig.backgroundColor,
+                              fontWeight: AppConfig.headLineWeight,
+                            ),
+                          ),
+                        ),
+
                       ],
                     ),
                   ),
@@ -1034,6 +1096,10 @@ class _SalesScreenState extends State<SalesScreen> {
         availableStock =
             double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
       }
+      List<String> serialNumbers =
+          product['serial_numbers'] != null && product['serial_numbers'] is List
+              ? List<String>.from(product['serial_numbers'])
+              : [];
 
       showDialog(
         context: context,
@@ -1205,6 +1271,33 @@ class _SalesScreenState extends State<SalesScreen> {
                                 fillColor: Colors.grey.shade300),
                           ),
                           SizedBox(height: 10),
+                          ...serialNumbers.map((serialNumber) {
+                            int index = serialNumbers.indexOf(
+                                serialNumber); // Get the index for updates
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: 10.0), // Spacing between text fields
+                              child: TextFormField(
+                                initialValue: serialNumber,
+                                onChanged: (value) {
+                                  // Update the specific serial number in the list
+                                  serialNumbers[index] = value;
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'Serial Number ${index + 1}',
+                                  labelStyle:
+                                      TextStyle(fontWeight: FontWeight.bold),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      vertical: 2.h, horizontal: 10.w),
+                                  hintText: 'Enter serial number',
+                                  border: OutlineInputBorder(
+                                      borderSide: BorderSide.none),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade300,
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ] else ...[
                           Text('No units available for this product.'),
                         ],

@@ -36,59 +36,8 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
   String? name;
   String? code;
   String? payment;
-  // void addToCart(Product product) async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
-  //
-  //   // Check if the product is already in cartItems based on product ID or any unique identifier
-  //   bool alreadyExists = cartItems.any((item) {
-  //     Map<String, dynamic> itemMap = jsonDecode(item);
-  //     return itemMap['id'] ==
-  //         product.id; // Adjust 'id' to your product identifier
-  //   });
-  //
-  //   if (!alreadyExists) {
-  //     cartItems.add(jsonEncode(product.toJson()));
-  //     await prefs.setStringList('cartItemsreturn', cartItems);
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('${product.name} added')),
-  //     );
-  //   } else {
-  //     cartItems.add(jsonEncode(product.toJson()));
-  //     await prefs.setStringList('cartItemsreturn', cartItems);
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('${product.name} added')),
-  //     );
-  //   }
-  // }
-
-  // void addToCart(Product product) async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
-  //
-  //   for (var unit in product.units) {
-  //     bool alreadyExists = cartItems.any((item) {
-  //       Map<String, dynamic> itemMap = jsonDecode(item);
-  //       return itemMap['id'] == product.id && itemMap['unitId'] == unit.id;
-  //     });
-  //
-  //     if (!alreadyExists) {
-  //       var productUnitMap = product.toJson();
-  //       productUnitMap['unitId'] = unit.id; // Add unit id to the product map
-  //       cartItems.add(jsonEncode(productUnitMap));
-  //       await prefs.setStringList('cartItemsreturn', cartItems);
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('${product.name} (${unit.name}) added')),
-  //       );
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text(
-  //                 '${product.name} (${unit.name}) is already in the cart')),
-  //       );
-  //     }
-  //   }
-  // }
+  String? paydata;
+  // int? dataId;
 
   void addToCart(Product product) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -128,7 +77,6 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
         );
       }
     } else {
-      // For products with more than two units, allow unlimited addition
       cartItems.add(jsonEncode(product.toJson()));
       await prefs.setStringList('cartItems', cartItems);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,22 +125,47 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
     }
   }
 
+  Future<List<Product>> fetchSearchedProducts(String query) async {
+    final response = await http.get(
+      Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      return (jsonResponse['data'] as List)
+          .map((productJson) => Product.fromJson(productJson))
+          .toList();
+    } else {
+      throw Exception('Failed to load search results');
+    }
+  }
+
   Future<void> _searchProducts(String query) async {
     setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = List.from(_products);
-      } else {
-        _filteredProducts = _products
-            .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
+      _isLoading = true;
     });
 
-    if (_filteredProducts.isEmpty && _hasMore) {
-      await _fetchProducts();
-      _searchProducts(query); // Re-run the search after fetching more products
+    try {
+      if (query.isEmpty) {
+        // If the search query is empty, reset to show all products.
+        _filteredProducts = List.from(_products);
+      } else {
+        // Call the search API with the query
+        final searchResults = await fetchSearchedProducts(query);
+
+        // Update the filtered products with search results
+        setState(() {
+          _filteredProducts = searchResults;
+          _hasMore = false; // Assume search doesn't need pagination
+        });
+      }
+    } catch (e) {
+      print('Error searching products: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -213,6 +186,8 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
       name = params!['name'];
       code = params!['code'];
       payment = params!['paymentTerms'];
+      paydata = params!['outstandamt'];
+      // dataId = params!['dataId'];
     }
     return Scaffold(
       appBar: AppBar(
@@ -299,20 +274,6 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                   itemBuilder: (context, index) {
                     if (index == _filteredProducts.length) {
                       return SizedBox.shrink();
-                      //   Shimmer.fromColors(
-                      //   baseColor:
-                      //       AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      //   highlightColor: AppConfig.backButtonColor,
-                      //   child: Center(
-                      //     child: Column(
-                      //       children: [
-                      //         CommonWidgets.loadingContainers(
-                      //             height: SizeConfig.blockSizeVertical * 10,
-                      //             width: SizeConfig.blockSizeHorizontal * 90),
-                      //       ],
-                      //     ),
-                      //   ),
-                      // );
                     }
                     final product = _filteredProducts[index];
                     return GestureDetector(
@@ -324,7 +285,9 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                               'customerId': id,
                               'name': name,
                               'code': code,
-                              'paymentTerms': payment
+                              'paymentTerms': payment,
+                              'outstandamt':paydata
+                              // 'dataId': dataId
                             });
                       },
                       child: Padding(
@@ -422,12 +385,12 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                                           ),
                                           Text(
                                             product.units != null &&
-                                                product.units.length > 2
+                                                    product.units.length > 2
                                                 ? '${product.units[2].name}:${product.units[2].stock}'
                                                 : '',
                                             style: TextStyle(
                                               fontSize:
-                                              AppConfig.textCaption3Size,
+                                                  AppConfig.textCaption3Size,
                                             ),
                                           ),
                                         ],

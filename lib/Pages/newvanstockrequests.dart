@@ -36,7 +36,7 @@ class _VanStocksState extends State<VanStocks> {
   String? selectedUnitName;
   List<ProductType> productTypes = [];
   List<ProductType?> selectedProductTypes =
-      []; // List to store selected product types
+  []; // List to store selected product types
   String? name;
   int _ifVat = 1;
   // num tax = 0;
@@ -85,13 +85,6 @@ class _VanStocksState extends State<VanStocks> {
           cartItems[i].selectedUnitName =
               prefs.getString('unitNamereq$i') ?? cartItems[i].units.first.name;
         }
-
-        // for (int i = 0; i < cartItems.length; i++) {
-        //   selectedProductTypes[i] = productTypes.firstWhere(
-        //         (type) => type.name == prefs.getString('productType$i'),
-        //     orElse: () => productTypes.first,
-        //   );
-        // }
       }
     });
   }
@@ -109,69 +102,9 @@ class _VanStocksState extends State<VanStocks> {
         cartItems = products;
         selectedProductTypes = List.generate(
           cartItems.length,
-          (index) => null,
+              (index) => null,
         );
       });
-    }
-  }
-
-  // double total = 0;
-  double calculateTotalRate() {
-    double total = 0;
-    for (int index = 0; index < cartItems.length; index++) {
-      double rate = double.tryParse(
-              amounts[index] ?? cartItems[index].price.toString()) ??
-          0;
-      int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      total += rate * quantity;
-    }
-    return total;
-  }
-
-  // double tax = 0;
-  double calculateTax() {
-    double tax = 0;
-    for (int index = 0; index < cartItems.length; index++) {
-      double rate = double.tryParse(
-              amounts[index] ?? cartItems[index].price.toString()) ??
-          0;
-      int stock = cartItems[index].units[0].stock ?? 0;
-      int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-      double totaltax = ((rate) / 100) * quantity;
-      tax += totaltax;
-    }
-    return tax;
-  }
-
-  // double grnddtotal = 0;
-  Map<String, dynamic> grandTotal() {
-    String discountValue = _discountData.text.trim();
-    double discountAmount = double.tryParse(discountValue) ?? 0;
-    double totalRate = calculateTotalRate();
-    double totalTax = calculateTax();
-    double grandTotal = _ifVat == 1
-        ? _isPercentage
-            ? totalRate - ((totalRate + totalTax) * discountAmount) / 100
-            : totalRate + totalTax - discountAmount
-        : _isPercentage
-            ? totalRate - (totalRate * discountAmount) / 100
-            : totalRate - discountAmount;
-    int roundedGrandTotal = customRound(grandTotal);
-
-    return {
-      'original': grandTotal,
-      'rounded': roundedGrandTotal,
-      'roundOffValue': roundedGrandTotal - grandTotal,
-    };
-  }
-
-  int customRound(double value) {
-    double fractionalPart = value - value.toInt();
-
-    if (fractionalPart >= 0.5) {
-      return value.ceil();
-    } else {
-      return value.floor();
     }
   }
 
@@ -184,13 +117,30 @@ class _VanStocksState extends State<VanStocks> {
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
 
-      products.removeAt(index); // Remove the item at the specific index
+      // Remove the item at the specific index
+      products.removeAt(index);
+
+      // Remove quantity and amount for the removed product
+      qtys.remove(index);
+      amounts.remove(index);
+
+      // Update the keys of the qtys and amounts maps
+      Map<int, String> newQtys = {};
+      Map<int, String> newAmounts = {};
+      for (int i = 0; i < products.length; i++) {
+        newQtys[i] =
+            qtys[i + (i >= index ? 1 : 0)] ?? '1'; // Adjusting the index
+        newAmounts[i] = amounts[i + (i >= index ? 1 : 0)] ??
+            products[i].price.toString(); // Adjusting the index
+      }
+
+      qtys = newQtys;
+      amounts = newAmounts;
 
       List<String> updatedCartItemsJson =
-          products.map((product) => jsonEncode(product.toJson())).toList();
+      products.map((product) => jsonEncode(product.toJson())).toList();
 
       await prefs.setStringList('cartItemsvanstock', updatedCartItemsJson);
-
       fetchCartItems(); // Refresh UI after deletion
     }
   }
@@ -205,13 +155,6 @@ class _VanStocksState extends State<VanStocks> {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> grandTotalMap = grandTotal();
-
-    double total = calculateTotalRate();
-    double tax = _ifVat == 1 ? calculateTax() : 0;
-    int roundedGrandTotal = grandTotalMap['rounded'];
-    double roundOffValue = grandTotalMap['roundOffValue'];
-
     void postDataToApi() async {
       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vanrequest.store');
       List<int> quantities = [];
@@ -258,9 +201,9 @@ class _VanStocksState extends State<VanStocks> {
         print('Post successful');
         if (mounted) {
           CommonWidgets.showDialogueBox(
-                  context: context, title: "Alert", msg: "Created Successfully")
+              context: context, title: "Alert", msg: "Created Successfully")
               .then(
-            (value) {
+                (value) {
               clearCart();
             },
           );
@@ -274,7 +217,7 @@ class _VanStocksState extends State<VanStocks> {
 
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params['name'];
     }
@@ -297,8 +240,8 @@ class _VanStocksState extends State<VanStocks> {
           ),
           onPressed: (cartItems.isNotEmpty)
               ? () async {
-                  postDataToApi();
-                }
+            postDataToApi();
+          }
               : null,
           child: Text(
             'SAVE',
@@ -325,35 +268,32 @@ class _VanStocksState extends State<VanStocks> {
         actions: [
           (_search)
               ? Container(
-                  height: SizeConfig.blockSizeVertical * 5,
-                  width: SizeConfig.blockSizeHorizontal * 76,
-                  decoration: BoxDecoration(
-                    color: AppConfig.colorPrimary,
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                    border: Border.all(color: AppConfig.colorPrimary),
-                  ),
-                  child: TextField(
-                    controller: _searchData,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.all(5),
-                      hintText: "Search...",
-                      hintStyle: TextStyle(color: AppConfig.backgroundColor),
-                      border: InputBorder.none,
-                    ),
-                  ),
-                )
+            height: SizeConfig.blockSizeVertical * 5,
+            width: SizeConfig.blockSizeHorizontal * 76,
+            decoration: BoxDecoration(
+              color: AppConfig.colorPrimary,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(10),
+              ),
+              border: Border.all(color: AppConfig.colorPrimary),
+            ),
+            child: TextField(
+              controller: _searchData,
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.all(5),
+                hintText: "Search...",
+                hintStyle: TextStyle(color: AppConfig.backgroundColor),
+                border: InputBorder.none,
+              ),
+            ),
+          )
               : Container(),
           CommonWidgets.horizontalSpace(1),
           GestureDetector(
             onTap: () {
               Navigator.pushReplacementNamed(
-                context, SelectProductsScreen.routeName,
-                //     arguments: {'customerId': id, 'name': name}).then((value) {
-                //   // _initDone = false;
-                //   // _getTypes();
-                // }
+                context,
+                SelectProductsScreen.routeName,
               );
             },
             child: Icon(
@@ -367,595 +307,220 @@ class _VanStocksState extends State<VanStocks> {
       ),
       body: cartItems.isEmpty
           ? Center(
-              child: Text('No items.'),
-            )
+        child: Text('No items.'),
+      )
           : SingleChildScrollView(
-              child: Column(
-                children: [
-                  ListView.builder(
-                    physics: BouncingScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: cartItems.length,
-                    itemBuilder: (context, index) {
-                      List<String> unitNames = cartItems[index]
-                          .units
-                          .where((unit) => unit.name != null)
-                          .map((unit) => unit.name!)
-                          .toList();
+        child: Column(
+          children: [
+            ListView.builder(
+              physics: BouncingScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: cartItems.length,
+              itemBuilder: (context, index) {
+                List<String> unitNames = cartItems[index]
+                    .units
+                    .where((unit) => unit.name != null)
+                    .map((unit) => unit.name!)
+                    .toList();
 
-                      if (unitNames.isEmpty) {
-                        return SizedBox.shrink();
-                      }
+                if (unitNames.isEmpty) {
+                  return SizedBox.shrink();
+                }
 
-                      // Ensure each item has its own selected unit name state
-                      String? selectedUnitName =
-                          cartItems[index].selectedUnitName ?? unitNames.first;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 2),
-                        child: Card(
-                          elevation: 1,
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            width: SizeConfig.blockSizeHorizontal * 90,
-                            decoration: BoxDecoration(
-                              color: AppConfig.backgroundColor,
-                              border: Border.all(
-                                color: AppConfig.buttonDeactiveColor
-                                    .withOpacity(0.5),
-                              ),
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 50,
-                                      height: 60,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: FadeInImage(
-                                          image: NetworkImage(
-                                            '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-                                          ),
-                                          placeholder: const AssetImage(
-                                            'Assets/Images/no_image.jpg',
-                                          ),
-                                          imageErrorBuilder:
-                                              (context, error, stackTrace) {
-                                            return Image.asset(
-                                              'Assets/Images/no_image.jpg',
-                                              fit: BoxFit.fitWidth,
-                                            );
-                                          },
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                    CommonWidgets.horizontalSpace(1),
-                                    Column(
-                                      children: [
-                                        CommonWidgets.verticalSpace(1),
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            CommonWidgets.horizontalSpace(1),
-                                            SizedBox(
-                                              width: SizeConfig
-                                                      .blockSizeHorizontal *
-                                                  70,
-                                              child: Text(
-                                                '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
-                                                style: TextStyle(
-                                                  fontSize: AppConfig
-                                                      .textCaption3Size,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    CircleAvatar(
-                                      backgroundColor:
-                                          Colors.grey.withOpacity(0.2),
-                                      radius: 10,
-                                      child: GestureDetector(
-                                        onTap: () async {
-                                          removeFromCart(index);
-                                        },
-                                        child: const Icon(
-                                          Icons.close,
-                                          size: 15,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    // SizedBox(
-                                    //   width: 45,
-                                    //   height: 20,
-                                    //   child: DropdownButtonHideUnderline(
-                                    //     child: DropdownButton<ProductType>(
-                                    //       alignment: Alignment.center,
-                                    //       isExpanded: true,
-                                    //       style: TextStyle(
-                                    //         fontSize: 12,
-                                    //         color: AppConfig.colorPrimary,
-                                    //         fontWeight: FontWeight.bold,
-                                    //       ),
-                                    //       hint: Center(child: Text('Select')),
-                                    //       value: selectedProductTypes[index] !=
-                                    //               null
-                                    //           ? selectedProductTypes[index]
-                                    //           : productTypes.isNotEmpty
-                                    //               ? productTypes.first
-                                    //               : null,
-                                    //       onChanged: (ProductType? newValue) {
-                                    //         setState(() {
-                                    //           selectedProductTypes[index] =
-                                    //               newValue;
-                                    //         });
-                                    //       },
-                                    //       items: productTypes
-                                    //           .map((ProductType productType) {
-                                    //         return DropdownMenuItem<
-                                    //             ProductType>(
-                                    //           value: productType,
-                                    //           child: Center(
-                                    //               child: Text(productType
-                                    //                   .name)), // Center align the item text
-                                    //         );
-                                    //       }).toList(),
-                                    //       icon: SizedBox.shrink(),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    // Text('| '),
-                                    Flexible(
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton<String>(
-                                          isDense: true,
-                                          isExpanded: false,
-                                          alignment: Alignment.center,
-                                          value: selectedUnitName,
-                                          items: unitNames
-                                              .map<DropdownMenuItem<String>>(
-                                                  (String value) {
-                                            return DropdownMenuItem<String>(
-                                              value: value,
-                                              child: Center(
-                                                child: Text(
-                                                  value,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        AppConfig.colorPrimary,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                          onChanged: (String? newValue) {
-                                            setState(() {
-                                              cartItems[index]
-                                                  .selectedUnitName = newValue;
-
-                                              // Find the selected unit and update the rate
-                                              // for (var unit
-                                              //     in cartItems[index].units) {
-                                              //   if (unit.name == newValue) {
-                                              //     // Perform validation based on stock
-                                              //     if (unit.stock >=
-                                              //         int.parse(
-                                              //             qtys[index] ?? '1')) {
-                                              //       // Stock is sufficient
-                                              //       amounts[index] =
-                                              //           unit.price.toString();
-                                              //     } else {
-                                              //       // Stock is insufficient, handle this scenario (e.g., show error message)
-                                              //       // For now, setting rate to default or handle as per your app logic
-                                              //       amounts[index] =
-                                              //           cartItems[index]
-                                              //               .price
-                                              //               .toString();
-                                              //       // You can show a snackbar or dialog here indicating insufficient stock
-                                              //       ScaffoldMessenger.of(
-                                              //               context)
-                                              //           .showSnackBar(SnackBar(
-                                              //         content: Text(
-                                              //             'Insufficient stock for ${unit.name}'),
-                                              //         duration:
-                                              //             Duration(seconds: 2),
-                                              //       ));
-                                              //     }
-                                              //     // saveToSharedPreferences(
-                                              //     //     'amountreq$index',
-                                              //     //     amounts[index]);
-                                              //     break;
-                                              //   }
-                                              // }
-                                              saveToSharedPreferences(
-                                                  'unitNamereq$index',
-                                                  newValue);
-                                            });
-                                          },
-                                          icon: SizedBox.shrink(),
-                                        ),
-                                      ),
-                                    ),
-                                    Text(' | '),
-                                    GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return AlertDialog(
-                                                  title: const Text('Quantity'),
-                                                  content: TextField(
-                                                    controller:
-                                                        TextEditingController(
-                                                      text: qtys[index] ?? '',
-                                                    ),
-                                                    onChanged: (value) {
-                                                      setState(() {
-                                                        qtys[index] = value;
-                                                        saveToSharedPreferences(
-                                                            'qtyreq$index',
-                                                            value);
-                                                      });
-                                                    },
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    // controller: _discountData,
-                                                  ),
-                                                  actions: <Widget>[
-                                                    MaterialButton(
-                                                      color: AppConfig
-                                                          .colorPrimary,
-                                                      textColor: Colors.white,
-                                                      child: const Text('OK'),
-                                                      onPressed: () {
-                                                        // var selectedUnit =
-                                                        //     cartItems[index]
-                                                        //         .units
-                                                        //         .firstWhere(
-                                                        //           (unit) =>
-                                                        //               unit.name ==
-                                                        //               selectedUnitName,
-                                                        //           // orElse: () => null,
-                                                        //         );
-                                                        //
-                                                        // if (selectedUnit !=
-                                                        //     null) {
-                                                        //   int enteredQuantity =
-                                                        //       int.tryParse(qtys[
-                                                        //                   index] ??
-                                                        //               '1') ??
-                                                        //           0;
-                                                        //   if (enteredQuantity >
-                                                        //       selectedUnit
-                                                        //           .stock) {
-                                                        //     // Quantity entered exceeds available stock
-                                                        //     ScaffoldMessenger
-                                                        //             .of(context)
-                                                        //         .showSnackBar(
-                                                        //             SnackBar(
-                                                        //       content: Text(
-                                                        //         'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
-                                                        //       ),
-                                                        //       duration:
-                                                        //           Duration(
-                                                        //               seconds:
-                                                        //                   2),
-                                                        //     ));
-                                                        //     // Reset quantity to available stock or handle as per your app logic
-                                                        //     setState(() {
-                                                        //       qtys[index] =
-                                                        //           selectedUnit
-                                                        //               .stock
-                                                        //               .toString();
-                                                        //       saveToSharedPreferences(
-                                                        //           'qtyreq$index',
-                                                        //           qtys[index]);
-                                                        //     });
-                                                        //   } else {
-                                                        //     Navigator.pop(
-                                                        //         context); // Close dialog if validation passed
-                                                        //   }
-                                                        // } else {
-                                                        //   Navigator.pop(
-                                                        //       context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
-                                                        // }
-                                                        quantity =
-                                                            qtysctrl.text;
-                                                        Navigator.pop(context);
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              });
-                                        },
-                                        child: Row(
-                                          children: [
-                                            Text('Qty: '),
-                                            Text(
-                                              '${qtys[index] ?? '1'}',
-                                              style: TextStyle(
-                                                  color: AppConfig.colorPrimary,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        )),
-                                    // Text(' | '),
-                                    // GestureDetector(
-                                    //     onTap: () {
-                                    //       showDialog(
-                                    //           context: context,
-                                    //           builder: (context) {
-                                    //             return AlertDialog(
-                                    //               title: const Text('Amount'),
-                                    //               content: TextField(
-                                    //                 controller:
-                                    //                     TextEditingController(
-                                    //                   text:
-                                    //                       '${amounts[index] ?? cartItems[index].price}',
-                                    //                 ),
-                                    //                 onChanged: (value) {
-                                    //                   setState(() {
-                                    //                     amounts[index] = value;
-                                    //                   });
-                                    //                 },
-                                    //                 keyboardType:
-                                    //                     TextInputType.number,
-                                    //                 // controller: _discountData,
-                                    //               ),
-                                    //               actions: <Widget>[
-                                    //                 MaterialButton(
-                                    //                   color: AppConfig
-                                    //                       .colorPrimary,
-                                    //                   textColor: Colors.white,
-                                    //                   child: const Text('OK'),
-                                    //                   onPressed: () {
-                                    //                     amount =
-                                    //                         amountctrl.text;
-                                    //                     Navigator.pop(context);
-                                    //                   },
-                                    //                 ),
-                                    //               ],
-                                    //             );
-                                    //           });
-                                    //     },
-                                    //     child: Row(
-                                    //       children: [
-                                    //         Text('Rate: '),
-                                    //         Text(
-                                    //           '${amounts[index] ?? cartItems[index].price}',
-                                    //           style: TextStyle(
-                                    //               color: AppConfig.colorPrimary,
-                                    //               fontWeight: FontWeight.bold),
-                                    //         ),
-                                    //       ],
-                                    //     )),
-                                    // Text(' | '),
-                                    // Text(
-                                    //   'Amt: ${amounts[index] ?? cartItems[index].price}',
-                                    //   style: TextStyle(color: Colors.grey),
-                                    // )
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                // Ensure each item has its own selected unit name state
+                String? selectedUnitName =
+                    cartItems[index].selectedUnitName ?? unitNames.first;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 2),
+                  child: Card(
+                    elevation: 1,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      width: SizeConfig.blockSizeHorizontal * 90,
+                      decoration: BoxDecoration(
+                        color: AppConfig.backgroundColor,
+                        border: Border.all(
+                          color: AppConfig.buttonDeactiveColor
+                              .withOpacity(0.5),
                         ),
-                      );
-                    },
+                        borderRadius:
+                        const BorderRadius.all(Radius.circular(10)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 50,
+                                height: 60,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: FadeInImage(
+                                    image: NetworkImage(
+                                      '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
+                                    ),
+                                    placeholder: const AssetImage(
+                                      'Assets/Images/no_image.jpg',
+                                    ),
+                                    imageErrorBuilder:
+                                        (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'Assets/Images/no_image.jpg',
+                                        fit: BoxFit.fitWidth,
+                                      );
+                                    },
+                                    fit: BoxFit.fitWidth,
+                                  ),
+                                ),
+                              ),
+                              CommonWidgets.horizontalSpace(1),
+                              Column(
+                                children: [
+                                  CommonWidgets.verticalSpace(1),
+                                  Row(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      CommonWidgets.horizontalSpace(1),
+                                      SizedBox(
+                                        width: SizeConfig
+                                            .blockSizeHorizontal *
+                                            70,
+                                        child: Text(
+                                          '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
+                                          style: TextStyle(
+                                            fontSize: AppConfig
+                                                .textCaption3Size,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              CircleAvatar(
+                                backgroundColor:
+                                Colors.grey.withOpacity(0.2),
+                                radius: 10,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    removeFromCart(index);
+                                  },
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 15,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    isDense: true,
+                                    isExpanded: false,
+                                    alignment: Alignment.center,
+                                    value: selectedUnitName,
+                                    items: unitNames
+                                        .map<DropdownMenuItem<String>>(
+                                            (String value) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Center(
+                                              child: Text(
+                                                value,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color:
+                                                  AppConfig.colorPrimary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        cartItems[index]
+                                            .selectedUnitName = newValue;
+                                        saveToSharedPreferences(
+                                            'unitNamereq$index',
+                                            newValue);
+                                      });
+                                    },
+                                    icon: SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+                              Text(' | '),
+                              GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('Quantity'),
+                                            content: TextField(
+                                              controller:
+                                              TextEditingController(
+                                                text: qtys[index] ?? '',
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  qtys[index] = value;
+                                                  saveToSharedPreferences(
+                                                      'qtyreq$index',
+                                                      value);
+                                                });
+                                              },
+                                              keyboardType:
+                                              TextInputType.number,
+                                              // controller: _discountData,
+                                            ),
+                                            actions: <Widget>[
+                                              MaterialButton(
+                                                color: AppConfig
+                                                    .colorPrimary,
+                                                textColor: Colors.white,
+                                                child: const Text('OK'),
+                                                onPressed: () {
+                                                  quantity =
+                                                      qtysctrl.text;
+                                                  Navigator.pop(context);
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        });
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Text('Qty: '),
+                                      Text(
+                                        '${qtys[index] ?? '1'}',
+                                        style: TextStyle(
+                                            color: AppConfig.colorPrimary,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  // Padding(
-                  //   padding: const EdgeInsets.only(
-                  //     right: 18.0,
-                  //   ),
-                  //   child: Column(
-                  //     crossAxisAlignment: CrossAxisAlignment.end,
-                  //     children: [
-                  //       // Row(
-                  //       //   mainAxisAlignment: MainAxisAlignment.end,
-                  //       //   children: [
-                  //       //     Text("REMARKS"),
-                  //       //     SizedBox(
-                  //       //       width: 10,
-                  //       //     ),
-                  //       //     InkWell(
-                  //       //       onTap: () {
-                  //       //         showDialog(
-                  //       //           context: context,
-                  //       //           builder: (context) {
-                  //       //             return AlertDialog(
-                  //       //               title: const Text('Remarks'),
-                  //       //               content: TextField(
-                  //       //                 controller: _remarksController,
-                  //       //                 onChanged: (value) {
-                  //       //                   setState(() {
-                  //       //                     _remarksText = value;
-                  //       //                   });
-                  //       //                 },
-                  //       //                 keyboardType: TextInputType.text,
-                  //       //                 decoration: const InputDecoration(
-                  //       //                   hintText: "Enter your remarks",
-                  //       //                 ),
-                  //       //               ),
-                  //       //               actions: <Widget>[
-                  //       //                 MaterialButton(
-                  //       //                   color: AppConfig.colorPrimary,
-                  //       //                   textColor: Colors.white,
-                  //       //                   child: const Text('OK'),
-                  //       //                   onPressed: () {
-                  //       //                     setState(() {
-                  //       //                       _remarksText =
-                  //       //                           _remarksController.text;
-                  //       //                     });
-                  //       //                     Navigator.pop(context);
-                  //       //                   },
-                  //       //                 ),
-                  //       //               ],
-                  //       //             );
-                  //       //           },
-                  //       //         );
-                  //       //       },
-                  //       //       child: Container(
-                  //       //         constraints: BoxConstraints(
-                  //       //           minWidth: 70,
-                  //       //           maxWidth: 150,
-                  //       //         ),
-                  //       //         padding: EdgeInsets.symmetric(
-                  //       //             horizontal: 10, vertical: 3),
-                  //       //         decoration: BoxDecoration(
-                  //       //           border: Border.all(
-                  //       //               color: AppConfig.buttonDeactiveColor),
-                  //       //           borderRadius:
-                  //       //               const BorderRadius.all(Radius.circular(5)),
-                  //       //         ),
-                  //       //         child: Text(
-                  //       //           _remarksText,
-                  //       //           style: TextStyle(
-                  //       //             color: Colors.black,
-                  //       //             // fontWeight: FontWeight.bold,
-                  //       //           ),
-                  //       //           maxLines: 1,
-                  //       //           overflow: TextOverflow.ellipsis,
-                  //       //         ),
-                  //       //       ),
-                  //       //     ),
-                  //       //   ],
-                  //       // ),
-                  //       // SizedBox(
-                  //       //   height: 10,
-                  //       // ),
-                  //       // Row(
-                  //       //   mainAxisAlignment: MainAxisAlignment.end,
-                  //       //   children: [
-                  //       //     Text(
-                  //       //       'Discount ',
-                  //       //       style: TextStyle(
-                  //       //         fontSize: AppConfig.textCaption3Size,
-                  //       //       ),
-                  //       //     ),
-                  //       //     // InkWell(
-                  //       //     //   onTap: () => setState(() {
-                  //       //     //     _isPercentage = !_isPercentage;
-                  //       //     //   }),
-                  //       //     //   child: Container(
-                  //       //     //     decoration: BoxDecoration(
-                  //       //     //         border: Border.all(color: Colors.black),
-                  //       //     //         color: (!_isPercentage)
-                  //       //     //             ? AppConfig.colorPrimary
-                  //       //     //             : AppConfig.backButtonColor,
-                  //       //     //         borderRadius: const BorderRadius.only(
-                  //       //     //             topLeft: Radius.circular(3),
-                  //       //     //             bottomLeft: Radius.circular(3))),
-                  //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
-                  //       //     //     height: SizeConfig.blockSizeVertical * 3,
-                  //       //     //     child: Center(
-                  //       //     //       child: Text(
-                  //       //     //         'AMOUNT',
-                  //       //     //         style: TextStyle(
-                  //       //     //           fontSize: AppConfig.textCaption3Size,
-                  //       //     //           color: (!_isPercentage)
-                  //       //     //               ? AppConfig.backButtonColor
-                  //       //     //               : AppConfig.textBlack,
-                  //       //     //         ),
-                  //       //     //       ),
-                  //       //     //     ),
-                  //       //     //   ),
-                  //       //     // ),
-                  //       //     // InkWell(
-                  //       //     //   onTap: () => setState(() {
-                  //       //     //     _isPercentage = !_isPercentage;
-                  //       //     //   }),
-                  //       //     //   child: Container(
-                  //       //     //     decoration: BoxDecoration(
-                  //       //     //         border: Border.all(color: Colors.black),
-                  //       //     //         color: (_isPercentage)
-                  //       //     //             ? AppConfig.colorPrimary
-                  //       //     //             : AppConfig.backButtonColor,
-                  //       //     //         borderRadius: const BorderRadius.only(
-                  //       //     //             topRight: Radius.circular(3),
-                  //       //     //             bottomRight: Radius.circular(3))),
-                  //       //     //     width: SizeConfig.blockSizeHorizontal * 24,
-                  //       //     //     height: SizeConfig.blockSizeVertical * 3,
-                  //       //     //     child: Center(
-                  //       //     //         child: Text(
-                  //       //     //       'PERCENTAGE',
-                  //       //     //       style: TextStyle(
-                  //       //     //         fontSize: AppConfig.textCaption3Size,
-                  //       //     //         color: (_isPercentage)
-                  //       //     //             ? AppConfig.backButtonColor
-                  //       //     //             : AppConfig.textBlack,
-                  //       //     //       ),
-                  //       //     //     )),
-                  //       //     //   ),
-                  //       //     // ),
-                  //       //     // CommonWidgets.horizontalSpace(2),
-                  //       //     // InkWell(
-                  //       //     //   onTap: () {
-                  //       //     //     showDialog(
-                  //       //     //         context: context,
-                  //       //     //         builder: (context) {
-                  //       //     //           return AlertDialog(
-                  //       //     //             title: const Text('Discount'),
-                  //       //     //             content: TextField(
-                  //       //     //               keyboardType: TextInputType.number,
-                  //       //     //               controller: _discountData,
-                  //       //     //               decoration: const InputDecoration(
-                  //       //     //                   hintText: "Discount"),
-                  //       //     //             ),
-                  //       //     //             actions: <Widget>[
-                  //       //     //               MaterialButton(
-                  //       //     //                 color: AppConfig.colorPrimary,
-                  //       //     //                 textColor: Colors.white,
-                  //       //     //                 child: const Text('OK'),
-                  //       //     //                 onPressed: () {
-                  //       //     //                   Navigator.pop(context);
-                  //       //     //                 },
-                  //       //     //               ),
-                  //       //     //             ],
-                  //       //     //           );
-                  //       //     //         });
-                  //       //     //   },
-                  //       //     //   child: Container(
-                  //       //     //       width: SizeConfig.blockSizeHorizontal * 17,
-                  //       //     //       height: SizeConfig.blockSizeVertical * 3,
-                  //       //     //       decoration: BoxDecoration(
-                  //       //     //           border: Border.all(
-                  //       //     //               color: AppConfig.buttonDeactiveColor),
-                  //       //     //           borderRadius: const BorderRadius.all(
-                  //       //     //               Radius.circular(5))),
-                  //       //     //       child: Center(
-                  //       //     //         child: Text(_discountData.text.isEmpty
-                  //       //     //             ? ''
-                  //       //     //             : _discountData.text),
-                  //       //     //       )),
-                  //       //     // ),
-                  //       //   ],
-                  //       // ),
-                  //       // Text('Total: $total'),
-                  //       // Text('Tax: $tax'),
-                  //       // Text('Round off: ${roundOffValue.toStringAsFixed(2)}'),
-                  //       // Text('Grand Total: $roundedGrandTotal'),
-                  //     ],
-                  //   ),
-                  // ),
-                ],
-              ),
+                );
+              },
             ),
+          ],
+        ),
+      ),
     );
   }
 

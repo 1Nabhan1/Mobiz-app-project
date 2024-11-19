@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Pages/paymentcollection.dart';
 import 'package:mobizapp/Pages/salesselectproductreturn.dart';
 import 'package:mobizapp/selectproduct.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,10 +22,15 @@ class Customerreturndetail extends StatefulWidget {
   _CustomerreturndetailState createState() => _CustomerreturndetailState();
 }
 
+int? id;
+// int?dataId;
 class _CustomerreturndetailState extends State<Customerreturndetail> {
+  late String initialQty;
+  int specificIndex = 0;
   List<Product> cartItems = [];
   bool _search = false;
-
+  Reason? _selectedReason;
+  List<Reason> _reasonList = [];
   bool _isPercentage = false;
   final TextEditingController _discountData = TextEditingController();
   final TextEditingController amountctrl = TextEditingController();
@@ -35,27 +41,153 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   final TextEditingController _roundoff = TextEditingController();
   Map<int, String> qtys = {};
   TextEditingController _searchData = TextEditingController();
-  int? id;
   String? selectedUnitName;
   List<ProductType> productTypes = [];
   List<ProductType?> selectedProductTypes =
       []; // List to store selected product types
   String? name;
+  // String? code;
+  String? paymentTerms;
+  String? paydata;
   int _ifVat = 1;
   String roundoff = '';
   // num tax = 0;
   String? code;
+  int?dataId;
   String? payment;
   String amount = '';
   String quantity = '';
   bool _isButtonDisabled = true;
   bool _hasData = false;
+  bool _fetchCartItemsComplete = false;
+  bool _fetchSalesReturnDataComplete = false;
   @override
   void initState() {
     super.initState();
     fetchCartItems();
     fetchProductTypes();
     initializeValues();
+    fetchReasons();
+    setInitialQty();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Check if arguments are passed via the ModalRoute and extract them
+      if (ModalRoute.of(context)!.settings.arguments != null) {
+        final Map<String, dynamic>? params =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+        id = params!['customerId'];
+        name = params['name'];
+        code = params!['code'];
+        payment = params!['paymentTerms'];
+        dataId = params!['dataId'];
+        paydata = params!['outstandamt'];
+        print("OutStand:$code");
+      }
+      fetchSalesReturnData();
+    });
+  }
+
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //
+  //   // Check if arguments are passed via the ModalRoute and extract them
+  //   final Map<String, dynamic>? params = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+  //
+  //   if (params != null) {
+  //     setState(() {
+  //       id = params['customerId'];
+  //       name = params['name'];
+  //       code = params['code'];
+  //       payment = params['paymentTerms'];
+  //       dataId = params['dataId'];
+  //       paydata = params['outstandamt'];
+  //     });
+  //
+  //     // Now that dataId is set, you can call fetchSalesReturnData
+  //     fetchSalesReturnData(dataId!);
+  //   }
+  // }
+
+  Future<void> addToCart(Product product) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
+
+    // Count how many instances of the product are already in the cart
+    int productCount = cartItems.fold(0, (count, item) {
+      Map<String, dynamic> itemMap = jsonDecode(item);
+      return itemMap['id'] == product.id ? count + 1 : count;
+    });
+
+    // Restriction logic based on the number of units
+    if (product.units.length == 1) {
+      if (productCount >= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${product.name} is already in the cart')),
+        );
+        return;
+      }
+    } else if (product.units.length == 2) {
+      if (productCount >= 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Only 2 ${product.name} can be added')),
+        );
+        return;
+      }
+    }
+
+    // Add product to cart
+    cartItems.add(jsonEncode(product.toJson()));
+    await prefs.setStringList('cartItemsreturn', cartItems);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${product.name} added')),
+    );
+  }
+
+  Future<void> fetchSalesReturnData() async {
+    print("DataaIID");
+    print(dataId);
+    final url = Uri.parse(
+        'http://68.183.92.8:3699/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=$dataId');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      print(response.request);
+      final data = jsonDecode(response.body);
+      if (data != null && data['data'] != null) {
+        if (dataId != null) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('dataId', dataId.toString());
+          List<Product> fetchedProducts = [];
+          if (data['data'] is List) {
+            fetchedProducts = (data['data'] as List).map((item) {
+              Product product = Product.fromJson(item);
+              product.defaultValue = 1;
+              return product;
+            }).toList();
+            cartItems.addAll(fetchedProducts);
+            for (var product in fetchedProducts) {
+              await addToCart(product);
+            }
+          } else if (data['data'] is Map) {
+            Product product = Product.fromJson(data['data']);
+            product.defaultValue = 1;
+            cartItems.add(product);
+            await addToCart(product);
+          }
+          selectedProductTypes = List.generate(
+            cartItems.length,
+            (index) => null,
+          );
+          setState(() {
+            _fetchSalesReturnDataComplete =
+                true;
+          });
+        }
+      }
+    } else {
+      throw Exception('Failed to load sales return data');
+    }
   }
 
   Future<void> fetchCartItems() async {
@@ -63,17 +195,55 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     List<String>? cartItemsJson = prefs.getStringList('cartItemsreturn');
 
     if (cartItemsJson != null) {
+      // Clear cartItems to avoid duplicates
+      cartItems.clear();
+
+      // Convert JSON strings to Product objects
       List<Product> products = cartItemsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
 
+      cartItems.sort((a, b) {
+        return a.isSelected ? -1 : (b.isSelected ? 1 : 0);
+      });
       setState(() {
-        cartItems = products;
+        cartItems.addAll(products);
         selectedProductTypes = List.generate(
           cartItems.length,
           (index) => null,
         );
+        _fetchCartItemsComplete = true;
       });
+    }
+    print('cartItemsJson');
+    print(cartItemsJson);
+  }
+
+  void setInitialQty() {
+    if (cartItems.isNotEmpty && cartItems[specificIndex].units.isNotEmpty) {
+      initialQty = cartItems[specificIndex].units[0].stock?.toString() ?? '1';
+    } else {
+      initialQty = '1'; // Fallback value if cartItems or units is empty
+    }
+  }
+
+  Future<void> fetchReasons() async {
+    final response = await http.get(Uri.parse(
+        'http://68.183.92.8:3699/api/get-water-reason?store_id=${AppState().storeId}'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['data'] != null) {
+        setState(() {
+          _reasonList = (data['data'] as List)
+              .map((item) => Reason.fromJson(item))
+              .toList();
+        });
+      } else {
+        throw Exception('Reasons not found in the response');
+      }
+    } else {
+      throw Exception('Failed to load reasons');
     }
   }
 
@@ -165,34 +335,30 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   // }
   Future<void> removeFromCart(int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // Retrieve the current list of cart items from SharedPreferences
     List<String>? cartItemsJson = prefs.getStringList('cartItemsreturn');
 
     if (cartItemsJson != null) {
-      // Decode the JSON data to a list of Product objects
+      // Decode the JSON strings to Product objects
       List<Product> products = cartItemsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
 
-      // Remove the product at the specific index
+      // Validate index and remove product
       if (index >= 0 && index < products.length) {
         products.removeAt(index);
 
-        // Encode the updated list of products back to JSON
+        // Encode the updated list back to JSON and save it
         List<String> updatedCartItemsJson =
             products.map((product) => jsonEncode(product.toJson())).toList();
-
-        // Save the updated list back to SharedPreferences
         await prefs.setStringList('cartItemsreturn', updatedCartItemsJson);
 
-        // Remove related data for the specific index from SharedPreferences
+        // Remove item-specific shared preferences entries for this index
         await prefs.remove('productTypereturn$index');
         await prefs.remove('unitNamereturn$index');
         await prefs.remove('qtyreturn$index');
         await prefs.remove('amountreturn$index');
 
-        // Refresh UI after deletion
+        // Refresh cartItems list in UI
         fetchCartItems();
       }
     }
@@ -234,7 +400,6 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Wait until productTypes and cartItems are populated
     if (productTypes.isNotEmpty && cartItems.isNotEmpty) {
       setState(() {
         for (int i = 0; i < cartItems.length; i++) {
@@ -248,12 +413,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                     cartItems[i].units.first.name;
           }
 
-          for (int i = 0; i < cartItems.length; i++) {
-            selectedProductTypes[i] = productTypes.firstWhere(
-              (type) => type.name == prefs.getString('productTypereturn$i'),
-              orElse: () => productTypes.first,
-            );
-          }
+          selectedProductTypes[i] = productTypes.firstWhere(
+            (type) => type.name == prefs.getString('productTypereturn$i'),
+            orElse: () => productTypes.first,
+          );
         }
       });
     }
@@ -281,6 +444,11 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     double roundOffValue = grandTotalMap['roundOffValue'];
 
     void postDataToApi() async {
+      if (!_fetchCartItemsComplete && !_fetchSalesReturnDataComplete) {
+        print("Data sources are not fully loaded yet.");
+        return;
+      }
+
       var url =
           Uri.parse('${RestDatasource().BASE_URL}/api/vansales_return.store');
       List<int> quantities = [];
@@ -289,88 +457,98 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
       for (int index = 0; index < cartItems.length; index++) {
         String? selectedUnitName = cartItems[index].selectedUnitName;
-        int selectedUnitId;
-        if (selectedUnitName != null) {
-          selectedUnitId = cartItems[index]
-              .units
-              .firstWhere((unit) => unit.name == selectedUnitName)
-              .unit!;
-        } else {
-          selectedUnitId = cartItems[index].units.first.unit!;
-        }
+        int selectedUnitId = selectedUnitName != null
+            ? cartItems[index]
+                .units
+                .firstWhere((unit) => unit.name == selectedUnitName)
+                .unit!
+            : cartItems[index].units.first.unit!;
 
         selectedUnitIds.add(selectedUnitId);
         String? qty = qtys[index];
         int quantity = qty != null ? int.parse(qty) : 1;
         quantities.add(quantity);
+
         ProductType? selectedProductType = selectedProductTypes[index];
         Object productType =
             selectedProductType != null ? selectedProductType.id : 1;
         productTypesList.add(productType);
       }
+
       var data = {
-        'van_id': AppState().vanId,
-        'store_id': AppState().storeId,
-        'user_id': AppState().userId,
-        'item_id': cartItems.map((item) => item.id).toList(),
+        'van_id': AppState().vanId ?? 0,
+        'store_id': AppState().storeId ?? 0,
+        'user_id': AppState().userId ?? 0,
+        'item_id': cartItems.map((item) => item.id ?? 0).toList(),
         'quantity': quantities,
         'unit': selectedUnitIds,
         'mrp': amounts.entries.map((entry) {
-          return double.parse(entry.value);
+          return double.tryParse(entry.value) ?? 0.0;
+        }).toList().isEmpty ? [0.0] : amounts.entries.map((entry) {
+          return double.tryParse(entry.value) ?? 0.0;
         }).toList(),
-        'customer_id': id,
+
+        'customer_id': id ?? 0,
         'if_vat': _ifVat == 1 ? 1 : 0,
         'product_type': productTypesList,
         'total_tax': tax,
         'discount_type': _isPercentage ? '1' : '0',
-        "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
-        "total": total,
-        "round_off": roundOffValue,
-        "grand_total": roundedGrandTotal,
-        'remarks': _remarksText
+        'discount': _discountData.text.isEmpty ? '0' : _discountData.text,
+        'total': total,
+        'round_off': roundOffValue,
+        'grand_total': roundedGrandTotal,
+        'reason_id': _selectedReason?.id ?? 0,
+        'remarks': _remarksText,
+        'payment_terms': payment ?? 'N/A',
       };
-      var body = json.encode(data);
 
       var response = await http.post(
         url,
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: body,
+        body: json.encode(data),
       );
 
       if (response.statusCode == 200) {
-        // print(productTypesList);
-        // print('gggggggggggggggggggggggggggggggggggggg');
+        print(data);
         print('Post successful');
+        print(id.toString());
         if (mounted) {
           CommonWidgets.showDialogueBox(
-                  context: context, title: "Alert", msg: "Created Successfully")
-              .then(
-            (value) {
-              clearCart();
-              Navigator.pushReplacementNamed(
-                context,
-                HomereturnScreen.routeName,
-              );
-            },
-          );
+            context: context,
+            title: "Alert",
+            msg: "Created Successfully",
+          ).then((value) {
+            clearCart();
+            Navigator.pushReplacementNamed(
+                context, PaymentCollectionScreen.routeName,
+                arguments: {
+                  'customerId': id,
+                  'name':name,
+                  'code':code,
+                  'paymentTerms':payment,
+                  'outstandamt':paydata
+                });
+          });
         }
-        print(response.body);
       } else {
         print('Post failed with status: ${response.statusCode}');
         print(response.body);
       }
     }
 
-    if (ModalRoute.of(context)!.settings.arguments != null) {
-      final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      id = params!['customerId'];
-      name = params['name'];
-      code = params!['code'];
-      payment = params!['paymentTerms'];
-    }
+    // if (ModalRoute.of(context)!.settings.arguments != null) {
+    //   final Map<String, dynamic>? params =
+    //       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    //   id = params!['customerId'];
+    //   name = params['name'];
+    //   code = params!['code'];
+    //   payment = params!['paymentTerms'];
+    //   dataId = params!['dataId'];
+    //   paydata = params!['outstandamt'];
+    //
+    // }
 
     return WillPopScope(
       onWillPop: () async {
@@ -400,9 +578,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                   ),
                   onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
                       ? () async {
-                    setState(() {
-                      _isButtonDisabled = true; // Disable the button after it's pressed
-                    });
+                          setState(() {
+                            _isButtonDisabled =
+                                true; // Disable the button after it's pressed
+                          });
                           postDataToApi();
                         }
                       : null,
@@ -456,12 +635,15 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
             GestureDetector(
               onTap: () {
                 Navigator.pushReplacementNamed(
-                    context, Salesselectproductreturn.routeName, arguments: {
-                  'customerId': id,
-                  'name': name,
-                  'code': code,
-                  'paymentTerms': payment
-                }).then((value) {
+                    context, Salesselectproductreturn.routeName,
+                    arguments: {
+                      'customerId': id,
+                      'name': name,
+                      'code': code,
+                      'paymentTerms': payment,
+                      'outstandamt':paydata,
+                      // 'dataId': dataId
+                    }).then((value) {
                   // _initDone = false;
                   // _getTypes();
                 });
@@ -575,7 +757,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                     ),
                   ),
                   SizedBox(
-                    height: SizeConfig.blockSizeVertical * 58,
+                    height: SizeConfig.blockSizeVertical * 55,
                     child: ListView.builder(
                       physics: BouncingScrollPhysics(),
                       shrinkWrap: true,
@@ -586,12 +768,9 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                             .where((unit) => unit.name != null)
                             .map((unit) => unit.name!)
                             .toList();
-
                         if (unitNames.isEmpty) {
                           return SizedBox.shrink();
                         }
-
-                        // Ensure each item has its own selected unit name state
                         String? selectedUnitName =
                             cartItems[index].selectedUnitName ??
                                 unitNames.first;
@@ -673,33 +852,39 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                               // CommonWidgets.horizontalSpace(1),
                                               SizedBox(
                                                 width: 245.w,
-                                                child: Text(
-                                                  '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
-                                                  style: TextStyle(
-                                                    fontSize: AppConfig
-                                                        .textCaption3Size,
-                                                  ),
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()} | ${cartItems[index].defaultValue}',
+                                                      style: TextStyle(
+                                                        fontSize: AppConfig
+                                                            .textCaption3Size,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ],
                                       ),
-                                      CircleAvatar(
-                                        backgroundColor:
-                                            Colors.grey.withOpacity(0.2),
-                                        radius: 10,
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            removeFromCart(index);
-                                          },
-                                          child: const Icon(
-                                            Icons.close,
-                                            size: 15,
-                                            color: Colors.red,
+                                      if (cartItems.isNotEmpty &&
+                                          cartItems[index].defaultValue == 0)
+                                        CircleAvatar(
+                                          backgroundColor:
+                                          Colors.grey.withOpacity(0.2),
+                                          radius: 10,
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              removeFromCart(index);
+                                            },
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 15,
+                                              color: Colors.red,
+                                            ),
                                           ),
-                                        ),
-                                      ),
+                                        )
                                     ],
                                   ),
                                   Row(
@@ -730,14 +915,6 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                 saveToSharedPreferences(
                                                     'productTypereturn$index',
                                                     newValue!.name);
-                                                // if (newValue.name == 'Normal') {
-                                                //   amounts[index] =
-                                                //       cartItems[index]
-                                                //           .price
-                                                //           .toString();
-                                                // } else {
-                                                //   amounts[index] = '0';
-                                                // }
                                               });
                                             },
                                             items: productTypes
@@ -785,50 +962,6 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                 ),
                                               );
                                             }).toList(),
-                                            // onChanged: (String? newValue) {
-                                            //   setState(() {
-                                            //     cartItems[index]
-                                            //         .selectedUnitName = newValue;
-                                            //
-                                            //     // Find the selected unit and update the rate
-                                            //     for (var unit
-                                            //         in cartItems[index].units) {
-                                            //       if (unit.name == newValue) {
-                                            //         // Perform validation based on stock
-                                            //         if (unit.stock >=
-                                            //             int.parse(
-                                            //                 qtys[index] ?? '1')) {
-                                            //           // Stock is sufficient
-                                            //           amounts[index] =
-                                            //               unit.price.toString();
-                                            //         } else {
-                                            //           // Stock is insufficient, handle this scenario (e.g., show error message)
-                                            //           // For now, setting rate to default or handle as per your app logic
-                                            //           amounts[index] =
-                                            //               cartItems[index]
-                                            //                   .price
-                                            //                   .toString();
-                                            //           // You can show a snackbar or dialog here indicating insufficient stock
-                                            //           ScaffoldMessenger.of(
-                                            //                   context)
-                                            //               .showSnackBar(SnackBar(
-                                            //             content: Text(
-                                            //                 'Insufficient stock for ${unit.name}'),
-                                            //             duration:
-                                            //                 Duration(seconds: 2),
-                                            //           ));
-                                            //         }
-                                            //         saveToSharedPreferences(
-                                            //             'amountreturn$index',
-                                            //             amounts[index]);
-                                            //         break;
-                                            //       }
-                                            //     }
-                                            //     saveToSharedPreferences(
-                                            //         'unitNamereturn$index',
-                                            //         newValue);
-                                            //   });
-                                            // },
                                             onChanged: (String? newValue) {
                                               setState(() {
                                                 cartItems[index]
@@ -859,15 +992,27 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                       Text(' | '),
                                       GestureDetector(
                                         onTap: () {
+                                          setInitialQty();
+                                          String initialQty;
+                                          if (dataId != null || cartItems[index].defaultValue == 1) {
+                                            initialQty = cartItems[index].units[0].stock?.toString() ?? '1';
+                                          } else {
+                                            initialQty = qtys[index] ?? '1';
+                                          }
+
                                           showDialog(
                                             context: context,
                                             builder: (context) {
+                                              // Use initial quantity as the default text in TextField
+                                              TextEditingController
+                                                  qtyController =
+                                                  TextEditingController(
+                                                      text: initialQty);
+
                                               return AlertDialog(
                                                 title: Text('Quantity'),
                                                 content: TextField(
-                                                  controller:
-                                                      TextEditingController(
-                                                          text: qtys[index]),
+                                                  controller: qtyController,
                                                   onChanged: (value) {
                                                     setState(() {
                                                       qtys[index] = value;
@@ -886,54 +1031,13 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                     textColor: Colors.white,
                                                     child: Text('OK'),
                                                     onPressed: () {
-                                                      // Validate quantity against selected unit stock
-                                                      // var selectedUnit =
-                                                      //     cartItems[index]
-                                                      //         .units
-                                                      //         .firstWhere(
-                                                      //           (unit) =>
-                                                      //               unit.name ==
-                                                      //               selectedUnitName,
-                                                      //           // orElse: () => null,
-                                                      //         );
-                                                      //
-                                                      // if (selectedUnit != null) {
-                                                      //   int enteredQuantity =
-                                                      //       int.tryParse(
-                                                      //               qtys[index] ??
-                                                      //                   '1') ??
-                                                      //           0;
-                                                      //   if (enteredQuantity >
-                                                      //       selectedUnit.stock) {
-                                                      //     // Quantity entered exceeds available stock
-                                                      //     ScaffoldMessenger.of(
-                                                      //             context)
-                                                      //         .showSnackBar(
-                                                      //             SnackBar(
-                                                      //       content: Text(
-                                                      //         'Quantity exceeds available stock (${selectedUnit.stock}) for ${selectedUnit.name}',
-                                                      //       ),
-                                                      //       duration: Duration(
-                                                      //           seconds: 2),
-                                                      //     ));
-                                                      //     // Reset quantity to available stock or handle as per your app logic
-                                                      //     setState(() {
-                                                      //       qtys[index] =
-                                                      //           selectedUnit.stock
-                                                      //               .toString();
-                                                      //       saveToSharedPreferences(
-                                                      //           'qtyreturn$index',
-                                                      //           qtys[index]);
-                                                      //     });
-                                                      //   } else {
-                                                      //     Navigator.pop(
-                                                      //         context); // Close dialog if validation passed
-                                                      //   }
-                                                      // } else {
-                                                      //   Navigator.pop(
-                                                      //       context); // Close dialog if no unit found (shouldn't happen if UI is consistent)
-                                                      // }
-                                                      quantity = qtysctrl.text;
+                                                      setState(() {
+                                                        qtys[index] = qtyController
+                                                            .text;
+                                                        saveToSharedPreferences('qtyreturn$index', qtyController.text);// Update qtys w
+                                                        print("objectValues");// ith new value
+                                                        print( qtyController.text);
+                                                      });
                                                       Navigator.pop(context);
                                                     },
                                                   ),
@@ -946,12 +1050,17 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                           children: [
                                             Text('Qty: '),
                                             Text(
-                                              '${qtys[index] ?? '1'}',
+                                              (qtys[index] != null && qtys[index] != '')
+                                                  ? qtys[index]!  // Force unwrap since we check for null already
+                                                  : (cartItems[index].defaultValue == 1
+                                                  ? cartItems[index].units[0].stock?.toString() ?? '1' // Fallback to '1' if stock is null
+                                                  : '1'), // Default to '1' if no quantity is set
                                               style: TextStyle(
                                                 color: AppConfig.colorPrimary,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
+
                                           ],
                                         ),
                                       ),
@@ -1034,6 +1143,43 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Check conditions safely before rendering the DropdownButton
+                            if (cartItems.isNotEmpty &&
+                                cartItems[0].defaultValue == 1 &&
+                                qtys[specificIndex] != null &&
+                                int.parse(qtys[specificIndex]!) < int.parse(initialQty)) // Compare quantities for decrease
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  SizedBox(width: 5),
+                                  DropdownButton<Reason>(
+                                    hint: Text('Reason'),
+                                    value: _selectedReason,
+                                    onChanged: (Reason? newValue) {
+                                      setState(() {
+                                        _selectedReason = newValue;
+                                        if (_selectedReason != null) {
+                                          // Print the selected Reason's id
+                                          print(_selectedReason!.id);
+                                        }
+                                      });
+                                    },
+                                    items: _reasonList
+                                        .map<DropdownMenuItem<Reason>>((Reason reason) {
+                                      return DropdownMenuItem<Reason>(
+                                        value: reason,
+                                        child: Text(reason.reason), // Display the reason text (String)
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -1299,7 +1445,6 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       for (var item in data['data']) {
         loadedProductTypes.add(ProductType.fromJson(item));
       }
-      // print(_hasData);
       setState(() {
         productTypes = loadedProductTypes;
         initializeValues();
@@ -1308,5 +1453,19 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     } else {
       throw Exception('Failed to load product types');
     }
+  }
+}
+
+class Reason {
+  final int id;
+  final String reason;
+
+  Reason({required this.id, required this.reason});
+
+  factory Reason.fromJson(Map<String, dynamic> json) {
+    return Reason(
+      id: json['id'],
+      reason: json['reasone'],
+    );
   }
 }

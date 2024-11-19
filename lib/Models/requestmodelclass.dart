@@ -113,6 +113,7 @@ class Detail {
   int? itemId;
   String? unit;
   String? product_type;
+  String? name;
   int? quantity;
   int? editedQuantity;
   String? approvedQuantity;
@@ -132,6 +133,7 @@ class Detail {
       {this.id,
       this.vanRequestId,
       this.product_type,
+      this.name,
       this.itemId,
       this.unit,
       this.quantity,
@@ -153,6 +155,7 @@ class Detail {
     id = json['id'];
     vanRequestId = json['van_request_id'];
     product_type = json['product_type'];
+    name = json['name'];
     itemId = json['item_id'];
     unit = json['unit'];
     quantity = json['quantity'];

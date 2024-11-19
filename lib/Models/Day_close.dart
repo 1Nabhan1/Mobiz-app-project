@@ -126,6 +126,8 @@ class Data {
   final String createdAt;
   final String updatedAt;
   final String? deletedAt;
+  List<Sale>? sales;
+  List<SaleReturn>? salesReturn;
 
   Data({
     required this.id,
@@ -165,6 +167,8 @@ class Data {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.sales,
+    this.salesReturn,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) {
@@ -207,6 +211,12 @@ class Data {
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
       deletedAt: json['deleted_at'],
+      sales: json['sales'] != null
+          ? List<Sale>.from(json['sales'].map((x) => Sale.fromJson(x)))
+          : [],
+      salesReturn: json['sales_return'] != null
+          ? List<SaleReturn>.from(json['sales_return'].map((x) => SaleReturn.fromJson(x)))
+          : [],
     );
   }
 
@@ -250,5 +260,80 @@ class Data {
       'updated_at': updatedAt,
       'deleted_at': deletedAt,
     };
+  }
+}
+class Sale {
+  int? customerId;
+  String? invoiceNo;
+  num? grandTotal; // Changed from int? to num?
+  List<Customer>? customer;
+
+  Sale({
+    this.customerId,
+    this.invoiceNo,
+    this.grandTotal,
+    this.customer,
+  });
+
+  factory Sale.fromJson(Map<String, dynamic> json) {
+    return Sale(
+      customerId: json['customer_id'],
+      invoiceNo: json['invoice_no'],
+      grandTotal: json['grand_total'],
+      customer: json['customer'] != null
+          ? List<Customer>.from(json['customer'].map((x) => Customer.fromJson(x)))
+          : [],
+    );
+  }
+}
+
+class SaleReturn {
+  int? customerId;
+  String? invoiceNo;
+  num? grandTotal; // Changed from int? to num?
+  List<Customer>? customer;
+
+  SaleReturn({
+    this.customerId,
+    this.invoiceNo,
+    this.grandTotal,
+    this.customer,
+  });
+
+  factory SaleReturn.fromJson(Map<String, dynamic> json) {
+    return SaleReturn(
+      customerId: json['customer_id'],
+      invoiceNo: json['invoice_no'],
+      grandTotal: json['grand_total'],
+      customer: json['customer'] != null
+          ? List<Customer>.from(json['customer'].map((x) => Customer.fromJson(x)))
+          : [],
+    );
+  }
+}
+
+class Customer {
+  int? id;
+  String? name;
+  String? contactNumber;
+  String? whatsappNumber;
+  String? email;
+
+  Customer({
+    this.id,
+    this.name,
+    this.contactNumber,
+    this.whatsappNumber,
+    this.email,
+  });
+
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    return Customer(
+      id: json['id'],
+      name: json['name'],
+      contactNumber: json['contact_number'],
+      whatsappNumber: json['whatsapp_number'],
+      email: json['email'],
+    );
   }
 }

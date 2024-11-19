@@ -36,6 +36,7 @@ class Data {
   String? whatsappNumber;
   String? email;
   String? trn;
+  String? img;
   String? location;
   String? paymentTerms;
   int? creditLimit;
@@ -48,6 +49,7 @@ class Data {
   String? updatedAt;
   String? deletedAt;
   String? erpCustomerCode;
+  int?pricegroupId;
   String? visit;
 
   Data({
@@ -59,6 +61,7 @@ class Data {
     this.whatsappNumber,
     this.email,
     this.trn,
+    this.img,
     this.location,
     this.paymentTerms,
     this.creditLimit,
@@ -71,6 +74,7 @@ class Data {
     this.updatedAt,
     this.deletedAt,
     this.erpCustomerCode,
+    this.pricegroupId,
     this.visit,
   });
 
@@ -84,6 +88,7 @@ class Data {
     email = json['email'];
     location = json['location'];
     trn = json['trn'];
+    img= json['cust_image'];
     paymentTerms = json['payment_terms'];
     creditLimit = json['credit_limit'];
     creditDays = json['credit_days'];
@@ -95,6 +100,7 @@ class Data {
     updatedAt = json['updated_at'];
     deletedAt = json['deleted_at'];
     erpCustomerCode = json['erp_customer_code'];
+    pricegroupId = json['price_group_id'];
     visit = json['visit'];
   }
 
@@ -109,6 +115,7 @@ class Data {
     data['email'] = this.email;
     data['location'] = this.location;
     data['trn'] = this.trn;
+    data['cust_image'] = this.img;
     data['payment_terms'] = this.paymentTerms;
     data['credit_limit'] = this.creditLimit;
     data['credit_days'] = this.creditDays;

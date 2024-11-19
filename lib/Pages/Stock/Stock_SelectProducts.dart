@@ -2,29 +2,29 @@ import 'dart:convert';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:mobizapp/Pages/Stock/Stock_Name.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/sales_screen.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../Components/commonwidgets.dart';
-import '../Models/appstate.dart';
-import '../Models/sales_model.dart';
-import '../Utilities/rest_ds.dart';
-import '../confg/appconfig.dart';
-import '../confg/sizeconfig.dart';
-import 'Pages/vanstockoff.dart';
+import '../../Components/commonwidgets.dart';
+import '../../Models/appstate.dart';
+import '../../Models/sales_model.dart';
+import '../../Utilities/rest_ds.dart';
+import '../../confg/appconfig.dart';
+import '../../confg/sizeconfig.dart';
 
-class SelectProductsScreenoff extends StatefulWidget {
+class Stock_SelectProducts extends StatefulWidget {
   static const routeName = "/SelectProductScreenoff";
   @override
-  _SelectProductsScreenoffState createState() =>
-      _SelectProductsScreenoffState();
+  _Stock_SelectProductsState createState() =>
+      _Stock_SelectProductsState();
 }
 
 // String? name;
-class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
+class _Stock_SelectProductsState extends State<Stock_SelectProducts> {
   List<Products> products = [];
   int currentPage = 1;
   bool isLoading = false;
@@ -81,8 +81,8 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
       } else {
         filteredProducts = products
             .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
+        product.name!.toLowerCase().contains(query.toLowerCase()) ||
+            product.code!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -121,27 +121,27 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
           actions: [
             (_search)
                 ? Container(
-                    height: SizeConfig.blockSizeVertical * 5,
-                    width: SizeConfig.blockSizeHorizontal * 76,
-                    decoration: BoxDecoration(
-                      color: AppConfig.colorPrimary,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(10),
-                      ),
-                      border: Border.all(color: AppConfig.colorPrimary),
-                    ),
-                    child: TextField(
-                      autofocus: true,
-                      style: TextStyle(color: Colors.white),
-                      controller: _searchData,
-                      decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.all(5),
-                          hintText: "Search...",
-                          hintStyle:
-                              TextStyle(color: AppConfig.backgroundColor),
-                          border: InputBorder.none),
-                    ),
-                  )
+              height: SizeConfig.blockSizeVertical * 5,
+              width: SizeConfig.blockSizeHorizontal * 76,
+              decoration: BoxDecoration(
+                color: AppConfig.colorPrimary,
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(10),
+                ),
+                border: Border.all(color: AppConfig.colorPrimary),
+              ),
+              child: TextField(
+                autofocus: true,
+                style: TextStyle(color: Colors.white),
+                controller: _searchData,
+                decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.all(5),
+                    hintText: "Search...",
+                    hintStyle:
+                    TextStyle(color: AppConfig.backgroundColor),
+                    border: InputBorder.none),
+              ),
+            )
                 : Container(),
             CommonWidgets.horizontalSpace(1),
             GestureDetector(
@@ -164,129 +164,129 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
         ),
         body: filteredProducts.isEmpty
             ? Center(
-                child: isLoading
-                    ? Shimmer.fromColors(
-                        baseColor:
-                            AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                        highlightColor: AppConfig.backButtonColor,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Text('No products found'))
-            : NotificationListener<ScrollNotification>(
-                onNotification: (ScrollNotification scrollInfo) {
-                  if (!isLoading &&
-                      hasMoreProducts &&
-                      scrollInfo.metrics.pixels ==
-                          scrollInfo.metrics.maxScrollExtent) {
-                    fetchProducts(currentPage);
-                  }
-                  return false;
-                },
-                child: ListView.builder(
-                  itemCount:
-                      filteredProducts.length + (hasMoreProducts ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == filteredProducts.length) {
-                      return Center(
-                          child: Column(
-                        children: [
-                          SizedBox(
-                            height: 10.h,
-                          ),
-                          Text(
-                            "That's All",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ));
-                    }
-
-                    final product = filteredProducts[index];
-                    return Card(
-                      elevation: 3,
-                      child: InkWell(
-                        onTap: () => showProductDetailsDialog(context, product),
-                        child: Container(
-                          width: SizeConfig.blockSizeHorizontal * 90,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.transparent),
-                            color: AppConfig.backgroundColor,
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(10),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(5.0),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 50,
-                                  height: 50,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(15.0),
-                                    child: FadeInImage(
-                                      image: NetworkImage(
-                                          '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
-                                      placeholder: const AssetImage(
-                                          'Assets/Images/no_image.jpg'),
-                                      imageErrorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                            'Assets/Images/no_image.jpg',
-                                            fit: BoxFit.fitWidth);
-                                      },
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                  ),
-                                ),
-                                CommonWidgets.horizontalSpace(3),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Tooltip(
-                                      message: product.name!.toUpperCase(),
-                                      child: SizedBox(
-                                        width:
-                                            SizeConfig.blockSizeHorizontal * 70,
-                                        child: Text(
-                                          '${product.code} | ${product.name!.toUpperCase()}',
-                                          style: TextStyle(
-                                              fontSize:
-                                                  AppConfig.textCaption2Size),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+            child: isLoading
+                ? Shimmer.fromColors(
+              baseColor:
+              AppConfig.buttonDeactiveColor.withOpacity(0.1),
+              highlightColor: AppConfig.backButtonColor,
+              child: Center(
+                child: Column(
+                  children: [
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                  ],
                 ),
               ),
+            )
+                : Text('No products found'))
+            : NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            if (!isLoading &&
+                hasMoreProducts &&
+                scrollInfo.metrics.pixels ==
+                    scrollInfo.metrics.maxScrollExtent) {
+              fetchProducts(currentPage);
+            }
+            return false;
+          },
+          child: ListView.builder(
+            itemCount:
+            filteredProducts.length + (hasMoreProducts ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == filteredProducts.length) {
+                return Center(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 10.h,
+                        ),
+                        Text(
+                          "That's All",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ));
+              }
+
+              final product = filteredProducts[index];
+              return Card(
+                elevation: 3,
+                child: InkWell(
+                  onTap: () => showProductDetailsDialog(context, product),
+                  child: Container(
+                    width: SizeConfig.blockSizeHorizontal * 90,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.transparent),
+                      color: AppConfig.backgroundColor,
+                      borderRadius: const BorderRadius.all(
+                        Radius.circular(10),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(15.0),
+                              child: FadeInImage(
+                                image: NetworkImage(
+                                    '${RestDatasource().Product_URL}/uploads/product/${product.proImage}'),
+                                placeholder: const AssetImage(
+                                    'Assets/Images/no_image.jpg'),
+                                imageErrorBuilder:
+                                    (context, error, stackTrace) {
+                                  return Image.asset(
+                                      'Assets/Images/no_image.jpg',
+                                      fit: BoxFit.fitWidth);
+                                },
+                                fit: BoxFit.fitWidth,
+                              ),
+                            ),
+                          ),
+                          CommonWidgets.horizontalSpace(3),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Tooltip(
+                                message: product.name!.toUpperCase(),
+                                child: SizedBox(
+                                  width:
+                                  SizeConfig.blockSizeHorizontal * 70,
+                                  child: Text(
+                                    '${product.code} | ${product.name!.toUpperCase()}',
+                                    style: TextStyle(
+                                        fontSize:
+                                        AppConfig.textCaption2Size),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -581,7 +581,7 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
                             'selected_products', selectedProducts);
                         Navigator.pop(context);
                         Navigator.pushReplacementNamed(
-                            context, VanStocksoff.routeName, arguments: {
+                            context, Stock_Name.routeName, arguments: {
                           'name': name,
                           'customerId': id,
                           'id':dataId

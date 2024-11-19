@@ -226,19 +226,20 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
 
     return InkWell(
       onTap: () {
-        Navigator.of(context)
-            .pushNamed(CustomerDetailsScreen.routeName, arguments: {
+        Navigator.of(context).pushNamed(CustomerDetailsScreen.routeName, arguments: {
           'name': data.name!,
           'address': data.address,
           'phone': data.contactNumber,
           'mail': data.email,
           'location': data.location,
+          'cust_image':data.img,
           'customerType': '',
           'days': data.creditDays,
           'creditLimit': data.creditLimit,
           'paymentTerms': data.paymentTerms,
           'provinceId': data.provinceId,
           'routeId': data.routeId,
+          'price_group_id':data.pricegroupId,
           'trn': data.trn,
           'whatsappNumber': data.whatsappNumber,
           'code': data.code,
@@ -265,8 +266,8 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15.0),
                     child: FadeInImage(
-                      image: const NetworkImage(
-                          'https://www.vecteezy.com/vector-art/5337799-icon-image-not-found-vector'),
+                      image: NetworkImage(
+                          'http://68.183.92.8:3696/uploads/customer/cust_image/${data.img}'),
                       placeholder:
                           const AssetImage('Assets/Images/no_image.jpg'),
                       imageErrorBuilder: (context, error, stackTrace) {

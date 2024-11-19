@@ -61,6 +61,7 @@ class AppConfig {
   static var labelWeight = FontWeight.bold;
 
   /// New definitions end
+  static var textHeadlineSizeBig = SizeConfig.safeBlockVertical! * 7;
   static var textHeadlineSize = SizeConfig.safeBlockVertical! * 5;
   static var textSubTitleSize = SizeConfig.safeBlockVertical! * 4;
   static var textSubtitle2Size = SizeConfig.safeBlockVertical! * 3;
@@ -70,6 +71,7 @@ class AppConfig {
   static var textCaptionSize = SizeConfig.safeBlockVertical! * 2;
   static var textCaption2Size = SizeConfig.safeBlockVertical! * 1.8;
   static var textCaption3Size = SizeConfig.safeBlockVertical! * 1.5;
+  static var textCaption3Sizepre = SizeConfig.safeBlockVertical! * 1.3;
 
   static var textLabelSize = SizeConfig.safeBlockVertical! * 2;
   static var textHeadlineWeight = FontWeight.bold;

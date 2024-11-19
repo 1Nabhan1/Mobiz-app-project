@@ -27,11 +27,11 @@ class PaymentCollectionScreen extends StatefulWidget {
       _PaymentCollectionScreenState();
 }
 
-int? cuId;
+// int? cuId;
 String cuname = '';
-String cucode = '';
-String cupay = '';
-String cuoutstand = '';
+// String cucode = '';
+// String cupay = '';
+// String cuoutstand = '';
 
 class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   List<Invoice> invoices = [];
@@ -42,30 +42,49 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   List<bool> expandedStates = [];
   TextEditingController _paidAmt = TextEditingController();
   String PaidAmt = '';
-  String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  String RoundOff = '';
+  String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
   TextEditingController _bankController = TextEditingController();
   String bankData = '';
   TextEditingController _chequeController = TextEditingController();
   String chequeData = '';
+  int?id;
+  String? paydata;
+  String?code;
+  String?payment;
   List<String> enteredValues = [];
   List<String> invoiceTypes = [];
   List<String> invoiceno = [];
   List<String> invoicedate = [];
   List<int> goodsTypes = [];
   List<int> invoiceid = [];
+  final TextEditingController _roundOffController = TextEditingController();
+  double roundOffValue = 0.0;
 
   String formatDate(String date) {
     DateTime parsedDate = DateTime.parse(date);
-    return DateFormat('dd MMMM yyyy').format(parsedDate);
+    return DateFormat('dd MMM yyyy').format(parsedDate);
   }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   // futureInvoices = fetchInvoices();
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     _handleRouteArguments();
+  //     futureInvoices = fetchInvoices();
+  //   });
+  // }
 
   @override
   void initState() {
     super.initState();
-    // futureInvoices = fetchInvoices();
+    futureInvoices =
+        Future.value(ApiResponse(data: [])); // Initialize with an empty future
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleRouteArguments();
-      futureInvoices = fetchInvoices();
+      futureInvoices =
+          fetchInvoices(); // Update it after handling the route arguments
     });
   }
 
@@ -74,11 +93,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (arguments != null) {
       setState(() {
-        cuId = arguments['customerId'];
-        cucode = arguments['code'];
-        cuname = arguments['name'];
-        cupay = arguments['paymentTerms'];
-        cuoutstand = arguments['outstandamt'];
+        // cuId = arguments['customerId'];
+        code = arguments['code'] ?? '';
+        cuname = arguments['name'] ?? '';
+        payment = arguments['paymentTerms'] ?? '';
+        // cuoutstand = arguments['outstandamt'] ?? '';
+        paydata = arguments!['outstandamt'] ?? '';
+        id = int.tryParse(arguments['customerId'].toString());
       });
     }
   }
@@ -104,7 +125,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   double getBalanceAmount() {
     double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
-
+    double roundOff = RoundOff.isNotEmpty?double.parse(RoundOff):0;
     double allocatedAmount = enteredValues.asMap().entries.map((entry) {
       int index = entry.key;
       String value = entry.value;
@@ -122,15 +143,32 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return 0.0;
     }).fold(0.0, (sum, amount) => sum + amount);
 
-    return paidAmount + allocatedAmount;
+    return paidAmount + allocatedAmount - roundOff;
   }
+
+  double getPaidAmount() {
+    String text = _paidAmt.text;
+
+    if (text.isEmpty) {
+      return 0.0; // or handle the empty case as needed
+    }
+
+    try {
+      return double.parse(text);
+    } catch (e) {
+      // Handle the error (e.g., show a message to the user)
+      print('Error parsing double: $e');
+      return 0.0; // or handle the invalid number case as needed
+    }
+  }
+
 
   void updateBalanceAndAllocatedAmounts() {
     setState(() {});
   }
 
-  double getPaidAmount() {
-    String text = _paidAmt.text;
+  double getRoundOff() {
+    String text = _roundOffController.text;
 
     if (text.isEmpty) {
       return 0.0; // or handle the empty case as needed
@@ -159,6 +197,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     // }
     double allocatedAmount = getAllocatedAmount();
     double PaidAmount = getPaidAmount();
+    double roundOff = getRoundOff();
     PaidAmt = _paidAmt.text;
     return Scaffold(
       appBar: AppBar(
@@ -175,7 +214,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${cucode ?? ''} | ${cuname ?? ''} | ${cupay ?? ''}',
+                    '${code ?? ''} | ${cuname ?? ''} | ${payment ?? ''}',
                     style:
                         const TextStyle(color: AppConfig.buttonDeactiveColor),
                   ),
@@ -183,13 +222,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   Row(
                     children: [
                       const Text(
-                        'Total outstanding',
+                        'Total Outstanding',
                         style: TextStyle(color: AppConfig.buttonDeactiveColor),
                       ),
                       CommonWidgets.horizontalSpace(1),
                       _inputBox(
                           status: false,
-                          value: "${cuoutstand == '[]' ? '' : cuoutstand}"),
+                          value: "${paydata == '[]' ? '' : paydata}"),
                       // ${_data == '[]' ? '' : _data}
                       const Spacer(),
                       const Text(
@@ -257,6 +296,55 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       _inputBox(
                           status: false,
                           value: getBalanceAmount().toStringAsFixed(2)),
+                    ],
+                  ),
+                  CommonWidgets.verticalSpace(1),
+                  Row(
+                    children: [
+                      Text(
+                        'Round Off',
+                        style: TextStyle(color: AppConfig.buttonDeactiveColor),
+                      ),
+                      CommonWidgets.horizontalSpace(1),
+                      // Editable input for Round Off
+                      InkWell(
+                        onTap: () {
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('Round Off'),
+                                  content: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        RoundOff = value;
+                                        getRoundOff();
+                                      });
+                                    },
+                                    keyboardType: TextInputType.number,
+                                    controller: _roundOffController,
+                                    decoration: const InputDecoration(
+                                        hintText: "Round Off"),
+                                  ),
+                                  actions: <Widget>[
+                                    MaterialButton(
+                                      color: AppConfig.colorPrimary,
+                                      textColor: Colors.white,
+                                      child: const Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          getRoundOff();
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }).then((value) => setState(() {}));
+                        },
+                        child: _inputBox(status: true, value: (RoundOff ?? '')),
+                      ),
                     ],
                   ),
                 ],
@@ -346,6 +434,20 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 invoiceid.add(invoice.id);
                               });
                               // }
+
+                              String formatInvoiceType(String invoiceType) {
+                                if (invoiceType.toLowerCase() == "payment_voucher") {
+                                  return "Payment";
+                                }
+                                if (invoiceType.toLowerCase() == "salesreturn") {
+                                  return "Sales Return";
+                                }
+                                // Capitalize the first letter of each word in invoiceType
+                                return invoiceType
+                                    .split('_') // Split by underscore if the type uses underscores (e.g., "sales_invoice")
+                                    .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()) // Capitalize first letter
+                                    .join(' '); // Join the words back together with a space
+                              }
                               return Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 20),
@@ -375,7 +477,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                           .spaceBetween,
                                                   children: [
                                                     Text(
-                                                        "${formatDate(invoice.invoiceDate)} | ${invoice.invoiceNo} | ${invoice.invoiceType}"),
+                                                        "${(invoice.invoiceDate)} | ${invoice.invoiceNo} | ${formatInvoiceType(invoice.invoiceType)}"),
                                                     InkWell(
                                                       onTap: () {
                                                         _showDialog(context,
@@ -484,14 +586,14 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 value: dropdownvalue,
                                 icon: const SizedBox(),
                                 underline: const SizedBox(),
-                                items: items.map((String items) {
+                                items: items.map((String item) {
+                                  String capitalizedItem =
+                                      item[0].toUpperCase() + item.substring(1);
                                   return DropdownMenuItem(
-                                    value: items,
-                                    child: Text(items),
+                                    value: item,
+                                    child: Text(capitalizedItem),
                                   );
                                 }).toList(),
-                                // After selecting the desired option,it will
-                                // change button value to selected value
                                 onChanged: (String? newValue) {
                                   setState(() {
                                     dropdownvalue = newValue!;
@@ -499,8 +601,6 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                 },
                               ),
                             ),
-                            // _inputBox(
-                            //     status: true, value: "Cheque"),
                             (dropdownvalue != "Cash")
                                 ? const Spacer()
                                 : Container(),
@@ -640,7 +740,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                     borderRadius: BorderRadius.circular(3), // Rectangle shape
                   ),
                 ),
-                onPressed: allocatedAmount == PaidAmount
+                onPressed: (PaidAmount > 0 && (PaidAmount - roundOff == allocatedAmount))
                     ? () {
                         postCollectionData();
                       }
@@ -731,13 +831,14 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   Future<ApiResponse> fetchInvoices() async {
-    final String url =
-        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$cuId';
+    final String url = '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
+      print(response.request);
       // print('llllllllllllllllllllllllll');
-      print(cuId);
+      print("objectIIDD");
+      print(id.toString());
       ApiResponse apiResponse = ApiResponse.fromJson(jsonDecode(response.body));
       invoices = apiResponse.data;
       // Initialize enteredValues list with the length of fetched invoices
@@ -763,13 +864,14 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return value.isEmpty ? 0.0 : double.parse(value);
     }).toList();
     final body = {
-      'allocation_amount': getAllocatedAmount(),
+      'allocation_amount': getPaidAmount(),
+      'round_off':_roundOffController.text,
       'van_id': AppState().vanId,
       'store_id': AppState().storeId,
       'user_id': AppState().userId,
       'goods_out_id': goodsTypes,
       'amount': processedValues,
-      'customer_id': cuId,
+      'customer_id': id,
       'invoice_type': invoiceTypes,
       'collection_type': dropdownvalue,
       'bank': _bankController.text,
@@ -791,6 +893,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     if (response.statusCode == 200) {
       print(response.body);
+
       // print(processedValues);
       // print('dddddddddddddddd');
       // Handle success response

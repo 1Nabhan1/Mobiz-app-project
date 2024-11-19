@@ -159,8 +159,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         ),
                         pw.SizedBox(height: 3),
                         pw.Text('${data.customer![0].name}'),
-                        pw.SizedBox(height: 3),
-                        pw.Text('Market: ${data.customer![0].address}'),
+                        // pw.SizedBox(height: 3),
+                        // pw.Text('Market: ${data.customer![0].address}'),
                         pw.SizedBox(height: 3),
                         pw.Text('TRN: ${data.customer![0].trn}'),
                       ],
@@ -184,23 +184,43 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Collection Type: ${data.collectionType}'),
-                    pw.Text('Bank Name: ${data.bank}'),
-                    pw.Text('Cheque No: ${data.chequeNo}'),
-                    pw.Text('Cheque Date: ${data.chequeDate}'),
-                    pw.Text('Amount: ${data.totalAmount}'),
+                    if (data.collectionType == 'Cheque') ...[
+                      pw.Text('Collection Type: Cheque'),
+                      pw.Text('Bank Name: ${data.bank??'N/A'}'),
+                      pw.Text('Cheque No: ${data.chequeNo??'N/A'}'),
+                      pw.Text('Cheque Date: ${data.chequeDate??'N/A'}'),
+                    ] else if (data.collectionType == 'Cash') ...[
+                      // Add any text or elements specific to Cash collection type if needed
+                      // For example:
+                      pw.Text('Collection Type: Cash'),
+                    ]
                   ],
                 ),
+
                 pw.SizedBox(height: 10),
                 pw.SizedBox(height: 10),
               ],
             ),
-            // Add the table separately to ensure it starts at the current position and paginates properly
             _buildSalesTable(data.sales!),
             pw.SizedBox(height: 20),
-            pw.Text('Van: ${data.vanId}'),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text((data.roundoff != null && double.parse(data.roundoff!) != 0)
+                      ? 'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}'
+                      : ''),
+                ]
+            ),
+            pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Text('Total: ${data.totalAmount??'N/A'}'),
+              ]
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text('Van: ${data.van![0].name??'N/A'}'),
             pw.SizedBox(width: 20),
-            pw.Text('Salesman: N/A'),
+            pw.Text('Salesman: ${data.user![0].name??'N/A'}'),
           ],
         ),
       );
@@ -214,6 +234,19 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     }
   }
 
+  String formatInvoiceType(String? invoiceType) {
+    if (invoiceType == null) return 'N/A'; // Return N/A if invoiceType is null
+
+    // Capitalize the first letter and check for specific cases
+    switch (invoiceType.toLowerCase()) {
+      case 'salesreturn':
+        return 'Sales Return';
+      case 'payment_voucher':
+        return 'Payment';
+      default:
+        return invoiceType[0].toUpperCase() + invoiceType.substring(1).toLowerCase();
+    }
+  }
 // Separate function to build the sales table with proper pagination
   pw.Widget _buildSalesTable(List<Sales> sales) {
     return pw.Table.fromTextArray(
@@ -228,13 +261,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         2: pw.FractionColumnWidth(0.2),
         3: pw.FractionColumnWidth(0.2),
       },
+
+
       data: sales.asMap().entries.map((entry) {
         final index = entry.key + 1;
         final sale = entry.value;
         return [
           '$index',
           sale.invoiceNo ?? 'N/A',
-          sale.invoiceType ?? 'N/A',
+          formatInvoiceType(sale.invoiceType),
           sale.amount?.toString() ?? 'N/A',
         ];
       }).toList(),
@@ -398,6 +433,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                     ),
                     Text(
+                      'Round Off: ${data.roundoff??'0.00'}',
+                      style: TextStyle(
+                        fontSize: AppConfig.textCaption3Size,
+                      ),
+                    ),
+                    Text(
                       'Type:  ${data.collectionType == 'cheque' ? 'Cheque | ${data.bank} | ${data.chequeNo} \nCheque Date: ${data.chequeDate}' : data.collectionType}',
                       style: TextStyle(
                         fontSize: AppConfig.textCaption3Size,
@@ -536,7 +577,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           printAlignedText('Customer: ${data.customer![0].name}',
               'Reference: ${data.sales![0].voucherNo ?? 'N/A'}');
           // printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
-          printAlignedText('Market:  ${data.customer![0].address}',
+          printAlignedText(
+              // 'Market:  ${data.customer![0].address}',
+            '',
               'Date: ${data.sales![0].inDate}');
           // printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
           printAlignedText('TRN: ${data.customer![0].trn}',
@@ -554,10 +597,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         // printer.printNewLine();
 
         // Collection Information
-        printAlignedText('Collection Type: ${data.collectionType}', ' ');
-        printAlignedText('Bank Name: ${data.bank}', ' ');
-        printAlignedText('Cheque No: ${data.chequeNo}', '');
-        printAlignedText('Cheque Date: ${data.chequeDate}', ' ');
+        if (data.collectionType == 'Cheque') {
+          printAlignedText('Collection Type: Cheque', ' ');
+          printAlignedText('Bank Name: ${data.bank}', ' ');
+          printAlignedText('Cheque No: ${data.chequeNo}', ' ');
+          printAlignedText('Cheque Date: ${data.chequeDate}', ' ');
+        } else if (data.collectionType == 'Cash') {
+          // Optional: Print something specific for cash or leave it out
+          printAlignedText('Collection Type: Cash', ' '); // Uncomment if needed
+        }
         printAlignedText('Amount: ${data.totalAmount}', ' ');
         // printer.printLeftRight('Collection Type:', '${data.collectionType}', 1);
         // printer.printLeftRight('Bank Name:', '${data.bank}', 1);
@@ -584,6 +632,21 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         // printer.printCustom('---------------------------', 1, 0);
 
         // Iterate and print each sales item
+
+        String formatInvoiceType(String? invoiceType) {
+          if (invoiceType == null) return 'N/A'; // Return N/A if invoiceType is null
+
+          // Capitalize the first letter and check for specific cases
+          switch (invoiceType.toLowerCase()) {
+            case 'salesreturn':
+              return 'Sales Return';
+            case 'payment_voucher':
+              return 'Payment';
+            default:
+              return invoiceType[0].toUpperCase() + invoiceType.substring(1).toLowerCase();
+          }
+        }
+
         for (var i = 0; i < data.sales!.length; i++) {
           var sale = data.sales![i];
           line =
@@ -591,17 +654,19 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               "${(i + 1).toString().padRight(columnWidth1)}"
               " ${sale.invoiceNo?.padRight(columnWidth2) ??
               'N/A'.padRight(columnWidth2)}"
-              "${sale.invoiceType?.padRight(columnWidth3) ??
-              'N/A'.padRight(columnWidth3)}"
+              "${formatInvoiceType(sale.invoiceType)?.padRight(columnWidth3) ?? 'N/A'.padRight(columnWidth3)}"
               "${sale.amount?.padRight(columnWidth4) ??
               'N/A'.padRight(columnWidth4)}";
           printer.printCustom(line, 1, 0);
         }
-
         printer.printNewLine();
         printer.printCustom("-" * 72, 1, 1);
-        printAlignedText("Van: ${data.vanId}", "");
-        printAlignedText("Salesman: N/A", "");
+        if (data.roundoff != null && double.parse(data.roundoff!) != 0) {
+          printAlignedText('', 'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}');
+        }
+        printAlignedText('', 'Total: ${data.totalAmount}');
+        printAlignedText("Van: ${data.van![0].name}", "");
+        printAlignedText("Salesman: ${data.user![0].name}", "");
         // printer.printLeftRight('Van:', '${data.vanId}', 1);
         // printer.printLeftRight('Salesman:', 'N/A', 1);
         printer.printNewLine();

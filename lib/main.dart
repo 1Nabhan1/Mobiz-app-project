@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
+import 'package:mobizapp/Pages/CustomerStock.dart';
 import 'package:mobizapp/Pages/CustomerVisit.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
 import 'package:mobizapp/Pages/ExpensesPage.dart';
@@ -21,9 +22,17 @@ import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/vanselectproduct.dart';
 import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
+import 'package:mobizapp/Water.dart';
+import 'package:mobizapp/Models/VanStockDataModel.dart';
+import 'package:mobizapp/tst.dart';
+import 'package:mobizapp/tsts.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
+import 'Pages/Cheque/Cheque_Colection.dart';
+import 'Pages/Copy/Copy.dart';
+import 'Pages/Copy/CopySelectProducts.dart';
 import 'Pages/CustomeSOA.dart';
+import 'Pages/DayReport.dart';
 import 'Pages/Day_closeReport.dart';
 import 'Pages/DriverDetailsPage.dart';
 import 'Pages/DriverPage.dart';
@@ -32,6 +41,9 @@ import 'Pages/Driver_paymentCollection.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Delivery_details_driver.dart';
 import 'Pages/Schedule_page.dart';
+import 'Pages/Stock/StockName_RequestScreen.dart';
+import 'Pages/Stock/Stock_Name.dart';
+import 'Pages/Stock/Stock_SelectProducts.dart';
 import 'Pages/Total_sales.dart';
 import 'Pages/VanTransferReceive.dart';
 import 'Pages/VanTransferSend.dart';
@@ -72,7 +84,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
           ),
-          // home: PlaceSearchApp(),
+          // home: ChequeCollectionPage(),
           initialRoute: SplashScreen.routeName,
           routes: {
             // '/': (context) => Home(),
@@ -90,7 +102,8 @@ class MyApp extends StatelessWidget {
                 const Driver_customer_detail_screen(),
             HomepageDriver.routeName: (context) => const HomepageDriver(),
             ProductsScreen.routeName: (context) => ProductsScreen(),
-            ErrorHandlingScreen.routeName: (context) => const ErrorHandlingScreen(),
+            ErrorHandlingScreen.routeName: (context) =>
+                const ErrorHandlingScreen(),
             VanStockRequestsScreen.routeName: (context) =>
                 const VanStockRequestsScreen(),
             VanStocks.routeName: (context) => VanStocks(),
@@ -131,8 +144,10 @@ class MyApp extends StatelessWidget {
             ExpenseAdd.routeName: (context) => ExpenseAdd(),
             OffLoadRequestScreen.routeName: (context) => OffLoadRequestScreen(),
             VanStocksoff.routeName: (context) => VanStocksoff(),
-            SelectProductsScreenoff.routeName: (context) =>
-                SelectProductsScreenoff(),
+            SelectProductsScreenoff.routeName: (context) => SelectProductsScreenoff(),
+            Tststs.routeName: (context) => Tststs(),
+            CustomerStock.routeName: (context) => CustomerStock(),
+            DayReport.routeName: (context) => DayReport(),
             Vanselectproducts.routeName: (context) => Vanselectproducts(),
             VanTransferSend.routeName: (context) => VanTransferSend(),
             VanTransferConfirm.routeName: (context) => VanTransferConfirm(),
@@ -140,6 +155,12 @@ class MyApp extends StatelessWidget {
             ScheduleDriver.routeName: (context) => ScheduleDriver(),
             DriverPage.routeName: (context) => DriverPage(),
             DriverDetails.routeName: (context) => DriverDetails(),
+            CopyScreen.routeName: (context) => CopyScreen(),
+            CopySelectProduct.routeName: (context) => CopySelectProduct(),
+            StockName_RequestScreen.routeName: (context) => StockName_RequestScreen(),
+            Stock_Name.routeName: (context) => Stock_Name(),
+            Stock_SelectProducts.routeName: (context) => Stock_SelectProducts(),
+            ChequeCollectionPage.routeName: (context) => ChequeCollectionPage(),
           }),
     );
   }
