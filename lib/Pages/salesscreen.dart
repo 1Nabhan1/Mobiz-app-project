@@ -461,7 +461,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 : GestureDetector(
                     onTap: () {
                       Navigator.pushReplacementNamed(
-                              context, SalesSelectProductsorderScreen.routeName,
+                              context, SalesSelectProductsScreen.routeName,
                               arguments: {'customerId': id, 'name': name})
                           .then((value) {
                         // _initDone = false;

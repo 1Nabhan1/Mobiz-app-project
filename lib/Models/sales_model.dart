@@ -71,33 +71,40 @@ class Data {
 }
 
 class Product {
+  final String? data;
   final int id;
   final String code;
   final String name;
   final String proImage;
   final int taxPercentage;
   final double price;
-  final int storeId;
+  final int? storeId; // Optional
   final int status;
   final List<Units> units;
   String? selectedUnitName;
   int? selectedUnitId;
+  bool isSelected;
+  int defaultValue;
 
   Product({
+    this.data,
     required this.id,
     required this.code,
     required this.name,
     required this.proImage,
     required this.taxPercentage,
     required this.price,
-    required this.storeId,
+    this.storeId, // Optional
     required this.status,
     required this.units,
     this.selectedUnitName,
     this.selectedUnitId,
+    this.isSelected = false,
+    this.defaultValue = 0,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    print('Parsing Product: $json'); // Debugging print
     return Product(
       id: int.tryParse(json['id'].toString()) ?? 0,
       code: json['code'] ?? '',
@@ -107,13 +114,17 @@ class Product {
       price: double.tryParse(json['price'].toString()) ?? 0.0,
       storeId: int.tryParse(json['store_id'].toString()) ?? 0,
       status: int.tryParse(json['status'].toString()) ?? 0,
-      units: List<Units>.from(
-        json['units'].map((unit) => Units.fromJson(unit)),
-      ),
+      units: (json['units'] is List)
+          ? List<Units>.from(
+              json['units'].map((unit) => Units.fromJson(unit)),
+            )
+          : [],
+      defaultValue: json['default_value'] ?? 0,  // Ensure this line is added
     );
   }
 
   Map<String, dynamic> toJson() {
+    // print(object)
     return {
       'id': id,
       'code': code,
@@ -124,6 +135,7 @@ class Product {
       'store_id': storeId,
       'status': status,
       'units': units.map((unit) => unit.toJson()).toList(),
+      'default_value': defaultValue,
     };
   }
 }
@@ -219,12 +231,14 @@ class Products {
   final String code;
   final String name;
   final String proImage;
+  final String serialbarcode_required;
 
   Products({
     required this.id,
     required this.code,
     required this.name,
     required this.proImage,
+    required this.serialbarcode_required,
   });
 
   factory Products.fromJson(Map<String, dynamic> json) {
@@ -233,6 +247,7 @@ class Products {
       code: json['code'] ?? '',
       name: json['name'] ?? '',
       proImage: json['pro_image'] ?? '',
+      serialbarcode_required: json['serial_barcode_required'] ?? '',
     );
   }
 }
