@@ -1251,7 +1251,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                           )),
                                       Text(' | '),
                                       Text(
-                                        'Amt: ${ttlamount}',
+                                        'Amt: ${ttlamount.toStringAsFixed(3)}',
                                         style: TextStyle(color: Colors.grey),
                                       )
                                     ],
@@ -1505,7 +1505,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                 ],
                               )
                             : SizedBox.shrink(),
-                        Text('Total: $total'),
+                        Text('Total: ${total.toStringAsFixed(3)}'),
                         Text('Tax: ${tax.toStringAsFixed(2)}'),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,

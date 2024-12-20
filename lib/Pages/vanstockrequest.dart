@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:shimmer/shimmer.dart';
@@ -244,20 +245,30 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
                         // CommonWidgets.horizontalSpace(12),
                         Spacer(),
                         Text(
-                          (data.status == 1)
+                          (data.status == 0)
+                              ? 'Cancelled'
+                              : (data.status == 1)
                               ? 'Pending'
                               : (data.status == 2)
-                                  ? 'Approved'
-                                  : 'Confirmed',
+                              ? 'Approved'
+                              : (data.status == 3)
+                              ? 'Confirmed'
+                              : '',
                           style: TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
-                              color: (data.status == 1)
-                                  ? AppConfig.colorWarning
-                                  : (data.status == 2)
-                                      ? Colors.orange
-                                      : Colors.green,
-                              fontWeight: AppConfig.headLineWeight),
+                            fontSize: AppConfig.textCaption3Size,
+                            color: (data.status == 0)
+                                ? Colors.red
+                                : (data.status == 1)
+                                ? AppConfig.colorWarning
+                                : (data.status == 2)
+                                ? Colors.orange
+                                : (data.status == 3)
+                                ? Colors.green
+                                : Colors.grey,
+                            fontWeight: AppConfig.headLineWeight,
+                          ),
                         ),
+
                       ],
                     ),
                   ),
@@ -528,27 +539,61 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
     dynamic bodyJson = {
       "id": id,
     };
+
     try {
       dynamic resJson = await api.sendData(
           '/api/vanrequest.confirm', AppState().token, jsonEncode(bodyJson));
-    } catch (e) {
-      if (mounted) {
-        CommonWidgets.showDialogueBox(
-            context: context,
-            title: "Alert",
-            msg: "Requset Added Successfully");
-        setState(() {
-          _initDone = false;
-        });
-        _getRequests();
+
+      // Check if the response indicates success
+      if (resJson['success'] == true) {
+        print("Request confirmed successfully for ID: $id");
+
+        // Navigate to the home screen
+        Navigator.pushReplacementNamed(context, HomeScreen.routeName);
+      } else {
+        print("Request failed: ${resJson['messages']}");
       }
-    }finally {
-      // Optionally re-enable the button if required
+    } catch (e) {
+      print("Error while processing request: $e");
+    } finally {
       setState(() {
-        _isButtonDisabled = false; // Enable button if needed
+        _isButtonDisabled = false; // Re-enable button
       });
     }
   }
+
+
+// Future<void> _conformrequest(int id) async {
+  //   setState(() {
+  //     _isButtonDisabled = true; // Disable button
+  //   });
+  //
+  //   RestDatasource api = RestDatasource();
+  //
+  //   dynamic bodyJson = {
+  //     "id": id,
+  //   };
+  //   try {
+  //     dynamic resJson = await api.sendData(
+  //         '/api/vanrequest.confirm', AppState().token, jsonEncode(bodyJson));
+  //   } catch (e) {
+  //     if (mounted) {
+  //       print("sdsd: ${id}");
+  //       CommonWidgets.showDialogueBox(
+  //           context: context,
+  //           title: "Alert",
+  //           msg: "Requset Added Successfully");
+  //       setState(() {
+  //         _initDone = false;
+  //       });
+  //       _getRequests();
+  //     }
+  //   }finally {
+  //     setState(() {
+  //       _isButtonDisabled = false;
+  //     });
+  //   }
+  // }
 }
 
 class VanRequestModel {

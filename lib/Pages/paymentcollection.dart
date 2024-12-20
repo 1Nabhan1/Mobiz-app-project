@@ -163,7 +163,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   // }
 
   double getBalanceAmount() {
-    double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
+    double paidAmount = getPaidAmount();
     double roundOff = RoundOff.isNotEmpty ? double.parse(RoundOff) : 0;
     double allocatedAmount = enteredValues.asMap().entries.map((entry) {
       int index = entry.key;
@@ -195,21 +195,39 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     return balance;
   }
 
+  // double getPaidAmount() {
+  //   String text = _paidAmt.text.trim(); // Trim whitespace
+  //
+  //   if (text.isEmpty) {
+  //     return 0.0; // Return 0 if the input is empty
+  //   }
+  //
+  //   // Check if the input is a valid double
+  //   if (double.tryParse(text) == null) {
+  //     print('Invalid number entered: $text');
+  //     return 0.0;
+  //   }
+  //
+  //   return double.parse(text);
+  // }
+
   double getPaidAmount() {
-    String text = _paidAmt.text;
+    String text = _paidAmt.text.trim(); // Trim whitespace
 
     if (text.isEmpty) {
-      return 0.0; // or handle the empty case as needed
+      return 0.0; // Return 0 if the input is empty
     }
 
-    try {
-      return double.parse(text);
-    } catch (e) {
-      // Handle the error (e.g., show a message to the user)
-      print('Error parsing double: $e');
-      return 0.0; // or handle the invalid number case as needed
+    // Check if the input is a valid double
+    double? amount = double.tryParse(text);
+    if (amount == null) {
+      print('Invalid number entered: $text');
+      return 0.0; // Return 0 for invalid input
     }
+
+    return amount; // Return the actual amount, including negatives
   }
+
 
   void updateBalanceAndAllocatedAmounts() {
     setState(() {});
@@ -886,16 +904,15 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             onChanged: (value) {
               setState(() {
                 if (invoice.invoiceType.toLowerCase() == 'sales') {
-                  // Subtract entered amount from balance if invoice type is 'sales'
                   enteredValues[index] = value;
                 } else {
-                  // Add entered amount to balance if invoice type is not 'sales'
-                  double currentBalance = double.parse(value) +
-                      double.parse(PaidAmt) -
-                      getAllocatedAmount();
-                  enteredValues[index] = currentBalance.toString();
+                  double parsedValue = double.tryParse(value) ?? 0.0;
+                  double parsedPaidAmt = double.tryParse(PaidAmt) ?? 0.0;
+                  double currentBalance = parsedValue + parsedPaidAmt - getAllocatedAmount();
+                  enteredValues[index] = currentBalance.toStringAsFixed(2);
                 }
               });
+
             },
             decoration: InputDecoration(hintText: "Enter amount"),
           ),
@@ -997,10 +1014,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'cheque_date': formattedDate,
       'invoice_no': invoiceno,
       'invoice_date': invoicedate,
-      'invoice_id': invoiceid
+      'invoice_id': invoiceid,
     };
+    print('Request Body: ${json.encode(body)}');
     print('processedValues');
     print(processedValues);
+
     final response = await http.post(
       Uri.parse(url),
       headers: {
@@ -1010,46 +1029,132 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     );
 
     if (response.statusCode == 200) {
-      print(response.body);
-      print("SSDSDS$processedValues");
       var responseBody = json.decode(response.body);
-      int payId = responseBody['data'][0]['id'];
-      print('Data posted successfully');
-      if (mounted) {
+      if (responseBody['success'] == true) {
+        print('Data posted successfully');
+
+        // Check if 'data' is not empty
+        int? payId;
+        if (responseBody['data'].isNotEmpty) {
+          payId = responseBody['data'][0]['id'];
+        }
+
         setState(() {
           isSaving = false;
         });
-        Future.delayed(Duration(milliseconds: 100), () {
-          CommonWidgets.showDialogueBox(
-                  context: context,
-                  title: "Alert",
-                  msg: "Transaction Successful")
-              .then((value) {
-            if (pricegroupId != null) {
-              Navigator.pushReplacementNamed(
-                context,
-                GroupPrint.routeName, // Replace with the actual route name
-                arguments: {
-                  'price_group_id': pricegroupId,
-                  'saleId': saleId,
-                  'returnId': returnId,
-                  'payId': payId
-                },
-              );
-            } else {
-              Navigator.pushReplacementNamed(
-                context,
-                ReceiptScreen.receiptScreen,
-              );
-            }
-          });
-        });
+
+        if (pricegroupId != null) {
+          Navigator.pushReplacementNamed(
+            context,
+            GroupPrint.routeName,
+            arguments: {
+              'price_group_id': pricegroupId,
+              'saleId': saleId,
+              'returnId': returnId,
+              'payId': payId, // This will be null if 'data' is empty
+            },
+          );
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            ReceiptScreen.receiptScreen,
+          );
+        }
+      } else {
+        print('Failed: success is false');
       }
     } else {
-      // Handle error response
       print('Failed to post data: ${response.statusCode}');
     }
   }
+
+
+// Future<void> postCollectionData() async {
+  //   final url = '${RestDatasource().BASE_URL}/api/collection.post';
+  //   List<Map<String, dynamic>> collectionDetails = [];
+  //   for (int i = 0; i < invoices.length; i++) {
+  //     if (enteredValues[i].isNotEmpty) {
+  //       collectionDetails.add({
+  //         'InvoiceId': invoices[i].invoiceNo,
+  //         'Amount': double.parse(enteredValues[i]),
+  //       });
+  //     }
+  //   }
+  //   List<double> processedValues = enteredValues.map((value) {
+  //     return value.isEmpty
+  //         ? 0.0
+  //         : double.parse(double.parse(value).toStringAsFixed(2));
+  //   }).toList();
+  //
+  //   final body = {
+  //     'allocation_amount': getPaidAmount(),
+  //     'round_off': _roundOffController.text,
+  //     'van_id': AppState().vanId,
+  //     'store_id': AppState().storeId,
+  //     'user_id': AppState().userId,
+  //     'goods_out_id': goodsTypes,
+  //     'amount': processedValues,
+  //     'customer_id': id,
+  //     'invoice_type': invoiceTypes,
+  //     'collection_type': dropdownvalue,
+  //     'bank': _bankController.text,
+  //     'cheque_no': _chequeController.text,
+  //     'cheque_date': formattedDate,
+  //     'invoice_no': invoiceno,
+  //     'invoice_date': invoicedate,
+  //     'invoice_id': invoiceid
+  //   };
+  //   print('Request Body: ${json.encode(body)}');
+  //   print('processedValues');
+  //   print(processedValues);
+  //   final response = await http.post(
+  //     Uri.parse(url),
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: json.encode(body),
+  //   );
+  //
+  //   if (response.statusCode == 200) {
+  //     print(response.body);
+  //     print("SSDSDS$processedValues");
+  //     var responseBody = json.decode(response.body);
+  //     int payId = responseBody['data'][0]['id'];
+  //     print('Data posted successfully');
+  //     if (mounted) {
+  //       setState(() {
+  //         isSaving = false;
+  //       });
+  //       Future.delayed(Duration(milliseconds: 100), () {
+  //         CommonWidgets.showDialogueBox(
+  //                 context: context,
+  //                 title: "Alert",
+  //                 msg: "Transaction Successful")
+  //             .then((value) {
+  //           if (pricegroupId != null) {
+  //             Navigator.pushReplacementNamed(
+  //               context,
+  //               GroupPrint.routeName, // Replace with the actual route name
+  //               arguments: {
+  //                 'price_group_id': pricegroupId,
+  //                 'saleId': saleId,
+  //                 'returnId': returnId,
+  //                 'payId': payId
+  //               },
+  //             );
+  //           } else {
+  //             Navigator.pushReplacementNamed(
+  //               context,
+  //               ReceiptScreen.receiptScreen,
+  //             );
+  //           }
+  //         });
+  //       });
+  //     }
+  //   } else {
+  //     print('Failed to post data: ${response.statusCode}');
+  //   }
+  // }
 }
 
 class ApiResponse {

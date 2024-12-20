@@ -174,6 +174,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _emailController.text = params['email'] ?? '';
         _isUpdate = true;
       }
+      print("Code${_customercode}");
     });
     namefocus = FocusNode();
     addressfocus = FocusNode();
@@ -931,10 +932,12 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     }
 
     RestDatasource api = RestDatasource();
+    String codeToPost = _customercode ??
+        (cuCodeData.isNotEmpty ? cuCodeData.join(', ') : '');
     Map<String, dynamic> bodyJson = {
       'id': id,
       'name': _nameController.text,
-      'code': _customercode,
+      'code': codeToPost,
       'address': _addressController.text,
       'contact_number': _contactNumberController.text,
       'whatsapp_number': _whatsappNumberController.text,
@@ -954,7 +957,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     };
 
     print('Body data: $bodyJson');
-    print('Image: $_image');
+    print('Image: $codeToPost');
 
     try {
       dynamic resJson = await api.customerRegister(
@@ -964,6 +967,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         context,
         _isUpdate,
       );
+      print("Body${bodyJson}");
       print('Response: $resJson');
 
       if (mounted) {

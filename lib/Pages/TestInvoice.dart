@@ -134,7 +134,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     if (response.statusCode == 200) {
       print(response.request);
       VanSaleResponse vanSaleResponse =
-          VanSaleResponse.fromJson(json.decode(response.body));
+      VanSaleResponse.fromJson(json.decode(response.body));
 
       setState(() {
         vanSales.addAll(vanSaleResponse.data!.vanSales);
@@ -167,7 +167,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params['name'];
     }
@@ -191,81 +191,81 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                 CommonWidgets.verticalSpace(1),
                 (_initDone && !_noData)
                     ? SizedBox(
-                        height: SizeConfig.blockSizeVertical * 85,
-                        child: ListView.separated(
-                          separatorBuilder: (BuildContext context, int index) =>
-                              CommonWidgets.verticalSpace(1),
-                          itemCount: vanSales.length + (isLoading ? 1 : 0),
-                          shrinkWrap: true,
-                          itemBuilder: (context, index) {
-                            // Check if this is the last item (loading indicator)
-                            if (index == vanSales.length) {
-                              return isLoading
-                                  ? const Center(
-                                      child: Text(
-                                      "Loading...",
-                                      style: TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                          color: Colors.grey),
-                                    ))
-                                  : Center(
-                                      child: Text(
-                                        "That's All",
-                                        style: TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            color: Colors.grey.shade400,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    );
-                            }
-                            return _productsCard(vanSales[index], index);
-                          },
-                        ),
-                      )
-                    : (_noData && _initDone)
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                                CommonWidgets.verticalSpace(3),
-                                const Center(
-                                  child: Text('No Data'),
-                                ),
-                              ])
-                        : Shimmer.fromColors(
-                            baseColor:
-                                AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                            highlightColor: AppConfig.backButtonColor,
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                  CommonWidgets.loadingContainers(
-                                      height: SizeConfig.blockSizeVertical * 10,
-                                      width:
-                                          SizeConfig.blockSizeHorizontal * 90),
-                                ],
-                              ),
-                            ),
+                  height: SizeConfig.blockSizeVertical * 85,
+                  child: ListView.separated(
+                    separatorBuilder: (BuildContext context, int index) =>
+                        CommonWidgets.verticalSpace(1),
+                    itemCount: vanSales.length + (isLoading ? 1 : 0),
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      // Check if this is the last item (loading indicator)
+                      if (index == vanSales.length) {
+                        return isLoading
+                            ? const Center(
+                            child: Text(
+                              "Loading...",
+                              style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey),
+                            ))
+                            : Center(
+                          child: Text(
+                            "That's All",
+                            style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey.shade400,
+                                fontWeight: FontWeight.w700),
                           ),
+                        );
+                      }
+                      return _productsCard(vanSales[index], index);
+                    },
+                  ),
+                )
+                    : (_noData && _initDone)
+                    ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CommonWidgets.verticalSpace(3),
+                      const Center(
+                        child: Text('No Data'),
+                      ),
+                    ])
+                    : Shimmer.fromColors(
+                  baseColor:
+                  AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                  highlightColor: AppConfig.backButtonColor,
+                  child: Center(
+                    child: Column(
+                      children: [
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                        CommonWidgets.loadingContainers(
+                            height: SizeConfig.blockSizeVertical * 10,
+                            width:
+                            SizeConfig.blockSizeHorizontal * 90),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -330,17 +330,17 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                           data.status == 0
                               ? "Cancelled"
                               : data.status == 1
-                                  ? "Confirmed"
-                                  : "",
+                              ? "Confirmed"
+                              : "",
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                             fontWeight: AppConfig.headLineWeight,
                             color: data.status == 0
                                 ? Colors.red // Color for Cancelled
                                 : data.status == 1
-                                    ? Colors.green // Color for Confirmed
-                                    : Colors
-                                        .grey, // Default color for unknown status
+                                ? Colors.green // Color for Confirmed
+                                : Colors
+                                .grey, // Default color for unknown status
                           ),
                         ),
                       ],
@@ -370,40 +370,40 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                   ],
                 ),
                 (data.detail!.isNotEmpty)
-                    // ? Text(
-                    //     'Type: ${data.detail![0].productType}',
-                    //     style: TextStyle(
-                    //       fontSize: AppConfig.textCaption3Size,
-                    //     ),
-                    //   )
+                // ? Text(
+                //     'Type: ${data.detail![0].productType}',
+                //     style: TextStyle(
+                //       fontSize: AppConfig.textCaption3Size,
+                //     ),
+                //   )
 
                     ? Text(
-                        'Total: ${data.total?.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                        ),
-                      )
+                  'Total: ${data.total?.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                )
                     : Text(
-                        'Type:  ',
-                        style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                        ),
-                      ),
+                  'Type:  ',
+                  style: TextStyle(
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                ),
                 data.discount_type == '0'
                     ? Text(
-                        'Discount : ${data.discount?.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                        ),
-                      )
+                  'Discount : ${data.discount?.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                )
                     : data.discount_type == '1'
-                        ? Text(
-                            'Discount(%): ${data.discount?.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
-                            ),
-                          )
-                        : SizedBox.shrink(),
+                    ? Text(
+                  'Discount(%): ${data.discount?.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                )
+                    : SizedBox.shrink(),
                 Row(
                   children: [
                     Text(
@@ -421,6 +421,16 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                         size: 30,
                       ),
                     ),
+                    CommonWidgets.horizontalSpace(2),
+                    AppState().printer=="Wifi"?
+                    InkWell(
+                      onTap: () => _getwifiInvoiceData(data.id!, false),
+                      child: const Icon(
+                        Icons.document_scanner,
+                        color: Colors.green,
+                        size: 30,
+                      ),
+                    ):SizedBox.shrink(),
                     CommonWidgets.horizontalSpace(2),
                     InkWell(
                       onTap: () => _getInvoiceData(data.id!, false),
@@ -516,8 +526,8 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                           (i == data.detail!.length - 1)
                               ? Container()
                               : Divider(
-                                  color: AppConfig.buttonDeactiveColor
-                                      .withOpacity(0.4)),
+                              color: AppConfig.buttonDeactiveColor
+                                  .withOpacity(0.4)),
                         ],
                       ),
                   ],
@@ -565,7 +575,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           double.tryParse(invoice.data!.discount!.toString()) != null &&
           double.parse(invoice.data!.discount!.toString()) > 0) {
         Discount =
-            "Discount: ${double.parse(invoice.data!.discount!.toString()).toStringAsFixed(2)}";
+        "Discount: ${double.parse(invoice.data!.discount!.toString()).toStringAsFixed(2)}";
       } else {
         Discount = '';
       }
@@ -576,7 +586,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
       void printAlignedText(String leftText, String rightText) {
         const int maxLineLength =
-            68; // Adjust the maximum line length as per your printer's character limit
+        68; // Adjust the maximum line length as per your printer's character limit
         int leftTextLength = leftText.length;
         int rightTextLength = rightText.length;
 
@@ -656,7 +666,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
           "${'Type'.padRight(columnWidth5)}"
           "${'Rate'.padRight(columnWidth6)}"
           "${'Amount'.padRight(columnWidth7)}"
-          // "${'Vat'.padRight(columnWidth8)}"
+      // "${'Vat'.padRight(columnWidth8)}"
           " ${'Total'.padLeft(columnWidth9)}";
       printer.printCustom(headers, 1, 0); // Left aligned
 
@@ -691,7 +701,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
         // Split the product description if it exceeds the column width
         List<String> descriptionLines =
-            splitText(productDescription, columnWidth2);
+        splitText(productDescription, columnWidth2);
 
         for (int j = 0; j < descriptionLines.length; j++) {
           String line;
@@ -704,7 +714,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
                 "${productType.padRight(columnWidth5)}"
                 "${productRate.padRight(columnWidth6)}"
                 "${productTotal.padRight(columnWidth7)}"
-                // "${productTax.padRight(columnWidth8)}"
+            // "${productTax.padRight(columnWidth8)}"
                 "${productAmount.padLeft(columnWidth9)}";
           } else {
             // For subsequent lines, only include the description, leaving other columns blank
@@ -856,14 +866,14 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     // Calculate the center position for the text
     final double xPosition = (pageWidth - textSize.width) / 2;
     final double yPosition =
-        165; // Adjust this as needed for vertical positioning
+    165; // Adjust this as needed for vertical positioning
 
     // Draw the centered text
     page.graphics.drawString(
       text,
       font,
       bounds:
-          Rect.fromLTWH(xPosition, yPosition, textSize.width, textSize.height),
+      Rect.fromLTWH(xPosition, yPosition, textSize.width, textSize.height),
     );
 
     // Draw a line below the text
@@ -945,20 +955,20 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       row.cells[2].value = '${invoice.data!.detail![k].unit}';
       row.cells[3].value = '${invoice.data!.detail![k].quantity}';
       row.cells[4].value = (invoice.data!.detail![k].productType!
-                      .toLowerCase() ==
-                  "foc" ||
-              invoice.data!.detail![k].productType!.toLowerCase() == "FOC" ||
-              invoice.data!.detail![k].productType!.toLowerCase() == "Change")
+          .toLowerCase() ==
+          "foc" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "FOC" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "Change")
           ? 'Normal'
           : 'Normal';
       row.cells[5].value =
-          '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
+      '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
       row.cells[6].value =
-          '${invoice.data!.detail![k].taxable?.toStringAsFixed(2)}';
+      '${invoice.data!.detail![k].taxable?.toStringAsFixed(2)}';
       row.cells[7].value =
-          '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
       row.cells[8].value =
-          '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
+      '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
 
     // Define no border style
@@ -1093,6 +1103,355 @@ Salesman: ${invoice.data!.user![0].name}
         bytes, '${invoice.data!.invoiceNo!}.pdf', isPrint);
   }
 
+
+  Future<void> _wifiPdf(Invoice.InvoiceData invoice, bool isPrint) async {
+    PdfDocument document = PdfDocument();
+    final page = document.pages.add();
+    final Size pageSize = page.getClientSize();
+
+    // Load the image.
+
+    // final Uint8List imageData = await _readImageData(
+    //     invoice.data!.store![0].logo); //invoice.data!.store![0].logo
+    // print(invoice.data!.store![0].logo);
+    // if (imageData.isNotEmpty) {
+    //   final PdfBitmap image = PdfBitmap(imageData);
+    //
+    //   // Draw the image.
+    //   final Rect imageRect = Rect.fromCenter(
+    //     center: Offset(pageSize.width / 2, 50),
+    //     width: pageSize.width * 0.2, // Adjust width as per your requirement
+    //     height: pageSize.height * 0.1, // Adjust height as per your requirement
+    //   );
+    //   page.graphics.drawImage(image, imageRect);
+    // }
+
+    //content
+    // page.graphics.drawString(
+    //     'TAX INVOICE', PdfStandardFont(PdfFontFamily.helvetica, 30));
+
+    //heading
+    // final String head = '${invoice.data!.store![0].name}';
+    // Define the text and font
+    final double pageWidth = page.getClientSize().width;
+
+    final String addresss = '${invoice.data!.store![0].address ?? 'N/A'}';
+    final PdfFont addressfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
+
+    // final Size addresstextSize = addressfont.measureString(addresss);
+    // final double addressxPosition = (pageWidth - addresstextSize.width) / 2.0;
+    // final double addressyPosition = 120;
+
+    // page.graphics.drawString(
+    //   addresss,
+    //   addressfont,
+    //   bounds: Rect.fromLTWH(addressxPosition, addressyPosition,
+    //       addresstextSize.width, addresstextSize.height),
+    // );
+
+    // final String email = '${invoice.data!.store![0].email ?? 'N/A'}';
+    // final PdfFont emailfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
+    // final Size emailtextSize = emailfont.measureString(email);
+    // final double emailxPosition = (pageWidth - emailtextSize.width) / 2.0;
+    final double emailyposition = 135;
+    // page.graphics.drawString(
+    //   email,
+    //   emailfont,
+    //   bounds: Rect.fromLTWH(emailxPosition, emailyposition, emailtextSize.width,
+    //       emailtextSize.height),
+    // );
+
+    final String trn = 'TRN:${invoice.data!.store![0].trn ?? 'N/A'}';
+    final PdfFont trnfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
+
+    // final Size trntextSize = trnfont.measureString(trn);
+    // final double trnxPosition = (pageWidth - trntextSize.width) / 2.1;
+    final double trnyPosition = 150;
+
+    // page.graphics.drawString(
+    //   trn,
+    //   trnfont,
+    //   bounds: Rect.fromLTWH(
+    //       trnxPosition, trnyPosition, trntextSize.width, trntextSize.height),
+    // );
+
+    final String text = 'TAX INVOICE';
+    final PdfFont headfont = PdfStandardFont(
+      PdfFontFamily.helvetica,
+      15,
+    );
+    final Size headtextSize = headfont.measureString(text);
+    //
+    final double headxPosition = (pageWidth - headtextSize.width) / 2.0;
+    final double headyPosition = 100;
+    page.graphics.drawString(
+      text,
+      headfont,
+      bounds: Rect.fromLTWH(headxPosition, headyPosition, headtextSize.width,
+          headtextSize.height),
+    );
+
+    final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 15);
+
+    // Calculate the width of the text
+    final Size textSize = font.measureString(text);
+
+    // Calculate the center position for the text
+    final double xPosition = (pageWidth - textSize.width) / 2;
+    final double yPosition =
+    165; // Adjust this as needed for vertical positioning
+
+    // Draw the centered text
+    // page.graphics.drawString(
+    //   text,
+    //   font,
+    //   bounds:
+    //   Rect.fromLTWH(xPosition, yPosition, textSize.width, textSize.height),
+    // );
+
+    // Draw a line below the text
+    final remarks = invoice.data?.remarks;
+    final double lineYPosition =
+        yPosition + textSize.height + 10; // Adjust the gap as needed
+    page.graphics.drawLine(
+      PdfPen(PdfColor(0, 0, 0)), // Black pen
+      Offset(0, lineYPosition),
+      Offset(pageWidth, lineYPosition),
+    );
+
+    String address = '''
+  Customer: ${invoice.data!.customer![0].code} | ${invoice.data!.customer![0].name}
+  Email: ${invoice.data!.customer![0].email}
+  Contact No:  ${invoice.data!.customer![0].contactNumber}
+  TRN:  ${invoice.data!.customer![0].trn ?? ''}
+  ''';
+
+    String invoiceDetails = '''
+  Invoice No: ${invoice.data!.invoiceNo!}
+  Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
+  Due Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
+  ${remarks != null ? remarks : ''}
+  ''';
+
+    page.graphics.drawString(
+      address,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(0, 200, pageSize.width / 0, 100),
+    );
+
+    page.graphics.drawString(
+      invoiceDetails,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(pageSize.width / 2, 200, pageSize.width / 2, 100),
+      format: PdfStringFormat(
+        alignment: PdfTextAlignment.right,
+      ),
+    );
+
+    // Draw a horizontal line.
+    page.graphics.drawLine(
+      PdfPen(PdfColor(0, 0, 0)),
+      const Offset(0, 290),
+      Offset(pageSize.width, 290),
+    );
+
+    // Create a table without grid lines.
+    final PdfGrid grid = PdfGrid();
+    grid.columns.add(count: 9);
+    // Set column widths.
+    grid.columns[0].width = 30; // Sl.No
+    grid.columns[1].width = 180; // Product
+    grid.columns[2].width = 40; // Unit
+    grid.columns[3].width = 40; // Rate
+    grid.columns[4].width = 50; // Qty
+    grid.columns[5].width = 50;
+    grid.columns[6].width = 40;
+    grid.columns[7].width = 50; // Vat
+    grid.columns[8].width = 100;
+
+    // Add headers.
+    final PdfGridRow headerRow = grid.headers.add(1)[0];
+    headerRow.cells[0].value = 'Sl.No';
+    headerRow.cells[1].value = 'Product';
+    headerRow.cells[2].value = 'Unit';
+    headerRow.cells[3].value = 'Qty';
+    headerRow.cells[4].value = 'Type';
+    headerRow.cells[5].value = 'Rate';
+    headerRow.cells[6].value = 'Total';
+    headerRow.cells[7].value = 'Vat';
+    headerRow.cells[8].value = 'Amount';
+
+    for (int k = 0; k < invoice.data!.detail!.length; k++) {
+      final PdfGridRow row = grid.rows.add();
+      row.cells[0].value = '${k + 1}';
+      row.cells[1].value = '${invoice.data!.detail![k].name}';
+      row.cells[2].value = '${invoice.data!.detail![k].unit}';
+      row.cells[3].value = '${invoice.data!.detail![k].quantity}';
+      row.cells[4].value = (invoice.data!.detail![k].productType!
+          .toLowerCase() ==
+          "foc" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "FOC" ||
+          invoice.data!.detail![k].productType!.toLowerCase() == "Change")
+          ? 'Normal'
+          : 'Normal';
+      row.cells[5].value =
+      '${invoice.data!.detail![k].mrp?.toStringAsFixed(2)}';
+      row.cells[6].value =
+      '${invoice.data!.detail![k].taxable?.toStringAsFixed(2)}';
+      row.cells[7].value =
+      '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
+      row.cells[8].value =
+      '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
+    }
+
+    // Define no border style
+    final PdfBorders noBorder = PdfBorders(
+      left: PdfPen(PdfColor(255, 255, 255), width: 0),
+      top: PdfPen(PdfColor(255, 255, 255), width: 0),
+      right: PdfPen(PdfColor(255, 255, 255), width: 0),
+      bottom: PdfPen(PdfColor(255, 255, 255), width: 0),
+    );
+
+    // Remove borders from all header cells
+    for (int j = 0; j < grid.headers.count; j++) {
+      for (int k = 0; k < grid.headers[j].cells.count; k++) {
+        grid.headers[j].cells[k].style.borders = noBorder;
+      }
+    }
+
+    // Remove borders from all body cells
+    for (int i = 0; i < grid.rows.count; i++) {
+      for (int j = 0; j < grid.columns.count; j++) {
+        grid.rows[i].cells[j].style.borders = noBorder;
+      }
+    }
+
+    // Draw the table.
+    final PdfLayoutResult result = grid.draw(
+      page: page,
+      bounds: Rect.fromLTWH(0, 300, pageSize.width, pageSize.height - 180),
+    )!;
+
+    //   // Calculate the Y position for the line after the first row
+    // final double firstRowHeight = grid.headers[0].height + grid.rows[0].height;
+
+    // // Draw a line after the first row of the grid
+    // page.graphics.drawLine(
+    //   PdfPen(PdfColor(0, 0, 0), width: 1),
+    //   Offset(0, result.bounds.top + firstRowHeight),
+    //   Offset(pageSize.width, result.bounds.top + firstRowHeight),
+    // );
+    // Check if the table extends to the next page
+    PdfPage lastPage = result.page;
+    double tableBottom = result.bounds.bottom;
+
+    if (tableBottom >= pageSize.height) {
+      // Add a new page
+      lastPage = document.pages.add();
+      tableBottom = 0;
+    }
+
+    // Draw a horizontal line after the table.
+    lastPage.graphics.drawLine(
+      PdfPen(PdfColor(0, 0, 0)),
+      Offset(0, tableBottom + 15),
+      Offset(pageSize.width, tableBottom + 15),
+    );
+
+    // Draw invoice details at the bottom right.
+
+    // ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount?.toStringAsFixed(2)}' : '\t'}
+
+    String bottomInvoiceDetails = '''
+    ${invoice.data!.discount != null && invoice.data!.discount! > 0 ? 'Discount: ${invoice.data!.discount!.toStringAsFixed(2)}' : '\t'}
+  Total: ${invoice.data!.total ?? ''}
+  Vat: ${invoice.data!.totalTax?.toStringAsFixed(2)}
+  ${'${invoice.data!.roundOff}' != 0 ? 'Round off:${double.parse(invoice.data!.roundOff ?? '').toStringAsFixed(2)}\nGrand Total: ${invoice.data!.grandTotal?.toStringAsFixed(2)}' : 'Grand Total: ${invoice.data!.grandTotal}'}
+
+
+  ''';
+    print('invoice.data!.discounted_amount');
+    print(invoice.data!.discounted_amount);
+
+    lastPage.graphics.drawString(
+      bottomInvoiceDetails,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(
+        pageSize.width / 2,
+        tableBottom + 20,
+        pageSize.width / 2,
+        100,
+      ),
+      format: PdfStringFormat(
+        alignment: PdfTextAlignment.right,
+      ),
+    );
+
+
+// in word
+    String textData =
+        'Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY';
+    String? infoot = invoice.data!.store![0].invoice_footer;
+
+// Adjust the vertical position for the van details
+    double vanDetailsTop = tableBottom + 20 + 100 + 10;
+
+// Construct the van details string.
+    String bottomVanDetails = '''
+Van: ${invoice.data!.van![0].name}
+Salesman: ${invoice.data!.user![0].name}
+''';
+
+// Draw the word text above the van details
+    lastPage.graphics.drawString(
+      textData,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(
+        0,
+        vanDetailsTop -
+            17, // Adjust vertical position to be above the van details
+        pageSize.width,
+        100,
+      ),
+      format: PdfStringFormat(
+        alignment: PdfTextAlignment.left,
+      ),
+    );
+// Draw van details at the bottom left.
+    lastPage.graphics.drawString(
+      bottomVanDetails,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(
+        0,
+        vanDetailsTop,
+        pageSize.width / 2,
+        100,
+      ),
+      format: PdfStringFormat(
+        alignment: PdfTextAlignment.left,
+      ),
+    );
+    lastPage.graphics.drawString(
+      infoot!,
+      PdfStandardFont(PdfFontFamily.helvetica, 12),
+      bounds: Rect.fromLTWH(
+        0,
+        vanDetailsTop -
+            -40, // Adjust vertical position to be above the van details
+        pageSize.width,
+        100,
+      ),
+      format: PdfStringFormat(
+        alignment: PdfTextAlignment.left,
+      ),
+    );
+    List<int> bytes = await document.save();
+    document.dispose();
+
+    String file = await saveAndLaunchFile(
+        bytes, '${invoice.data!.invoiceNo!}.pdf', isPrint);
+  }
+
   // Future<String> _getImageData(String imageUrl) async {
   //   http.Response response = await http.get(Uri.parse(imageUrl));
   //   Uint8List bytes = response.bodyBytes;
@@ -1124,7 +1483,7 @@ Salesman: ${invoice.data!.user![0].name}
     Invoice.InvoiceData invoice = Invoice.InvoiceData();
     RestDatasource api = RestDatasource();
     dynamic response =
-        await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
+    await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
     if (response['data'] != null) {
       print("DDDDDD${id}");
       invoice = Invoice.InvoiceData.fromJson(response);
@@ -1142,11 +1501,33 @@ Salesman: ${invoice.data!.user![0].name}
     // _print(invoice, isPrint);
   }
 
+  Future<void> _getwifiInvoiceData(int id, bool isPrint) async {
+    Invoice.InvoiceData invoice = Invoice.InvoiceData();
+    RestDatasource api = RestDatasource();
+    dynamic response =
+    await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
+    if (response['data'] != null) {
+      print("DDDDDD${id}");
+      invoice = Invoice.InvoiceData.fromJson(response);
+      _wifiPdf(invoice, isPrint);
+    }
+    // if (_selectedDevice == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Default device not found')),
+    //   );
+    //   return;
+    // }
+    // if (!_connected) {
+    //   await _connect();
+    // }
+    // _print(invoice, isPrint);
+  }
+
   Future<void> _getInvoiceDataprint(int id, bool isPrint) async {
     Invoice.InvoiceData invoice = Invoice.InvoiceData();
     RestDatasource api = RestDatasource();
     dynamic response =
-        await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
+    await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
 
     if (response['data'] != null) {
       invoice = Invoice.InvoiceData.fromJson(response);
@@ -1253,32 +1634,32 @@ class VanSale {
 
   VanSale(
       {this.id,
-      this.customerId,
-      this.billMode,
-      this.inDate,
-      this.inTime,
-      this.invoiceNo,
-      this.discount_type,
-      this.deliveryNo,
-      this.otherCharge,
-      this.discount,
-      this.roundOff,
-      this.total,
-      this.totalTax,
-      this.grandTotal,
-      this.receipt,
-      this.balance,
-      this.orderType,
-      this.ifVat,
-      this.vanId,
-      this.userId,
-      this.storeId,
-      this.status,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.detail,
-      this.customer});
+        this.customerId,
+        this.billMode,
+        this.inDate,
+        this.inTime,
+        this.invoiceNo,
+        this.discount_type,
+        this.deliveryNo,
+        this.otherCharge,
+        this.discount,
+        this.roundOff,
+        this.total,
+        this.totalTax,
+        this.grandTotal,
+        this.receipt,
+        this.balance,
+        this.orderType,
+        this.ifVat,
+        this.vanId,
+        this.userId,
+        this.storeId,
+        this.status,
+        this.createdAt,
+        this.updatedAt,
+        this.deletedAt,
+        this.detail,
+        this.customer});
 
   VanSale.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -1418,62 +1799,62 @@ class Detail {
 
   Detail(
       {this.id,
-      this.goodsOutId,
-      this.itemId,
-      this.productType,
-      this.unit,
-      this.convertQty,
-      this.quantity,
-      this.rate,
-      this.prodiscount,
-      this.taxable,
-      this.taxAmt,
-      this.mrp,
-      this.amount,
-      this.vanId,
-      this.userId,
-      this.storeId,
-      this.status,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.code,
-      this.name,
-      this.proImage,
-      this.categoryId,
-      this.subCategoryId,
-      this.brandId,
-      this.supplierId,
-      this.taxId,
-      this.taxPercentage,
-      this.taxInclusive,
-      this.price,
-      this.baseUnitId,
-      this.baseUnitQty,
-      this.baseUnitDiscount,
-      this.baseUnitBarcode,
-      this.baseUnitOpStock,
-      this.secondUnitPrice,
-      this.secondUnitId,
-      this.secondUnitQty,
-      this.secondUnitDiscount,
-      this.secondUnitBarcode,
-      this.secondUnitOpStock,
-      this.thirdUnitPrice,
-      this.thirdUnitId,
-      this.thirdUnitQty,
-      this.thirdUnitDiscount,
-      this.thirdUnitBarcode,
-      this.thirdUnitOpStock,
-      this.fourthUnitPrice,
-      this.fourthUnitId,
-      this.fourthUnitQty,
-      this.fourthUnitDiscount,
-      this.isMultipleUnit,
-      this.fourthUnitOpStock,
-      this.description,
-      this.productQty,
-      this.percentage});
+        this.goodsOutId,
+        this.itemId,
+        this.productType,
+        this.unit,
+        this.convertQty,
+        this.quantity,
+        this.rate,
+        this.prodiscount,
+        this.taxable,
+        this.taxAmt,
+        this.mrp,
+        this.amount,
+        this.vanId,
+        this.userId,
+        this.storeId,
+        this.status,
+        this.createdAt,
+        this.updatedAt,
+        this.deletedAt,
+        this.code,
+        this.name,
+        this.proImage,
+        this.categoryId,
+        this.subCategoryId,
+        this.brandId,
+        this.supplierId,
+        this.taxId,
+        this.taxPercentage,
+        this.taxInclusive,
+        this.price,
+        this.baseUnitId,
+        this.baseUnitQty,
+        this.baseUnitDiscount,
+        this.baseUnitBarcode,
+        this.baseUnitOpStock,
+        this.secondUnitPrice,
+        this.secondUnitId,
+        this.secondUnitQty,
+        this.secondUnitDiscount,
+        this.secondUnitBarcode,
+        this.secondUnitOpStock,
+        this.thirdUnitPrice,
+        this.thirdUnitId,
+        this.thirdUnitQty,
+        this.thirdUnitDiscount,
+        this.thirdUnitBarcode,
+        this.thirdUnitOpStock,
+        this.fourthUnitPrice,
+        this.fourthUnitId,
+        this.fourthUnitQty,
+        this.fourthUnitDiscount,
+        this.isMultipleUnit,
+        this.fourthUnitOpStock,
+        this.description,
+        this.productQty,
+        this.percentage});
 
   Detail.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -1621,25 +2002,25 @@ class Customer {
 
   Customer(
       {this.id,
-      this.name,
-      this.code,
-      this.address,
-      this.contactNumber,
-      this.whatsappNumber,
-      this.email,
-      this.trn,
-      this.custImage,
-      this.paymentTerms,
-      this.creditLimit,
-      this.creditDays,
-      this.routeId,
-      this.provinceId,
-      this.storeId,
-      this.status,
-      this.createdAt,
-      this.updatedAt,
-      this.deletedAt,
-      this.erpCustomerCode});
+        this.name,
+        this.code,
+        this.address,
+        this.contactNumber,
+        this.whatsappNumber,
+        this.email,
+        this.trn,
+        this.custImage,
+        this.paymentTerms,
+        this.creditLimit,
+        this.creditDays,
+        this.routeId,
+        this.provinceId,
+        this.storeId,
+        this.status,
+        this.createdAt,
+        this.updatedAt,
+        this.deletedAt,
+        this.erpCustomerCode});
 
   Customer.fromJson(Map<String, dynamic> json) {
     id = json['id'];

@@ -10,6 +10,7 @@ class StoreDetail {
   final String? contactNumber;
   final String? whatsappNumber;
   final String? trn;
+  final String? invoice_footer;
   final String? subscriptionEndDate;
   final String? createdAt;
   final String? updatedAt;
@@ -28,6 +29,7 @@ class StoreDetail {
     this.contactNumber,
     this.whatsappNumber,
     this.trn,
+    this.invoice_footer,
     this.subscriptionEndDate,
     this.createdAt,
     this.updatedAt,
@@ -56,6 +58,7 @@ class StoreDetail {
       contactNumber: json['data']['contact_number'],
       whatsappNumber: json['data']['whatsapp_number'],
       trn: json['data']['trn'],
+      invoice_footer: json['data']['invoice_footer'],
       subscriptionEndDate: json['data']['subscription_end_date'],
       createdAt: json['data']['created_at'],
       updatedAt: json['data']['updated_at'],

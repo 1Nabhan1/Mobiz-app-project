@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobizapp/Pages/homepage.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:signature/signature.dart';
 import 'package:path_provider/path_provider.dart';
@@ -240,7 +241,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                           TextButton(
                             onPressed: () {
                               Navigator.of(context).pushReplacementNamed(
-                                  HomepageDriver.routeName);
+                                  HomeScreen.routeName);
                             },
                             child: Text("OK"),
                           ),

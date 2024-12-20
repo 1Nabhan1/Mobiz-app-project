@@ -183,17 +183,12 @@ class _VanStockScreenState extends State<VanStockScreen>
     });
 
     try {
-      // Fetch all products in one call
       final productData = await _getProducts();
-
-      // Filter products and their units with non-zero stock
       final filteredProducts = productData.data
           .map((product) {
-            // Filter units with stock > 0
             final filteredUnits =
                 product.units.where((unit) => unit.stock > 0).toList();
 
-            // Return product with only filtered units if units exist
             return filteredUnits.isNotEmpty
                 ? product.copyWith(units: filteredUnits)
                 : null;
@@ -201,12 +196,11 @@ class _VanStockScreenState extends State<VanStockScreen>
           .where((product) => product != null)
           .toList();
 
-      // Set the products once
       setState(() {
         _products =
             filteredProducts.cast<Product>(); // Cast to the correct type
         _filteredProducts =
-            List.from(_products); // Update filtered products list
+            List.from(_products);
       });
     } catch (e) {
       print('Error: $e');
@@ -1165,7 +1159,7 @@ class Unit {
   String name;
   double price;
   double minPrice;
-  double stock; // Changed to double
+  double stock;
 
   Unit({
     required this.unit,
@@ -1178,12 +1172,13 @@ class Unit {
 
   factory Unit.fromJson(Map<String, dynamic> json) {
     return Unit(
-      unit: json['unit'],
-      id: json['id'],
-      name: json['name'],
-      price: double.parse(json['price']),
-      minPrice: double.parse(json['min_price']),
-      stock: json['stock'].toDouble(), // Convert to double
+      unit: json['unit'] ?? 0, // Default to 0 if null
+      id: json['id'] ?? 0, // Default to 0 if null
+      name: json['name'] ?? '', // Default to empty string if null
+      price: double.tryParse(json['price']?.toString() ?? '') ?? 0.0, // Fallback to 0.0
+      minPrice: double.tryParse(json['min_price']?.toString() ?? '') ?? 0.0, // Fallback to 0.0
+      stock: (json['stock'] as num?)?.toDouble() ?? 0.0, // Safely convert to double
     );
   }
 }
+

@@ -224,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
       LoginModel loginResp = LoginModel.fromJson(resJson);
       if (loginResp.status == "success") {
         // print('loginResp.settings!.vatState');
-        // print(loginResp.settings!.vatState);
+        print("PRTTT${loginResp.settings!.printer}");
         if (loginResp.user != null && loginResp.authorisation != null) {
           appState.token = loginResp.authorisation!.token;
           appState.storeId = loginResp.user!.storeId;
@@ -242,6 +242,9 @@ class _LoginScreenState extends State<LoginScreen> {
               : '';
           appState.attendanceState = loginResp.settings != null
               ? loginResp.settings!.attendanceState
+              : '';
+          appState.printer = loginResp.settings != null
+              ? loginResp.settings!.printer
               : '';
           appState.loginState = 'LOGGED_IN';
 

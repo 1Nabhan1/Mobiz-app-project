@@ -100,6 +100,7 @@ class Settings {
   String? discountState;
   String? soValQtyState;
   String? attendanceState;
+  String? printer;
   Settings(
       {this.discountState,
       this.soValQtyState,
@@ -110,6 +111,7 @@ class Settings {
     soValQtyState = json['validate_qty_in_so'];
     discountState = json['discount'];
     attendanceState = json['attendance'];
+    printer = json['printer'];
   }
 }
 

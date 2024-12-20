@@ -861,7 +861,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       var response = await http.get(Uri.parse(
           '${RestDatasource().BASE_URL}/api/get_sales_pending_outstanding?customer_id=$id&store_id=${AppState().storeId}'));
       if (response.statusCode == 200) {
-        print(response.request);
+        // print(response.request);
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
         setState(() {
           _data = jsonResponse['data'].toString();

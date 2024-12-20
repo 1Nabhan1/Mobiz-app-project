@@ -356,6 +356,8 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       );
 
       if (response.statusCode == 200) {
+        print("Details: ${data}");
+        print("Details: $_ifVat");
         // print(_isPercentage ? '1' : '0');
         // print('fjnvjksdnvsbjvnsjkvhSDhv');
         // print(cartItems.map((item) => item.price).toList());

@@ -16,6 +16,7 @@ import 'package:mobizapp/Pages/customerscreen.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
 import 'package:mobizapp/Pages/productspage.dart';
 import 'package:mobizapp/Pages/receiptscreen.dart';
+import 'package:mobizapp/Pages/schedule_Driver.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:mobizapp/Pages/van_transfer.dart';
@@ -1099,6 +1100,9 @@ class _HomeScreenState extends State<HomeScreen> {
               break;
             case 'SchedulePage':
               Navigator.pushNamed(context, SchedulePage.routeName);
+              break;
+            case 'ScheduleDriver':
+              Navigator.pushNamed(context, ScheduleDriver.routeName);
               break;
             case 'Attendance':
               Navigator.pushNamed(context, Attendance.routeName);

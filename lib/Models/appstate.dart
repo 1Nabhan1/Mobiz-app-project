@@ -11,6 +11,7 @@ class AppState {
   String? validate_qtySO;
   String? discountState;
   String? attendanceState;
+  String? printer;
   int? userId;
   int? vanId;
   int? storeId;
@@ -45,6 +46,7 @@ class AppState {
     validate_qtySO;
     discountState;
     attendanceState;
+    printer;
     routeId;
     vanId;
     appVersion = "";
@@ -74,6 +76,7 @@ class AppState {
     validate_qtySO = json['validate_qty_in_so'];
     discountState = json['discount'];
     attendanceState = json['attendance'];
+    printer = json['printer'];
     routeId = json['route_id'];
     userType = json['user_type'];
     // userType = json['rol_id'];
@@ -112,6 +115,7 @@ class AppState {
     data['validate_qty_in_so'] = validate_qtySO;
     data['discount'] = discountState;
     data['attendance'] = attendanceState;
+    data['printer'] = printer;
     data['route_id'] = routeId;
     data['app_version'] = appVersion;
     data['build_number'] = buildNumber;

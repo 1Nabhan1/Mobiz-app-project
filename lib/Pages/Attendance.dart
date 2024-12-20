@@ -699,6 +699,7 @@ class _AttendanceState extends State<Attendance> {
         '${RestDatasource().BASE_URL}/api/get_today_check_in_detail?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}'));
 
     if (response.statusCode == 200) {
+      print(response.request);
       print(response.body);
       return jsonDecode(response.body);
     } else {
@@ -708,12 +709,13 @@ class _AttendanceState extends State<Attendance> {
 
   Future<Map<String, dynamic>?> fetchOdometerReading() async {
     final String url =
-        '${RestDatasource().BASE_URL}/api/getLastOdometerReading?store_id=${AppState().storeId}&user_id=${AppState().userId}';
+        '${RestDatasource().BASE_URL}/api/getLastOdometerReading?store_id=${AppState().storeId}&user_id=${AppState().userId}&van_id=${AppState().vanId}';
 
     try {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
+        print(response.request);
         final jsonData = json.decode(response.body);
         // odometerData = json.decode(response.body);
         if (jsonData['success']) {

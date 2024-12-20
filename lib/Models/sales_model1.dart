@@ -62,7 +62,7 @@ class Unit {
       id: json['id'],
       name: json['name'],
       price: json['price'],
-      minPrice: json['min_price'],
+      minPrice: json['min_price']??'',
       stock: json['stock'],
     );
   }

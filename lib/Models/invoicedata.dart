@@ -210,6 +210,7 @@ class Store {
   String? currency;
   num? vatPercentage;
   String? trn;
+  String? invoice_footer;
   int? status;
   String? createdAt;
   String? updatedAt;
@@ -236,6 +237,7 @@ class Store {
       this.currency,
       this.vatPercentage,
       this.trn,
+      this.invoice_footer,
       this.status,
       this.createdAt,
       this.updatedAt,
@@ -262,6 +264,7 @@ class Store {
     currency = json['currency'];
     vatPercentage = json['vat_percentage'];
     trn = json['trn'];
+    invoice_footer = json['invoice_footer'];
     status = json['status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
@@ -290,6 +293,7 @@ class Store {
     data['currency'] = this.currency;
     data['vat_percentage'] = this.vatPercentage;
     data['trn'] = this.trn;
+    data['invoice_footer'] = this.invoice_footer;
     data['status'] = this.status;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;

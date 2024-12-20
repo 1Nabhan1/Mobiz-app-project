@@ -71,8 +71,6 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
       if (jsonResponse['success']) {
         final deliveries = List<CustomerDelivery>.from(jsonResponse['data']
             .map((delivery) => CustomerDelivery.fromJson(delivery)));
-
-        // Reset expandedStates to match the length of the new deliveries
         setState(() {
           expandedStates3 = List<bool>.filled(deliveries.length, false);
         });

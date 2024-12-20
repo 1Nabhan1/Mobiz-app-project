@@ -206,7 +206,7 @@ class Unit {
   final String name;
   final double price;
   final double minPrice;
-  final int stock;
+  final double stock;
 
   Unit({
     required this.unit,
@@ -224,7 +224,7 @@ class Unit {
       name: json['name'],
       price: double.parse(json['price'].toString()),
       minPrice: double.parse(json['min_price'].toString()),
-      stock: json['stock'],
+      stock:double.parse(json['stock'].toString()),
     );
   }
 }
