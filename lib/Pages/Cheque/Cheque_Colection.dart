@@ -7,6 +7,7 @@ import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:http/http.dart'as http;
+import 'package:mobizapp/confg/sizeconfig.dart';
 
 class ChequeCollectionPage extends StatefulWidget {
   static const routeName = "/ChequeCollection";
@@ -24,6 +25,7 @@ class _ChequeCollectionPageState extends State<ChequeCollectionPage> {
   TextEditingController bankController = TextEditingController();
   TextEditingController chequeNoController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  TextEditingController amountController = TextEditingController();
 
 
   @override
@@ -77,9 +79,10 @@ class _ChequeCollectionPageState extends State<ChequeCollectionPage> {
     final url = Uri.parse('${RestDatasource().BASE_URL}/api/check_group_post');
     final body = {
       "customer_group_id": selectedId,
-      "collection_type": collectionType,
+      "collection_type": "Cheque",
       "cheque_date": selectedDate,
       "bank": bankController.text,
+      "amount":amountController.text,
       "cheque_no": chequeNoController.text,
       "description": descriptionController.text,
       "van_id": AppState().vanId,
@@ -98,6 +101,7 @@ class _ChequeCollectionPageState extends State<ChequeCollectionPage> {
       if (response.statusCode == 200) {
         print("Data: $body");
         print("Body: ${response.body}");
+        print("Bosssssdy: ${amountController.text}");
         final data = json.decode(response.body);
         if (data['success'] == true) {
           showDialog(
@@ -214,37 +218,105 @@ class _ChequeCollectionPageState extends State<ChequeCollectionPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Text(
-                                    'Collection Type',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
+                                  Text(
+                                    'Amount',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
+                                  SizedBox(width: SizeConfig.blockSizeHorizontal*8,),
                                   Container(
-                                    width: 80,
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
+                                    width: SizeConfig.blockSizeHorizontal*20,
+                                    child: TextField(
+                                      controller: amountController,
+                                      readOnly: true, // Make the TextField non-editable directly
+                                      onTap: () async {
+                                        String? result = await showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            String tempValue = amountController.text;
+
+                                            return AlertDialog(
+                                              title: const Text('Enter Amount'),
+                                              content: TextField(
+                                                keyboardType: TextInputType.number,
+                                                controller: TextEditingController(text: tempValue), // Set initial text
+                                                onChanged: (value) {
+                                                  tempValue = value; // Update temporary value
+                                                },
+                                                decoration: const InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  hintText: 'Enter amount',
+                                                ),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop(null); // Close without saving
+                                                  },
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop(tempValue); // Return the input value
+                                                  },
+                                                  child: const Text('OK'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+
+                                        if (result != null && result.isNotEmpty) {
+                                          // Update the TextField with the entered data
+                                          setState(() {
+                                            amountController.text = result;
+                                          });
+                                        }
+                                      },
+                                      decoration: InputDecoration(
                                         border: OutlineInputBorder(),
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 10),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                                         isDense: true,
                                       ),
-                                      items: ['Cheque', 'Cash']
-                                          .map((type) => DropdownMenuItem(
-                                                value: type,
-                                                child: Text(type),
-                                              ))
-                                          .toList(),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          collectionType = value!;
-                                        });
-                                      },
-                                      value: collectionType,
-                                      icon: SizedBox.shrink(),
                                     ),
-                                  )
+                                  ),
                                 ],
                               ),
+                              // SizedBox(
+                              //   height: 10,
+                              // ),
+                              // Row(
+                              //   children: [
+                              //     Text(
+                              //       'Collection Type',
+                              //       style:
+                              //           TextStyle(fontWeight: FontWeight.bold),
+                              //     ),
+                              //     Container(
+                              //       width: 80,
+                              //       child: DropdownButtonFormField<String>(
+                              //         decoration: const InputDecoration(
+                              //           border: OutlineInputBorder(),
+                              //           contentPadding: EdgeInsets.symmetric(
+                              //               horizontal: 10),
+                              //           isDense: true,
+                              //         ),
+                              //         items: ['Cheque', 'Cash']
+                              //             .map((type) => DropdownMenuItem(
+                              //                   value: type,
+                              //                   child: Text(type),
+                              //                 ))
+                              //             .toList(),
+                              //         onChanged: (value) {
+                              //           setState(() {
+                              //             collectionType = value!;
+                              //           });
+                              //         },
+                              //         value: collectionType,
+                              //         icon: SizedBox.shrink(),
+                              //       ),
+                              //     )
+                              //   ],
+                              // ),
                               SizedBox(
                                 height: 10,
                               ),

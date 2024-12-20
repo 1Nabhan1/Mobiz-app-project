@@ -147,7 +147,6 @@ class _DayReportState extends State<DayReport> {
                   pw.Text('Sales', style: pw.TextStyle(fontSize: 15)),
                 ],
               ),
-              // Sales Table
               pw.Table(
                 border: pw.TableBorder.all(),
                 columnWidths: {
@@ -519,7 +518,7 @@ class _DayReportState extends State<DayReport> {
           String firstLine = "${(report.sales!.indexOf(sale) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${sale.invoiceNo!.padRight(columnWidth3)}"
-              "${sale.grandTotal.toString().padLeft(columnWidth4)}";
+              "${sale.grandTotal!.toStringAsFixed(2).padLeft(columnWidth4)}";
 
           printer.printCustom(firstLine, 1, 0);
 
@@ -565,7 +564,7 @@ class _DayReportState extends State<DayReport> {
           String firstLine = "${(report.salesReturn!.indexOf(salesReturn) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(salesReturn.invoiceNo ?? 'No Type').padRight(columnWidth3)}"
-              "${salesReturn.grandTotal.toString().padLeft(columnWidth4)}";
+              "${salesReturn.grandTotal!.toStringAsFixed(2).padLeft(columnWidth4)}";
 
           printer.printCustom(firstLine, 1, 0);
           for (int i = 1; i < customerNameLines.length; i++) {
@@ -629,7 +628,7 @@ class _DayReportState extends State<DayReport> {
           String firstLine = "${(report.collection!.indexOf(collection) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(collection.collectionType ?? 'No Type').padRight(columnWidth3)}"
-              "${collection.totalAmount.toString().padLeft(columnWidth4)}";
+              "${(double.tryParse(collection.totalAmount ?? '0')?.toStringAsFixed(2) ?? '0.00').padLeft(columnWidth4)}";
 
           printer.printCustom(firstLine, 1, 0);
           for (int i = 1; i < customerNameLines.length; i++) {
@@ -677,7 +676,8 @@ class _DayReportState extends State<DayReport> {
           String firstLine = "${(report.expense!.indexOf(expense) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(expense.description ?? 'No Type').padRight(columnWidth3)}"
-              "${expense.amount.toString().padLeft(columnWidth4)}";
+              "${(double.tryParse(expense.amount ?? '0')?.toStringAsFixed(2) ?? '0.00').padLeft(columnWidth4)}";
+
 
           printer.printCustom(firstLine, 1, 0);
           for (int i = 1; i < customerNameLines.length; i++) {
@@ -890,7 +890,7 @@ class _DayReportState extends State<DayReport> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     SizedBox(
-                                      width: 20, // Fixed width for SI NO
+                                      width: 25, // Fixed width for SI NO
                                       child: Text(
                                         '${index + 1}', // SI NO
                                         textAlign: TextAlign.left,

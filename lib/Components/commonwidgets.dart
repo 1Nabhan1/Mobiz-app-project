@@ -108,7 +108,8 @@ class CommonWidgets {
   static Future<void> showDialogueBox(
       {required BuildContext context,
       required String title,
-      required String msg}) async {
+      required String msg
+      }) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!

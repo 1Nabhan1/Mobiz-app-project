@@ -14,6 +14,8 @@ import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
 import 'package:http/http.dart' as http;
 
+import 'TestInvoice.dart';
+
 class SalesScreen extends StatefulWidget {
   static const routeName = "/ScalesScreen";
   @override
@@ -385,10 +387,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Call your custom function here
         await _onBackPressed();
-        // Return true to allow the page to be popped
-        // Return false to prevent the page from being popped
         return true;
       },
       child: Scaffold(

@@ -80,7 +80,8 @@ class Data {
       this.updatedAt,
       this.deletedAt,
       this.detail,
-      this.customer});
+      this.customer
+      });
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -220,7 +221,8 @@ class Detail {
   num? percentage;
 
   Detail(
-      {this.id,
+      {
+        this.id,
       this.goodsOutId,
       this.itemId,
       this.productType,

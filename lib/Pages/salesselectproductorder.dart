@@ -35,12 +35,20 @@ class _SalesSelectProductsorderScreenState
 
   final TextEditingController _searchData = TextEditingController();
   @override
+  @override
   void initState() {
     super.initState();
-    fetchProducts(currentPage); // Initial fetch
     _searchData.addListener(() {
-      _filterProducts(_searchData.text);
+      if (_searchData.text.isEmpty) {
+        products.clear();
+        currentPage = 1;
+        hasMoreProducts = true;
+        fetchProducts(currentPage);
+      } else {
+        _filterProducts(_searchData.text);
+      }
     });
+    fetchProducts(currentPage);
   }
 
   Future<void> fetchProducts(int page) async {
@@ -54,8 +62,6 @@ class _SalesSelectProductsorderScreenState
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
-      // print(AppState().storeId);
-      print(url);
       final data = jsonDecode(response.body);
       final List<Products> fetchedProducts = (data['data']['data'] as List)
           .map((json) => Products.fromJson(json))
@@ -63,8 +69,10 @@ class _SalesSelectProductsorderScreenState
       final pagination = data['data'];
       setState(() {
         isLoading = false;
-        products.addAll(fetchedProducts);
-        filteredProducts = List.from(products); // Update filtered products
+        if (_searchData.text.isEmpty) {
+          products.addAll(fetchedProducts);
+          filteredProducts = List.from(products);
+        }
         currentPage++;
         hasMoreProducts = currentPage <= pagination['last_page'];
       });
@@ -79,15 +87,7 @@ class _SalesSelectProductsorderScreenState
   void _filterProducts(String query) async {
     if (query.isEmpty) {
       setState(() {
-        if (query.isEmpty) {
-          filteredProducts = List.from(products);
-        } else {
-          filteredProducts = products
-              .where((product) =>
-                  product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                  product.code!.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-        }
+        filteredProducts = List.from(products);
       });
     } else {
       final String searchUrl =

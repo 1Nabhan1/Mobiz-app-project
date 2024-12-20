@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -12,8 +14,9 @@ import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shimmer/shimmer.dart';
-
+import 'package:http/http.dart'as http;
 import '../Components/commonwidgets.dart';
+import '../Models/Store_model.dart';
 import '../confg/sizeconfig.dart';
 import 'Mapscreen.dart';
 
@@ -32,11 +35,26 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
   List<Data> filteredCustomers = [];
   String searchQuery = '';
   bool _isSearching = false;
+  bool showFields = false;
+
   @override
   void initState() {
     super.initState();
     getCustomerDetails();
     requestLocationPermission();
+    fetchStoreDetail() .then((storeDetail) {
+      if (storeDetail != null && storeDetail.comapny_id == 5) {
+        setState(() {
+          showFields = true; // Show fields for company_id 5
+        });
+      } else {
+        setState(() {
+          showFields = false; // Hide fields otherwise
+        });
+      }
+      print("SSSSS${storeDetail!.comapny_id}");
+      print("Fields$showFields");
+    });
   }
 
   Future<void> requestLocationPermission() async {
@@ -317,6 +335,27 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
                       'Contact:${data.contactNumber}',
                       style: TextStyle(fontSize: AppConfig.textCaption3Size),
                     ),
+                    Visibility(
+                      visible: showFields,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: SizeConfig.blockSizeHorizontal * 72,
+                            child: Text(
+                              'Building: ${data.building ?? 'N/A'}',
+                              style: TextStyle(fontSize: AppConfig.textCaption3Size),
+                            ),
+                          ),
+                          SizedBox(
+                            width: SizeConfig.blockSizeHorizontal * 72,
+                            child: Text(
+                              'Flat Number: ${data.flatNo ?? 'N/A'}',
+                              style: TextStyle(fontSize: AppConfig.textCaption3Size),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -325,6 +364,37 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
         ),
       ),
     );
+  }
+
+  Future<StoreDetail?> fetchStoreDetail() async {
+    final url = Uri.parse('${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // print("data:::${data['company_id']}");
+        // print(showFields);
+        if (data['company_id'] == 5) {
+          setState(() {
+            showFields = true;
+          });
+        } else {
+          setState(() {
+            showFields = false;
+          });
+        }
+        return StoreDetail.fromJson(data);
+      } else {
+        // Handle error
+        print('Failed to fetch data: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return null;
+    }
   }
 
   Future<void> getCustomerDetails() async {

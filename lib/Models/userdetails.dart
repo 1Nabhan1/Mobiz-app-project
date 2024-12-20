@@ -13,7 +13,8 @@ class UserDetailsModel {
       });
     }
     success = json['success'];
-    messages = json['messages'].cast<String>();
+    messages = (json['messages'] as List?)?.cast<String>() ?? [];
+
   }
 
   Map<String, dynamic> toJson() {

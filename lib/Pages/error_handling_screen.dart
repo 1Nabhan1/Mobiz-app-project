@@ -28,7 +28,7 @@ class _ErrorHandlingScreenState extends State<ErrorHandlingScreen> {
   }
 
   Future<void> _getRoleId() async {
-    await Future.delayed(Duration(seconds: 2)); // Simulate loading delay
+    await Future.delayed(Duration(seconds: 3)); // Simulate loading delay
     while (AppState().rolId == null) {
       await Future.delayed(Duration(milliseconds: 100));
     }

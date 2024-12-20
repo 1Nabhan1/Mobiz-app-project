@@ -476,7 +476,7 @@ class _DaycloseState extends State<Dayclose> {
                                   children: [
                                     TextSpan(
                                         text:
-                                            '${data['no_of_sales']} | ${data['amount_of_sales']}',
+                                            '${data['no_of_sales']} | ${data['amount_of_sales'].toStringAsFixed(3)}',
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),

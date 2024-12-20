@@ -13,6 +13,7 @@ import '../Models/paymentcollectionclass.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'Group_Print.dart';
 
 class PaymentCollectionScreen extends StatefulWidget {
   static const routeName = "/PaymentCollection";
@@ -48,10 +49,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   String bankData = '';
   TextEditingController _chequeController = TextEditingController();
   String chequeData = '';
-  int?id;
+  int? id;
+  int? saleId;
+  int? returnId;
   String? paydata;
-  String?code;
-  String?payment;
+  String? code;
+  String? payment;
+  int? pricegroupId;
   List<String> enteredValues = [];
   List<String> invoiceTypes = [];
   List<String> invoiceno = [];
@@ -60,6 +64,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   List<int> invoiceid = [];
   final TextEditingController _roundOffController = TextEditingController();
   double roundOffValue = 0.0;
+  bool group = false;
+  bool isSaving = false;
+  int? selectedIndex;
 
   String formatDate(String date) {
     DateTime parsedDate = DateTime.parse(date);
@@ -100,6 +107,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         // cuoutstand = arguments['outstandamt'] ?? '';
         paydata = arguments!['outstandamt'] ?? '';
         id = int.tryParse(arguments['customerId'].toString());
+        pricegroupId = arguments!['price_group_id'];
+        saleId = arguments!['saleId'];
+        returnId = arguments!['returnId'];
+        print("pricegroupId ${saleId}");
+        print("returnId ${returnId}");
       });
     }
   }
@@ -123,9 +135,36 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     }).fold(0.0, (sum, amount) => sum + amount);
   }
 
+  // double getBalanceAmount() {
+  //   double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
+  //   double roundOff = RoundOff.isNotEmpty ? double.parse(RoundOff) : 0;
+  //   double allocatedAmount = enteredValues.asMap().entries.map((entry) {
+  //     int index = entry.key;
+  //     String value = entry.value;
+  //     if (value.isNotEmpty) {
+  //       double amount = double.parse(value);
+  //       String invoiceType = invoices[index].invoiceType.toLowerCase();
+  //       if (invoiceType == "sales" || invoiceType == "balance") {
+  //         return -amount;
+  //       } else if (invoiceType == "salesreturn" ||
+  //           invoiceType == "payment_voucher" ||
+  //           invoiceType == "balance_minus") {
+  //         return amount;
+  //       }
+  //     }
+  //     return 0.0;
+  //   }).fold(0.0, (sum, amount) => sum + amount);
+  //   print("BAL${paidAmount + allocatedAmount - roundOff}");
+  //   print("PAy$paidAmount");
+  //   print("allocated$allocatedAmount");
+  //   print("roud$roundOff");
+  //
+  //   return paidAmount + allocatedAmount - roundOff;
+  // }
+
   double getBalanceAmount() {
     double paidAmount = PaidAmt.isNotEmpty ? double.parse(PaidAmt) : 0;
-    double roundOff = RoundOff.isNotEmpty?double.parse(RoundOff):0;
+    double roundOff = RoundOff.isNotEmpty ? double.parse(RoundOff) : 0;
     double allocatedAmount = enteredValues.asMap().entries.map((entry) {
       int index = entry.key;
       String value = entry.value;
@@ -143,7 +182,17 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return 0.0;
     }).fold(0.0, (sum, amount) => sum + amount);
 
-    return paidAmount + allocatedAmount - roundOff;
+    double balance = paidAmount + allocatedAmount - roundOff;
+
+    // Truncate the balance to two decimal places
+    balance = (balance * 100).truncateToDouble() / 100;
+
+    print("BAL $balance");
+    print("PAy $paidAmount");
+    print("allocated $allocatedAmount");
+    print("roud $roundOff");
+
+    return balance;
   }
 
   double getPaidAmount() {
@@ -161,7 +210,6 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       return 0.0; // or handle the invalid number case as needed
     }
   }
-
 
   void updateBalanceAndAllocatedAmounts() {
     setState(() {});
@@ -227,8 +275,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       ),
                       CommonWidgets.horizontalSpace(1),
                       _inputBox(
-                          status: false,
-                          value: "${paydata == '[]' ? '' : paydata}"),
+                        status: false,
+                        value:
+                        "${paydata == '[]' || paydata == null ? '' : (double.tryParse(paydata!)?.toStringAsFixed(3) ?? '')}"
+                      ),
+
                       // ${_data == '[]' ? '' : _data}
                       const Spacer(),
                       const Text(
@@ -294,8 +345,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       ),
                       CommonWidgets.horizontalSpace(1),
                       _inputBox(
-                          status: false,
-                          value: getBalanceAmount().toStringAsFixed(2)),
+                          status: false, value: getBalanceAmount().toString()),
                     ],
                   ),
                   CommonWidgets.verticalSpace(1),
@@ -436,18 +486,25 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                               // }
 
                               String formatInvoiceType(String invoiceType) {
-                                if (invoiceType.toLowerCase() == "payment_voucher") {
+                                if (invoiceType.toLowerCase() ==
+                                    "payment_voucher") {
                                   return "Payment";
                                 }
-                                if (invoiceType.toLowerCase() == "salesreturn") {
+                                if (invoiceType.toLowerCase() ==
+                                    "salesreturn") {
                                   return "Sales Return";
                                 }
-                                // Capitalize the first letter of each word in invoiceType
                                 return invoiceType
-                                    .split('_') // Split by underscore if the type uses underscores (e.g., "sales_invoice")
-                                    .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()) // Capitalize first letter
-                                    .join(' '); // Join the words back together with a space
+                                    .split(
+                                        '_') // Split by underscore if the type uses underscores (e.g., "sales_invoice")
+                                    .map((word) =>
+                                        word[0].toUpperCase() +
+                                        word
+                                            .substring(1)
+                                            .toLowerCase()) // Capitalize first letter
+                                    .join(' ');
                               }
+
                               return Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 20),
@@ -480,19 +537,24 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                                                         "${(invoice.invoiceDate)} | ${invoice.invoiceNo} | ${formatInvoiceType(invoice.invoiceType)}"),
                                                     InkWell(
                                                       onTap: () {
+                                                        setState(() {
+                                                          selectedIndex =
+                                                              index; // Track the selected index
+                                                        });
                                                         _showDialog(context,
                                                             index, invoice);
                                                       },
                                                       child: _inputBox(
-                                                          status: false,
-                                                          value: enteredValues[
-                                                              index]),
+                                                        status: false,
+                                                        value: enteredValues[
+                                                            index],
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
                                                 Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 8.0),
+                                                  padding: EdgeInsets.symmetric(
+                                                      vertical: 8.0),
                                                   child: Row(
                                                     children: [
                                                       Text(
@@ -732,21 +794,73 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               ),
             ),
             CommonWidgets.verticalSpace(1),
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConfig.colorPrimary, // Background color
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(3), // Rectangle shape
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConfig.colorPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  onPressed: (PaidAmount > 0 &&
+                              (PaidAmount - roundOff == allocatedAmount) ||
+                          getBalanceAmount() == 0.0 &&
+                              !isSaving &&
+                              selectedIndex !=
+                                  null && // Ensure selectedIndex is set
+                              enteredValues[selectedIndex!]
+                                  .isNotEmpty) // Check enteredValues
+                      ? () {
+                          setState(() {
+                            isSaving = true;
+                          });
+                          postCollectionData().then((_) {
+                            setState(() {
+                              isSaving = false;
+                            });
+                          }).catchError((error) {
+                            setState(() {
+                              isSaving = false;
+                            });
+                          });
+                        }
+                      : null,
+                  child: Text(
+                    isSaving ? "Saving..." : "Save",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
-                onPressed: (PaidAmount > 0 && (PaidAmount - roundOff == allocatedAmount))
-                    ? () {
-                        postCollectionData();
-                      }
-                    : null,
-                child: Text("Save", style: TextStyle(color: Colors.white)),
-              ),
+                SizedBox(
+                  width: 15,
+                ),
+                saleId != null
+                    ?
+                ElevatedButton(
+                  style: ButtonStyle(
+                      shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+                      backgroundColor:
+                          WidgetStatePropertyAll(AppConfig.colorPrimary)),
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      GroupPrint.routeName, // Replace with the actual route name
+                      arguments: {
+                        'price_group_id': pricegroupId,
+                        'saleId': saleId,
+                        'returnId': returnId,
+                        // 'payId': payId;
+                      },
+                    );
+                  },
+                  child: Text(
+                          "SKIP",
+                          style: TextStyle(color: Colors.white),
+                        )
+                ):SizedBox.shrink()
+              ],
             ),
           ],
         ),
@@ -831,7 +945,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   }
 
   Future<ApiResponse> fetchInvoices() async {
-    final String url = '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
+    final String url =
+        '${RestDatasource().BASE_URL}/api/get_invoice_outstanding_detail?customer_id=$id';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -861,11 +976,14 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       }
     }
     List<double> processedValues = enteredValues.map((value) {
-      return value.isEmpty ? 0.0 : double.parse(value);
+      return value.isEmpty
+          ? 0.0
+          : double.parse(double.parse(value).toStringAsFixed(2));
     }).toList();
+
     final body = {
       'allocation_amount': getPaidAmount(),
-      'round_off':_roundOffController.text,
+      'round_off': _roundOffController.text,
       'van_id': AppState().vanId,
       'store_id': AppState().storeId,
       'user_id': AppState().userId,
@@ -893,22 +1011,39 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     if (response.statusCode == 200) {
       print(response.body);
-
-      // print(processedValues);
-      // print('dddddddddddddddd');
-      // Handle success response
+      print("SSDSDS$processedValues");
+      var responseBody = json.decode(response.body);
+      int payId = responseBody['data'][0]['id'];
       print('Data posted successfully');
       if (mounted) {
-        CommonWidgets.showDialogueBox(
-                context: context, title: "Alert", msg: "Transaction Successful")
-            .then(
-          (value) {
-            Navigator.pushReplacementNamed(
-              context,
-              ReceiptScreen.receiptScreen,
-            );
-          },
-        );
+        setState(() {
+          isSaving = false;
+        });
+        Future.delayed(Duration(milliseconds: 100), () {
+          CommonWidgets.showDialogueBox(
+                  context: context,
+                  title: "Alert",
+                  msg: "Transaction Successful")
+              .then((value) {
+            if (pricegroupId != null) {
+              Navigator.pushReplacementNamed(
+                context,
+                GroupPrint.routeName, // Replace with the actual route name
+                arguments: {
+                  'price_group_id': pricegroupId,
+                  'saleId': saleId,
+                  'returnId': returnId,
+                  'payId': payId
+                },
+              );
+            } else {
+              Navigator.pushReplacementNamed(
+                context,
+                ReceiptScreen.receiptScreen,
+              );
+            }
+          });
+        });
       }
     } else {
       // Handle error response

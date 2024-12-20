@@ -454,6 +454,7 @@ class _SOAState extends State<SOA> {
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
+      print(response.request);
       print(id);
       return SOAResponse.fromJson(jsonDecode(response.body));
     } else {

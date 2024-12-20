@@ -17,7 +17,7 @@ import '../../confg/appconfig.dart';
 import '../../confg/sizeconfig.dart';
 
 class Stock_SelectProducts extends StatefulWidget {
-  static const routeName = "/SelectProductScreenoff";
+  static const routeName = "/StockSelectProductScreenoff";
   @override
   _Stock_SelectProductsState createState() =>
       _Stock_SelectProductsState();
@@ -114,7 +114,7 @@ class _Stock_SelectProductsState extends State<Stock_SelectProducts> {
         appBar: AppBar(
           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
           title: const Text(
-            'Select Products',
+            'Select Stock Products',
             style: TextStyle(color: AppConfig.backgroundColor),
           ),
           backgroundColor: AppConfig.colorPrimary,

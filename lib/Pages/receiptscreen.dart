@@ -20,6 +20,7 @@ import '../Models/Store_model.dart';
 import '../Models/receiptdatamodel.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'TestReceipt.dart';
 
 class ReceiptScreen extends StatefulWidget {
   static const receiptScreen = "/Receipt";
@@ -34,15 +35,28 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   bool _noData = false;
   bool _connected = false;
   BluetoothDevice? _selectedDevice;
-
-  ReceiptsData receiptsData = ReceiptsData();
+  final ScrollController _scrollController = ScrollController();
+  // ReportData receiptsData = ReportData();
+  List<ReportData> receiptsData = [];
   List<BluetoothDevice> _devices = [];
   BlueThermalPrinter printer = BlueThermalPrinter.instance;
+  int _currentPage = 1;
+  bool _isLoading = false;
+  bool _hasMore = true;
   @override
   void initState() {
     super.initState();
-    _getRecentData();
+    // _getRecentData();
+    _fetchData();
     _initPrinter();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+              _scrollController.position.maxScrollExtent &&
+          !_isLoading &&
+          _hasMore) {
+        _fetchData();
+      }
+    });
   }
 
   void _initPrinter() async {
@@ -81,7 +95,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     });
   }
 
-  Future<void> generatePdf(Data data) async {
+  Future<void> generatePdf(ReportData data) async {
     final response = await http.get(Uri.parse(
         '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
     if (response.statusCode == 200) {
@@ -186,9 +200,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   children: [
                     if (data.collectionType == 'Cheque') ...[
                       pw.Text('Collection Type: Cheque'),
-                      pw.Text('Bank Name: ${data.bank??'N/A'}'),
-                      pw.Text('Cheque No: ${data.chequeNo??'N/A'}'),
-                      pw.Text('Cheque Date: ${data.chequeDate??'N/A'}'),
+                      pw.Text('Bank Name: ${data.bank ?? 'N/A'}'),
+                      pw.Text('Cheque No: ${data.chequeNo ?? 'N/A'}'),
+                      pw.Text('Cheque Date: ${data.chequeDate ?? 'N/A'}'),
                     ] else if (data.collectionType == 'Cash') ...[
                       // Add any text or elements specific to Cash collection type if needed
                       // For example:
@@ -196,31 +210,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ]
                   ],
                 ),
-
                 pw.SizedBox(height: 10),
                 pw.SizedBox(height: 10),
               ],
             ),
             _buildSalesTable(data.sales!),
             pw.SizedBox(height: 20),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Text((data.roundoff != null && double.parse(data.roundoff!) != 0)
-                      ? 'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}'
-                      : ''),
-                ]
-            ),
-            pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-              children: [
-                pw.Text('Total: ${data.totalAmount??'N/A'}'),
-              ]
-            ),
+            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+              pw.Text((data.roundoff != null &&
+                      double.parse(data.roundoff!) != 0)
+                  ? 'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}'
+                  : ''),
+            ]),
+            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
+              pw.Text('Total: ${data.totalAmount ?? 'N/A'}'),
+            ]),
             pw.SizedBox(height: 20),
-            pw.Text('Van: ${data.van![0].name??'N/A'}'),
+            pw.Text('Van: ${data.van![0].name ?? 'N/A'}'),
             pw.SizedBox(width: 20),
-            pw.Text('Salesman: ${data.user![0].name??'N/A'}'),
+            pw.Text('Salesman: ${data.user![0].name ?? 'N/A'}'),
           ],
         ),
       );
@@ -244,11 +252,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       case 'payment_voucher':
         return 'Payment';
       default:
-        return invoiceType[0].toUpperCase() + invoiceType.substring(1).toLowerCase();
+        return invoiceType[0].toUpperCase() +
+            invoiceType.substring(1).toLowerCase();
     }
   }
+
 // Separate function to build the sales table with proper pagination
-  pw.Widget _buildSalesTable(List<Sales> sales) {
+  pw.Widget _buildSalesTable(List<Salesy> sales) {
     return pw.Table.fromTextArray(
       border: pw.TableBorder.all(color: PdfColors.white),
       headers: ['SI NO', 'Reference No', 'Type', 'Amount'],
@@ -261,8 +271,6 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         2: pw.FractionColumnWidth(0.2),
         3: pw.FractionColumnWidth(0.2),
       },
-
-
       data: sales.asMap().entries.map((entry) {
         final index = entry.key + 1;
         final sale = entry.value;
@@ -294,17 +302,39 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               ? SizedBox(
                   height: SizeConfig.blockSizeVertical * 85,
                   child: ListView.separated(
+                    controller: _scrollController,
                     separatorBuilder: (BuildContext context, int index) =>
                         CommonWidgets.verticalSpace(1),
-                    itemCount: receiptsData.data?.length ?? 0,
+                    itemCount: receiptsData.length + (_isLoading ? 1 : 0),
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
-                      final data = receiptsData.data![index];
+                      // Check if this is the loading indicator
+                      if (_isLoading && index == receiptsData.length) {
+                        return _isLoading
+                            ? const Center(
+                                child: Text(
+                                "Loading...",
+                                style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey),
+                              ))
+                            : Center(
+                                child: Text(
+                                  "That's All",
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.grey.shade400,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              );
+                      }
+
+                      final data = receiptsData[index];
                       return _productsCard(data);
                     },
                   ),
                 )
-              : (_noData && _initDone)
+              : _noData && _initDone
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -347,7 +377,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     );
   }
 
-  Widget _productsCard(Data data) {
+  Widget _productsCard(ReportData data) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Container(
@@ -433,7 +463,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                     ),
                     Text(
-                      'Round Off: ${data.roundoff??'0.00'}',
+                      'Round Off: ${data.roundoff ?? '0.00'}',
                       style: TextStyle(
                         fontSize: AppConfig.textCaption3Size,
                       ),
@@ -443,6 +473,31 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       style: TextStyle(
                         fontSize: AppConfig.textCaption3Size,
                       ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Status: ',
+                          style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                          ),
+                        ),
+                        Text(
+                          (data.status == 0)
+                              ? 'Cancelled'
+                              : (data.status == 1)
+                                  ? 'Confirmed'
+                                  : 'Approved',
+                          style: TextStyle(
+                              fontSize: AppConfig.textCaption3Size,
+                              color: (data.status == 0)
+                                  ? Colors.red
+                                  : (data.status == 1)
+                                      ? Colors.green
+                                      : Colors.orange,
+                              fontWeight: AppConfig.headLineWeight),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -489,7 +544,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     );
   }
 
-  void _print(Data data) async {
+  void _print(ReportData data) async {
     if (_connected) {
       // Print Store Details Header
       // String logoUrl =`
@@ -517,7 +572,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       if (response.statusCode == 200) {
         // Parse JSON response into StoreDetail object
         StoreDetail storeDetail =
-        StoreDetail.fromJson(json.decode(response.body));
+            StoreDetail.fromJson(json.decode(response.body));
         final String api =
             '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
         final logoResponse = await http.get(Uri.parse(api));
@@ -526,8 +581,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         }
 
         void printAlignedText(String leftText, String rightText) {
-          const int maxLineLength =
-          68;
+          const int maxLineLength = 68;
           int leftTextLength = leftText.length;
           int rightTextLength = rightText.length;
 
@@ -535,10 +589,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           int spaceLength = maxLineLength - (leftTextLength + rightTextLength);
           String spaces = ' ' * spaceLength;
 
-          printer.printCustom(
-              '$leftText$spaces$rightText', 1,
+          printer.printCustom('$leftText$spaces$rightText', 1,
               0); // Print with left-aligned text
         }
+
         String logoUrl =
             'http://68.183.92.8:3697/uploads/store/${storeDetail.logos}';
         if (logoUrl.isNotEmpty) {
@@ -560,17 +614,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           }
         }
 
-
         printer.printNewLine();
-        String companyName =
-            '${storeDetail.name}'; // Example, replace with store name from your data
-        printer.printCustom(companyName, 3, 1); // Large font, center aligned
+        String companyName = '${storeDetail.name}';
+        printer.printCustom(companyName, 3, 1);
         printer.printNewLine();
 
         printer.printCustom("TRN: ${storeDetail.trn ?? "N/A"}", 1, 1);
         printer.printCustom("RECEIPT VOUCHER", 3, 1);
         printer.printNewLine();
-        printer.printCustom("-" * 72, 1, 1); // Centered
+        printer.printCustom("-" * 72, 1, 1);
 
         // Print Customer Details
         if (data.customer != null && data.customer!.isNotEmpty) {
@@ -579,7 +631,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           // printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
           printAlignedText(
               // 'Market:  ${data.customer![0].address}',
-            '',
+              '',
               'Date: ${data.sales![0].inDate}');
           // printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
           printAlignedText('TRN: ${data.customer![0].trn}',
@@ -634,7 +686,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         // Iterate and print each sales item
 
         String formatInvoiceType(String? invoiceType) {
-          if (invoiceType == null) return 'N/A'; // Return N/A if invoiceType is null
+          if (invoiceType == null)
+            return 'N/A'; // Return N/A if invoiceType is null
 
           // Capitalize the first letter and check for specific cases
           switch (invoiceType.toLowerCase()) {
@@ -643,26 +696,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             case 'payment_voucher':
               return 'Payment';
             default:
-              return invoiceType[0].toUpperCase() + invoiceType.substring(1).toLowerCase();
+              return invoiceType[0].toUpperCase() +
+                  invoiceType.substring(1).toLowerCase();
           }
         }
 
         for (var i = 0; i < data.sales!.length; i++) {
           var sale = data.sales![i];
-          line =
-          "${('').padRight(columnWidth0)}"
+          line = "${('').padRight(columnWidth0)}"
               "${(i + 1).toString().padRight(columnWidth1)}"
-              " ${sale.invoiceNo?.padRight(columnWidth2) ??
-              'N/A'.padRight(columnWidth2)}"
+              " ${sale.invoiceNo?.padRight(columnWidth2) ?? 'N/A'.padRight(columnWidth2)}"
               "${formatInvoiceType(sale.invoiceType)?.padRight(columnWidth3) ?? 'N/A'.padRight(columnWidth3)}"
-              "${sale.amount?.padRight(columnWidth4) ??
-              'N/A'.padRight(columnWidth4)}";
+              "${sale.amount?.padRight(columnWidth4) ?? 'N/A'.padRight(columnWidth4)}";
           printer.printCustom(line, 1, 0);
         }
         printer.printNewLine();
         printer.printCustom("-" * 72, 1, 1);
         if (data.roundoff != null && double.parse(data.roundoff!) != 0) {
-          printAlignedText('', 'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}');
+          printAlignedText('',
+              'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}');
         }
         printAlignedText('', 'Total: ${data.totalAmount}');
         printAlignedText("Van: ${data.van![0].name}", "");
@@ -672,40 +724,87 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         printer.printNewLine();
 
         printer.paperCut();
-      }// Cut paper after printing
+      } // Cut paper after printing
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Printer not connected')),
       );
     }
-  }
-
-  Future _getRecentData() async {
-    RestDatasource api = RestDatasource();
-    Map<String, dynamic> response = await api.getDetails(
-        '/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
-        AppState().token);
-
-    receiptsData = ReceiptsData.fromJson(response);
-    if (response['data'] != null) {
-      setState(() {
-        _initDone = true;
-      });
-    }
-    if (_selectedDevice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Default device not found')),
-      );
-      return;
-    }
     if (!_connected) {
       await _connect();
-    } else {
+    }
+  }
+
+  // Future _getRecentData() async {
+  //   RestDatasource api = RestDatasource();
+  //   Map<String, dynamic> response = await api.getDetails(
+  //       '/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}',
+  //       AppState().token);
+  //
+  //   receiptsData = ReportData.fromJson(response);
+  //   if (response['data'] != null) {
+  //     setState(() {
+  //       _initDone = true;
+  //     });
+  //   }
+  //   if (_selectedDevice == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Default device not found')),
+  //     );
+  //     return;
+  //   }
+  //   if (!_connected) {
+  //     await _connect();
+  //   } else {
+  //     setState(() {
+  //       _initDone = true;
+  //       _noData = true;
+  //     });
+  //   }
+  //   print('Response Data $response');
+  // }
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // final String baseUrl =
+      //     "http://68.183.92.8:3699/api/get_collection_test_report";
+
+      // Build the API URL with query parameters
+      final Uri apiUrl = Uri.parse(
+          "${RestDatasource().BASE_URL}/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}&page=$_currentPage");
+
+      // Fetch the data from the API
+      final http.Response response = await http.get(apiUrl);
+
+      if (response.statusCode == 200) {
+        print(response.request);
+        // Parse the JSON response
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // Convert the JSON into the CollectionReport model
+        final CollectionReport report = CollectionReport.fromJson(responseData);
+
+        // Update the state with the fetched data
+        setState(() {
+          receiptsData.addAll(report.data?.reportData ?? []);
+          _hasMore = report.data?.nextPageUrl != null;
+          _currentPage++;
+          _initDone = true;
+        });
+      } else {
+        throw Exception("Failed to fetch data");
+      }
+    } catch (e) {
+      print(e);
+    } finally {
       setState(() {
+        _isLoading = false;
         _initDone = true;
-        _noData = true;
+        // _noData = true;
       });
     }
-    print('Response Data $response');
   }
 }

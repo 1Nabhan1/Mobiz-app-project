@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/main.dart';
 import 'dart:convert';
 
@@ -57,106 +58,111 @@ class _CustomerStockState extends State<CustomerStock> {
           ? Center(child: CircularProgressIndicator()) // Show loader if data is null
           : customerStockData!.stock.isEmpty
           ? Center(child: Text("No stock data available")) // Message if no stock data
-          : Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-        ListView.builder(shrinkWrap: true,
-           scrollDirection: Axis.vertical,
-          physics: BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(8),
-          itemCount: customerStockData!.stock.length,
-          itemBuilder: (context, index) {
-            final item = customerStockData!.stock[index];
-
-            return Card(
-              elevation: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                  color: AppConfig.backgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                ),
-                child: ExpansionTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          : SingleChildScrollView(
+            child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Name: ${item.productSerial}",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        "${item.status}",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+                    ListView.builder(
+            shrinkWrap: true,
+             scrollDirection: Axis.vertical,
+            physics: BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(8),
+            itemCount: customerStockData!.stock.length,
+            itemBuilder: (context, index) {
+              final item = customerStockData!.stock[index];
+            
+              return Card(
+                elevation: 1,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    color: AppConfig.backgroundColor,
+                    borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  ),
+                  child: ExpansionTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Name: ${item.productSerial}",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "${item.status}",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+                        ),
+                      ],
+                    ),
+                    trailing: SizedBox.shrink(), // Removes the default dropdown icon
+                    children: [
+                      Divider(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Text("Quantity: ${item.noOfCoupons}"),
+                            SizedBox(height: 10),
+            
+                            // Display each coupon detail
+                            ListView.builder(
+                              physics: NeverScrollableScrollPhysics(), // Prevent scrolling inside ExpansionTile
+                              shrinkWrap: true, // Fit content in ExpansionTile
+                              itemCount: item.couponDetails.length,
+                              itemBuilder: (context, couponIndex) {
+                                final coupon = item.couponDetails[couponIndex];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 5),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text("Serial No: ${coupon.serialNo}"),
+                                      Text("Status: ${coupon.status}"),
+                                      Text("Coupon Type: ${coupon.coupenType}"),
+                                      // Text("Value: ${coupon.value}"),
+                                      SizedBox(height: 10),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  trailing: SizedBox.shrink(), // Removes the default dropdown icon
-                  children: [
-                    Divider(),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Text("Quantity: ${item.noOfCoupons}"),
-                          SizedBox(height: 10),
-
-                          // Display each coupon detail
-                          ListView.builder(
-                            physics: NeverScrollableScrollPhysics(), // Prevent scrolling inside ExpansionTile
-                            shrinkWrap: true, // Fit content in ExpansionTile
-                            itemCount: item.couponDetails.length,
-                            itemBuilder: (context, couponIndex) {
-                              final coupon = item.couponDetails[couponIndex];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Serial No: ${coupon.serialNo}"),
-                                    Text("Status: ${coupon.status}"),
-                                    Text("Coupon Type: ${coupon.coupenType}"),
-                                    // Text("Value: ${coupon.value}"),
-                                    SizedBox(height: 10),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
+              );
+            },
+                    ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 15.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Bottle Stock: ${customerStockData!.data.stock}',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
+                  Text('Deposit: ${customerStockData!.data.deposit}',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500))
+                ],
               ),
-            );
-          },
-        ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Bottle Stock: ${customerStockData!.data.stock}',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-                Text('Deposit: ${customerStockData!.data.deposit}',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500))
-              ],
             ),
-          ),
-      ],
+                      SizedBox(height:20)
+                  ],
+            ),
           ),
     );
   }
 
 
   Future<void> fetchCustomerStock(int customerId) async {
-    final url = Uri.parse("http://68.183.92.8:3699/api/get-customer-stock?customer_id=$customerId");
+    final url = Uri.parse("${RestDatasource().BASE_URL}/api/get-customer-stock?customer_id=$customerId");
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        print("ID:$customerId");
         final Map<String, dynamic> responseData = json.decode(response.body);
         setState(() {
           // Make sure to parse the whole response correctly

@@ -43,6 +43,7 @@ class Data {
   int? status;
   String? createdAt;
   String? discounted_amount;
+  String? remarks;
   String? updatedAt;
   String? deletedAt;
   List<Store>? store;
@@ -75,6 +76,7 @@ class Data {
       this.status,
       this.createdAt,
       this.discounted_amount,
+      this.remarks,
       this.updatedAt,
       this.deletedAt,
       this.store,
@@ -97,7 +99,7 @@ class Data {
     total = json['total'];
     totalTax = json['total_tax'];
     grandTotal = json['grand_total'];
-    receipt = json['receipt'];
+    receipt = (json['receipt'] is double) ? json['receipt'].toInt() : json['receipt'];
     balance = json['balance'];
     orderType = json['order_type'];
     ifVat = json['if_vat'];
@@ -107,6 +109,7 @@ class Data {
     status = json['status'];
     createdAt = json['created_at'];
     discounted_amount = json['discounted_amount'];
+    remarks = json['remarks'];
     updatedAt = json['updated_at'];
     deletedAt = json['deleted_at'];
     if (json['store'] != null) {

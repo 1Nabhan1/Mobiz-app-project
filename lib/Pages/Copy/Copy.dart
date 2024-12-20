@@ -280,7 +280,7 @@ class _CopyScreenState extends State<CopyScreen> {
 
     double tax = _ifVat == 1 ? calculateTax() : 0;
     var roundedGrandTotal = grandTotalMap['rounded'];
-    double roundOffValue = grandTotalMap['roundOffValue'];
+    double roundOffValue = double.parse(double.parse(grandTotalMap['roundOffValue'].toString()).toStringAsFixed(2));
     double total;
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
@@ -291,7 +291,7 @@ class _CopyScreenState extends State<CopyScreen> {
       code = params['code'];
       paymentTerms = params['paymentTerms'];
       paydata = params['outstandamt'];
-      print("Siuu: $paydata");
+      print("Siuu: $pricegroupId");
     }
     void postDataToApi() async {
       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
@@ -303,8 +303,9 @@ class _CopyScreenState extends State<CopyScreen> {
         return int.parse(product['unit_id']);
       }).toList();
       List<double> amounts = savedProducts.map<double>((product) {
-        return double.parse(product['amount'].toString());
+        return double.parse(double.parse(product['amount'].toString()).toStringAsFixed(2));
       }).toList();
+
       List<double> quantity = savedProducts.map<double>((product) {
         return double.parse(product['quantity'].toString());
       }).toList();
@@ -351,12 +352,14 @@ class _CopyScreenState extends State<CopyScreen> {
       );
 
       if (response.statusCode == 200) {
+        print("AMT$amounts");
         var responseBody = json.decode(response.body);
         int dataId = responseBody['data']['id'];
+        int saleId =  responseBody['data']['id'];
         print('Post successful');
         print('$data');
         print(serialNumbers);
-        print(response.body);
+        print("Body: ${response.body}");
         if (mounted) {
           CommonWidgets.showDialogueBox(
                   context: context, title: "Alert", msg: "Created Successfully")
@@ -368,10 +371,12 @@ class _CopyScreenState extends State<CopyScreen> {
                   arguments: {
                     'name': name,
                     'dataId': dataId,
+                    'saleId':saleId,
                     'customerId': id,
                     'code': code,
                     'paymentTerms': paymentTerms,
-                    'outstandamt': paydata
+                    'outstandamt': paydata,
+                    'price_group_id':pricegroupId
                   });
               print("Copyyyyyyyyyy");
               print(dataId);
@@ -1235,6 +1240,7 @@ class _CopyScreenState extends State<CopyScreen> {
                             keyboardType: TextInputType.number,
                             // initialValue: amount,
                             controller: amountController,
+                            readOnly: pricegroupId != 0,
                             // onChanged: (value) {
                             //   amount = amount;
                             // },

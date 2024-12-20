@@ -273,6 +273,9 @@ class _AttendanceState extends State<Attendance> {
               }
 
               Future<void> checkout() async {
+                setState(() {
+                  _isCheckedIn = true;
+                });
                 final url = Uri.parse(
                     '${RestDatasource().BASE_URL}/api/check-out.store');
                 final headers = {'Content-Type': 'application/json'};

@@ -393,6 +393,7 @@ class _CopySelectProductState extends State<CopySelectProduct> {
         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      print(response.request);
       print(product.id);
       print("dbfdjfjbdfbjdjjdvddv");
       print(id);

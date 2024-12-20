@@ -1,38 +1,23 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
-import 'package:mobizapp/Pages/Attendance.dart';
-import 'package:mobizapp/Pages/DayClose.dart';
-import 'package:mobizapp/Pages/ExpensesPage.dart';
-import 'package:mobizapp/Pages/VIsitsPage.dart';
-import 'package:mobizapp/Pages/customerscreen.dart';
 import 'package:mobizapp/Pages/loginpage.dart';
-import 'package:mobizapp/Pages/productspage.dart';
-import 'package:mobizapp/Pages/receiptscreen.dart';
 import 'package:mobizapp/Pages/schedule_Driver.dart';
-import 'package:mobizapp/Pages/selectProducts.dart';
-import 'package:mobizapp/Pages/newvanstockrequests.dart';
-import 'package:mobizapp/Pages/van_transfer.dart';
-import 'package:mobizapp/Pages/vanstockdata.dart';
-import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/Utilities/sharepref.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
-import 'package:mobizapp/Water.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-
+import 'package:shimmer/shimmer.dart';
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
 import 'Delivery_details_driver.dart';
-import 'Schedule_page.dart';
 import 'driver_customer_screen.dart';
-import 'homeorder.dart';
-import 'homereturn.dart';
-import 'offLoadRequest.dart';
-import 'saleinvoices.dart';
+import 'package:http/http.dart'as http;
 
 class HomepageDriver extends StatefulWidget {
   static const routeName = "/HomepageDriver";
@@ -45,6 +30,9 @@ class HomepageDriver extends StatefulWidget {
 class _HomepageDriverState extends State<HomepageDriver> {
   bool _restrict = false;
   String _appVersion = 'Loading...';
+  List<dynamic> appIcons = [];
+  List<List<dynamic>> paginatedIcons = [];
+  List<dynamic> IconDatas = [];
   bool performLogout() {
     try {
       SharedPref().clear();
@@ -61,6 +49,7 @@ class _HomepageDriverState extends State<HomepageDriver> {
     _getUserDetails();
     super.initState();
     _fetchAppVersion();
+    fetchAppIcons();
   }
 
   Future<void> _fetchAppVersion() async {
@@ -68,6 +57,63 @@ class _HomepageDriverState extends State<HomepageDriver> {
     setState(() {
       _appVersion = packageInfo.version;
     });
+  }
+
+  Future<void> fetchAppIcons() async {
+    try {
+      final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/store_app_icons_driver?store_id=${AppState().storeId}'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final successData = data['success'] as Map<String, dynamic>;
+
+        List<dynamic> extractedIcons = [];
+
+        successData.forEach((key, value) {
+          if (value['icon'] != null) {
+            extractedIcons.addAll(value['icon']); // Add all icons from each object
+          }
+        });
+
+        setState(() {
+          appIcons = extractedIcons;
+          paginatedIcons = _paginateList(appIcons, 15); // Paginate the icons
+        });
+      } else {
+        throw Exception('Failed to load app icons');
+      }
+    } catch (e) {
+      print('Error fetching app icons: $e');
+    }
+  }
+
+
+
+  List<List<dynamic>> _paginateList(List<dynamic> list, int chunkSize) {
+    List<List<dynamic>> chunks = [];
+    for (var i = 0; i < list.length; i += chunkSize) {
+      chunks.add(list.sublist(
+        i,
+        i + chunkSize > list.length ? list.length : i + chunkSize,
+      ));
+    }
+    return chunks;
+  }
+
+  IconData? getIconData(String? iconName) {
+    if (iconName == null) return null;
+
+    switch (iconName) {
+      case 'people':
+        return Icons.people;
+      case 'calendar_today':
+        return Icons.calendar_today;
+      case 'insert_drive_file_rounded':
+        return Icons.insert_drive_file_rounded;
+      default:
+        return Icons.help;
+    }
   }
 
   @override
@@ -171,72 +217,147 @@ class _HomepageDriverState extends State<HomepageDriver> {
                         ]),
                   ),
                   CommonWidgets.verticalSpace(4),
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // GestureDetector(
-                        //   onTap: () {
-                        //     if (_restrict) {
-                        //       CommonWidgets.showDialogueBox(
-                        //           context: context,
-                        //           title: "Alert",
-                        //           msg: "Van not allocated to this user");
-                        //     } else {
-                        //       Navigator.pushNamed(
-                        //           context, VanStockScreen.routeName);
-                        //     }
-                        //   },
-                        //   child: _iconButtons(
-                        //       icon: Icons.directions_bus, title: 'Van Stock'),
-                        // ),
-                        GestureDetector(
-                            onTap: () {
-                              // if (_restrict) {
-                              //   CommonWidgets.showDialogueBox(
-                              //       context: context,
-                              //       title: "Alert",
-                              //       msg: "Van not allocated to this user");
-                              // } else {
-                              //
-                              // }
-                              Navigator.pushNamed(
-                                  context, driver_customer_screen.routeName);
-                            },
-                            child: _iconButtons(
-                                icon: Icons.people, title: 'Customer')),
-                        GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                  context, ScheduleDriver.routeName);
-                            },
-                            child: _iconButtons(
-                                icon: Icons.calendar_today, title: 'Schedule')),
-                        InkWell(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                DeliveryDetailsDriver.routeName,
-                              );
-                            },
-                            child: _iconButtons(
-                                icon: Icons.insert_drive_file_rounded,
-                                title: 'Delivery')),
-                        // GestureDetector(
-                        //   onTap: () {
-                        //     if (_restrict) {
-                        //       CommonWidgets.showDialogueBox(
-                        //           context: context,
-                        //           title: "Alert",
-                        //           msg: "Van not allocated to this user");
-                        //     } else {
-                        //       Navigator.pushNamed(
-                        //           context, ProductsScreen.routeName);
-                        //     }
-                        //   },
-                        //   child: _iconButtons(
-                        //       icon: Icons.shopping_cart, title: 'Product'),
-                        // )
-                      ]),
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.68,
+                    child: paginatedIcons.isNotEmpty
+                        ? PageView.builder(
+                      itemCount: paginatedIcons.length,
+                      itemBuilder: (context, pageIndex) {
+                        final pageData = paginatedIcons[pageIndex];
+                        return SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 13,
+                                childAspectRatio: .95,
+                                mainAxisSpacing: 10,
+                              ),
+                              itemCount: pageData.length,
+                              itemBuilder: (context, index) {
+                                final iconData = pageData[index]; // Correctly handle single icon objects
+
+                                final iconName = iconData['icon'] as String?;
+                                final name = iconData['name'] as String? ?? 'Unknown';
+                                final url = iconData['url'] as String? ?? '';
+
+                                return _iconButtons(
+                                  title: name,
+                                  routeName: url,
+                                  icon: getIconData(iconName), // Map icon name to IconData
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                        : Center(
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey.shade300,
+                        highlightColor: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(35.0),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: GridView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: 12,
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    mainAxisExtent: 120,
+                                    crossAxisSpacing: 20,
+                                    mainAxisSpacing: 30,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+
+                  // Row(
+                  //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //     children: [
+                  //       // GestureDetector(
+                  //       //   onTap: () {
+                  //       //     if (_restrict) {
+                  //       //       CommonWidgets.showDialogueBox(
+                  //       //           context: context,
+                  //       //           title: "Alert",
+                  //       //           msg: "Van not allocated to this user");
+                  //       //     } else {
+                  //       //       Navigator.pushNamed(
+                  //       //           context, VanStockScreen.routeName);
+                  //       //     }
+                  //       //   },
+                  //       //   child: _iconButtons(
+                  //       //       icon: Icons.directions_bus, title: 'Van Stock'),
+                  //       // ),
+                  //       GestureDetector(
+                  //           onTap: () {
+                  //             // if (_restrict) {
+                  //             //   CommonWidgets.showDialogueBox(
+                  //             //       context: context,
+                  //             //       title: "Alert",
+                  //             //       msg: "Van not allocated to this user");
+                  //             // } else {
+                  //             //
+                  //             // }
+                  //             Navigator.pushNamed(
+                  //                 context, driver_customer_screen.routeName);
+                  //           },
+                  //           child: _iconButtons(
+                  //               icon: Icons.people, title: 'Customer')),
+                  //       GestureDetector(
+                  //           onTap: () {
+                  //             Navigator.pushNamed(
+                  //                 context, ScheduleDriver.routeName);
+                  //           },
+                  //           child: _iconButtons(
+                  //               icon: Icons.calendar_today, title: 'Schedule')),
+                  //       InkWell(
+                  //           onTap: () {
+                  //             Navigator.pushNamed(
+                  //               context,
+                  //               DeliveryDetailsDriver.routeName,
+                  //             );
+                  //           },
+                  //           child: _iconButtons(
+                  //               icon: Icons.insert_drive_file_rounded,
+                  //               title: 'Delivery')),
+                  //       // GestureDetector(
+                  //       //   onTap: () {
+                  //       //     if (_restrict) {
+                  //       //       CommonWidgets.showDialogueBox(
+                  //       //           context: context,
+                  //       //           title: "Alert",
+                  //       //           msg: "Van not allocated to this user");
+                  //       //     } else {
+                  //       //       Navigator.pushNamed(
+                  //       //           context, ProductsScreen.routeName);
+                  //       //     }
+                  //       //   },
+                  //       //   child: _iconButtons(
+                  //       //       icon: Icons.shopping_cart, title: 'Product'),
+                  //       // )
+                  //     ]),
                   // CommonWidgets.verticalSpace(2),
                   // Row(
                   //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -421,43 +542,59 @@ class _HomepageDriverState extends State<HomepageDriver> {
     );
   }
 
-  Widget _iconButtons({IconData? icon, required String title, String? image}) {
-    return Container(
-      width: SizeConfig.blockSizeHorizontal * 25,
-      height: SizeConfig.blockSizeVertical * 12.5,
-      decoration: const BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          color: AppConfig.colorPrimary),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (icon != null)
-            Icon(
-              icon,
-              color: AppConfig.backgroundColor,
-              size: 40,
-            )
-          else if (image != null)
-            Image.asset(
-              image,
-              width: 50,
-              height: 40,
-              fit: BoxFit.contain,
-            ),
-          SizedBox(
-            width: SizeConfig.blockSizeHorizontal * 18,
-            child: Center(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppConfig.backgroundColor,
-                    fontSize: AppConfig.textCaption3Size),
+  Widget _iconButtons({IconData? icon, required String title, String? image,  String? routeName}) {
+    return GestureDetector(
+      onTap: () {
+        if (routeName != null){
+          switch (routeName){
+            case 'driver_customer_screen':
+              Navigator.pushNamed(context, driver_customer_screen.routeName);
+              break;
+            case 'ScheduleDriver':
+              Navigator.pushNamed(context, ScheduleDriver.routeName);
+              break;
+            case 'DeliveryDetailsDriver':
+              Navigator.pushNamed(context,DeliveryDetailsDriver.routeName);
+          }
+        }
+      },
+      child: Container(
+        width: SizeConfig.blockSizeHorizontal * 25,
+        height: SizeConfig.blockSizeVertical * 12.5,
+        decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            color: AppConfig.colorPrimary),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (icon != null)
+              Icon(
+                icon,
+                color: AppConfig.backgroundColor,
+                size: 40,
+              )
+            else if (image != null)
+              Image.asset(
+                image,
+                width: 50,
+                height: 40,
+                fit: BoxFit.contain,
               ),
-            ),
-          )
-        ],
+            SizedBox(
+              width: SizeConfig.blockSizeHorizontal * 18,
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: AppConfig.backgroundColor,
+                      fontSize: AppConfig.textCaption3Size),
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

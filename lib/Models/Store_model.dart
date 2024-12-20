@@ -1,5 +1,6 @@
 class StoreDetail {
   final int id;
+  final int comapny_id;
   final String code;
   final String name;
   final String email;
@@ -17,6 +18,7 @@ class StoreDetail {
 
   StoreDetail({
     required this.id,
+    required this.comapny_id,
     required this.code,
     required this.name,
     required this.email,
@@ -44,6 +46,7 @@ class StoreDetail {
 
     return StoreDetail(
       id: json['data']['id'],
+      comapny_id: json['data']['comapny_id'],
       code: json['data']['code'],
       name: json['data']['name'],
       email: json['data']['email'],

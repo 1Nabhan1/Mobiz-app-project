@@ -114,7 +114,7 @@ class Detail {
   String? unit;
   String? product_type;
   String? name;
-  int? quantity;
+  double? quantity;
   int? editedQuantity;
   String? approvedQuantity;
   int? convertQty;
@@ -158,7 +158,7 @@ class Detail {
     name = json['name'];
     itemId = json['item_id'];
     unit = json['unit'];
-    quantity = json['quantity'];
+    quantity = (json['quantity'] as num?)?.toDouble();
     approvedQuantity = json['approved_quantity'];
     convertQty = json['convert_qty'];
     vanId = json['van_id'];

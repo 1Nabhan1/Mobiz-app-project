@@ -49,9 +49,13 @@ class Data {
   String? updatedAt;
   String? deletedAt;
   String? erpCustomerCode;
-  int?pricegroupId;
+  int? pricegroupId;
   String? visit;
+  String? building;
+  String? flatNo;
+  int? defaultValue; // Non-nullable field
 
+  // Constructor with required initializer for defaultValue
   Data({
     this.id,
     this.name,
@@ -76,57 +80,74 @@ class Data {
     this.erpCustomerCode,
     this.pricegroupId,
     this.visit,
+    this.building,
+    this.flatNo,
+    this.defaultValue = 0, // Default value assigned
   });
 
-  Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    name = json['name'];
-    code = json['code'];
-    address = json['address'];
-    contactNumber = json['contact_number'];
-    whatsappNumber = json['whatsapp_number'];
-    email = json['email'];
-    location = json['location'];
-    trn = json['trn'];
-    img= json['cust_image'];
-    paymentTerms = json['payment_terms'];
-    creditLimit = json['credit_limit'];
-    creditDays = json['credit_days'];
-    routeId = json['route_id'];
-    provinceId = json['province_id'];
-    storeId = json['store_id'];
-    status = json['status'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    deletedAt = json['deleted_at'];
-    erpCustomerCode = json['erp_customer_code'];
-    pricegroupId = json['price_group_id'];
-    visit = json['visit'];
+  // Factory method to create an instance from JSON
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      id: json['id'],
+      name: json['name'],
+      code: json['code'],
+      address: json['address'],
+      contactNumber: json['contact_number'],
+      whatsappNumber: json['whatsapp_number'],
+      email: json['email'],
+      location: json['location'],
+      trn: json['trn'],
+      img: json['cust_image'],
+      paymentTerms: json['payment_terms'],
+      creditLimit: json['credit_limit'],
+      creditDays: json['credit_days'],
+      routeId: json['route_id'],
+      provinceId: json['province_id'],
+      storeId: json['store_id'],
+      status: json['status'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+      deletedAt: json['deleted_at'],
+      erpCustomerCode: json['erp_customer_code'],
+      pricegroupId: json['price_group_id'],
+      visit: json['visit'],
+      building: json['Building'],
+      flatNo: json['Flat_no'],
+        defaultValue : json['default_value'] != null ? json['default_value'] : 0,
+      // Default value fallback
+    );
   }
 
+  // Method to convert the instance to JSON
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
-    data['code'] = this.code;
-    data['address'] = this.address;
-    data['contact_number'] = this.contactNumber;
-    data['whatsapp_number'] = this.whatsappNumber;
-    data['email'] = this.email;
-    data['location'] = this.location;
-    data['trn'] = this.trn;
-    data['cust_image'] = this.img;
-    data['payment_terms'] = this.paymentTerms;
-    data['credit_limit'] = this.creditLimit;
-    data['credit_days'] = this.creditDays;
-    data['route_id'] = this.routeId;
-    data['province_id'] = this.provinceId;
-    data['store_id'] = this.storeId;
-    data['status'] = this.status;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
-    data['deleted_at'] = this.deletedAt;
-    data['erp_customer_code'] = this.erpCustomerCode;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['code'] = code;
+    data['address'] = address;
+    data['contact_number'] = contactNumber;
+    data['whatsapp_number'] = whatsappNumber;
+    data['email'] = email;
+    data['location'] = location;
+    data['trn'] = trn;
+    data['cust_image'] = img;
+    data['payment_terms'] = paymentTerms;
+    data['credit_limit'] = creditLimit;
+    data['credit_days'] = creditDays;
+    data['route_id'] = routeId;
+    data['province_id'] = provinceId;
+    data['store_id'] = storeId;
+    data['status'] = status;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
+    data['deleted_at'] = deletedAt;
+    data['erp_customer_code'] = erpCustomerCode;
+    data['price_group_id'] = pricegroupId;
+    data['visit'] = visit;
+    data['Building'] = building;
+    data['Flat_no'] = flatNo;
+    data['default_value'] = defaultValue;
     return data;
   }
 }
+

@@ -396,10 +396,15 @@ class _VanTransferConfirmState extends State<VanTransferConfirm> {
             TextButton(
               onPressed: () {
                 if (_quantityController.text.isNotEmpty) {
+                  // setState(() {
+                  //   data.detail![index].quantity =
+                  //       int.tryParse(_quantityController.text) ?? 0;
+                  // });
                   setState(() {
                     data.detail![index].quantity =
-                        int.tryParse(_quantityController.text) ?? 0;
+                        double.tryParse(_quantityController.text) ?? 0.0;
                   });
+
                   Navigator.of(context).pop();
                 }
               },

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobizapp/Pages/homepage.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:http/http.dart' as http;
 
@@ -43,42 +44,47 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        width: SizeConfig.blockSizeHorizontal * 70,
-        height: SizeConfig.blockSizeVertical * 7,
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          // First Button
-          SizedBox(
-            width: SizeConfig.blockSizeHorizontal * 30,
-            child: ElevatedButton(
-              style: ButtonStyle(
-                shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7.0),
-                  ),
-                ),
-                backgroundColor:WidgetStatePropertyAll(
-                            AppConfig.colorPrimary),
-              ),
-              onPressed: () {
-                Navigator.pushNamed(context, Stock_Name.routeName);
-              },
-              child: Text(
-                'NEW',
-                style: TextStyle(
-                  fontSize: AppConfig.textCaption3Size,
-                  color: AppConfig.backgroundColor,
-                  fontWeight: AppConfig.headLineWeight,
-                ),
-              ),
-            ),
-          ),
-        ]),
-      ),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      // floatingActionButton: SizedBox(
+      //   width: SizeConfig.blockSizeHorizontal * 70,
+      //   height: SizeConfig.blockSizeVertical * 7,
+      //   child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+      //     // First Button
+      //     SizedBox(
+      //       width: SizeConfig.blockSizeHorizontal * 30,
+      //       child: ElevatedButton(
+      //         style: ButtonStyle(
+      //           shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+      //             RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(7.0),
+      //             ),
+      //           ),
+      //           backgroundColor:WidgetStatePropertyAll(
+      //                       AppConfig.colorPrimary),
+      //         ),
+      //         onPressed: () {
+      //           Navigator.pushNamed(context, Stock_Name.routeName);
+      //         },
+      //         child: Text(
+      //           'NEW',
+      //           style: TextStyle(
+      //             fontSize: AppConfig.textCaption3Size,
+      //             color: AppConfig.backgroundColor,
+      //             fontWeight: AppConfig.headLineWeight,
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ]),
+      // ),
       appBar: AppBar(
         backgroundColor: AppConfig.colorPrimary,
-        iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
+        // iconTheme: IconThemeData(color: AppConfig.backgroundColor),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pushReplacementNamed(context, HomeScreen.routeName);
+          },
+            child: Icon(Icons.arrow_back,color: Colors.white,)),
         title: const Text(
           'Stock Take Requests',
           style: TextStyle(color: AppConfig.backgroundColor),
@@ -106,24 +112,24 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
                 )
               : Container(),
           CommonWidgets.horizontalSpace(1),
-          // (!_search)
-          //     ? GestureDetector(
-          //         onTap: () async {
-          //           // if (stocks.isEmpty) {
-          //           //   Navigator.pushReplacementNamed(
-          //           //       context, SelectProductsScreen.routeName);
-          //           // } else {
-          //           Navigator.pushReplacementNamed(
-          //               context, Stock_Name.routeName);
-          //           // }
-          //         },
-          //         child: const Icon(
-          //           Icons.add,
-          //           size: 30,
-          //           color: AppConfig.backgroundColor,
-          //         ),
-          //       )
-          //     : Container(),
+          (!_search)
+              ? GestureDetector(
+                  onTap: () async {
+                    // if (stocks.isEmpty) {
+                    //   Navigator.pushReplacementNamed(
+                    //       context, SelectProductsScreen.routeName);
+                    // } else {
+                    Navigator.pushReplacementNamed(
+                        context, Stock_Name.routeName);
+                    // }
+                  },
+                  child: const Icon(
+                    Icons.add,
+                    size: 30,
+                    color: AppConfig.backgroundColor,
+                  ),
+                )
+              : Container(),
           CommonWidgets.horizontalSpace(1),
           GestureDetector(
             onTap: () {
@@ -330,13 +336,13 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
                                   ),
                                 ),
                                 CommonWidgets.horizontalSpace(2),
-                                Text(
-                                  'Requested Qty: ${data.detail![i].quantity}',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                    fontWeight: AppConfig.headLineWeight,
-                                  ),
-                                ),
+                                // Text(
+                                //   'Requested Qty: ${data.detail![i].quantity}',
+                                //   style: TextStyle(
+                                //     fontSize: AppConfig.textCaption3Size,
+                                //     fontWeight: AppConfig.headLineWeight,
+                                //   ),
+                                // ),
                               ],
                             ),
                             Divider(
@@ -346,6 +352,23 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
                           ],
                         ),
                       ),
+                    Center(
+                        child: ElevatedButton(
+                            style: ButtonStyle(
+                                backgroundColor: WidgetStatePropertyAll(
+                                    AppConfig.colorPrimary),
+                                shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10))),
+                                fixedSize: WidgetStatePropertyAll(Size(
+                                    SizeConfig.blockSizeHorizontal * 30,
+                                    SizeConfig.blockSizeVertical * 3))),
+                            onPressed: () {},
+                            child: Text(
+                              'Complete',
+                              style: TextStyle(color: Colors.white),
+                            )))
                   ],
                 ),
               ),

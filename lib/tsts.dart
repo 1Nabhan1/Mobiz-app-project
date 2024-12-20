@@ -1,45 +1,8 @@
-// Future<void> fetchSalesReturnData() async {
-//   final url = Uri.parse(
-//       'http://68.183.92.8:3699/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=843');
-//   final response = await http.get(url);
-//
-//   if (response.statusCode == 200) {
-//     final data = jsonDecode(response.body);
-//     if (data != null && data['data'] != null) {
-//       // Assuming data['data'] contains a list of products
-//       List<Product> fetchedProducts = (data['data'] as List)
-//           .map((item) => Product.fromJson(item))
-//           .toList();
-//
-//       // Add each product to the cart
-//       for (var product in fetchedProducts) {
-//         await addToCart(product);
-//       }
-//
-//       setState(() {
-//         cartItems = fetchedProducts; // Update the UI if needed
-//         _fetchSalesReturnDataComplete = true;
-//       });
-//     }
-//   } else {
-//     throw Exception('Failed to load sales return data');
-//   }
-// }
-//
-//
-//
-//
-//
-//
-//
-//
-//
 // import 'dart:convert';
 // import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:mobizapp/Models/appstate.dart';
-// import 'package:mobizapp/Pages/salesselectproductreturn.dart';
+// import 'package:mobizapp/Pages/selectProducts.dart';
 // import 'package:mobizapp/selectproduct.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 //
@@ -48,22 +11,18 @@
 // import '../Utilities/rest_ds.dart';
 // import '../confg/appconfig.dart';
 // import '../confg/sizeconfig.dart';
-// import 'homereturn.dart';
 //
-// class Customerreturndetail extends StatefulWidget {
-//   static const routeName = "/Customerreturndetail";
+// class VanStocks extends StatefulWidget {
+//   static const routeName = "/NewVanStockRequests";
 //
 //   @override
-//   _CustomerreturndetailState createState() => _CustomerreturndetailState();
+//   _VanStocksState createState() => _VanStocksState();
 // }
 //
-// class _CustomerreturndetailState extends State<Customerreturndetail> {
-//   late String initialQty;
-//   int specificIndex = 0;
+// class _VanStocksState extends State<VanStocks> {
 //   List<Product> cartItems = [];
 //   bool _search = false;
-//   String? _selectedReason;
-//   List<String> _reasonList = [];
+//
 //   bool _isPercentage = false;
 //   final TextEditingController _discountData = TextEditingController();
 //   final TextEditingController amountctrl = TextEditingController();
@@ -71,7 +30,6 @@
 //   final TextEditingController _remarksController = TextEditingController();
 //   String _remarksText = "";
 //   Map<int, String> amounts = {};
-//   final TextEditingController _roundoff = TextEditingController();
 //   Map<int, String> qtys = {};
 //   TextEditingController _searchData = TextEditingController();
 //   int? id;
@@ -81,283 +39,16 @@
 //   []; // List to store selected product types
 //   String? name;
 //   int _ifVat = 1;
-//   String roundoff = '';
 //   // num tax = 0;
-//   String? code;
-//   String? payment;
+//
 //   String amount = '';
 //   String quantity = '';
-//   bool _isButtonDisabled = true;
-//   bool _hasData = false;
-//   int? dataId;
-//   bool _fetchCartItemsComplete = false;
-//   bool _fetchSalesReturnDataComplete = false;
 //   @override
 //   void initState() {
 //     super.initState();
 //     fetchCartItems();
 //     fetchProductTypes();
 //     initializeValues();
-//     fetchSalesReturnData();
-//     fetchReasons();
-//     setInitialQty();
-//   }
-//
-//   Future<void> addToCart(Product product) async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     List<String>? cartItems = prefs.getStringList('cartItemsreturn') ?? [];
-//
-//     // Count how many instances of the product are already in the cart
-//     int productCount = cartItems.fold(0, (count, item) {
-//       Map<String, dynamic> itemMap = jsonDecode(item);
-//       return itemMap['id'] == product.id ? count + 1 : count;
-//     });
-//
-//     // Restriction logic based on the number of units
-//     if (product.units.length == 1) {
-//       if (productCount >= 1) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('${product.name} is already in the cart')),
-//         );
-//         return;
-//       }
-//     } else if (product.units.length == 2) {
-//       if (productCount >= 2) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Only 2 ${product.name} can be added')),
-//         );
-//         return;
-//       }
-//     }
-//
-//     // Add product to cart
-//     cartItems.add(jsonEncode(product.toJson()));
-//     await prefs.setStringList('cartItemsreturn', cartItems);
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text('${product.name} added')),
-//     );
-//   }
-//
-//   Future<void> fetchSalesReturnData() async {
-//     final url = Uri.parse(
-//         'http://68.183.92.8:3699/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=843');
-//     final response = await http.get(url);
-//
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-//
-//       // Check if data['data'] is a List or a Map
-//       if (data != null && data['data'] != null) {
-//         if (data['data'] is List) {
-//           // data['data'] is a list of products
-//           List<Product> fetchedProducts = (data['data'] as List)
-//               .map((item) {
-//             Product product = Product.fromJson(item);
-//             product.defaultValue = 1; // Set defaultValue to 1
-//             return product;
-//           })
-//               .toList();
-//
-//           for (var product in fetchedProducts) {
-//             await addToCart(product);
-//           }
-//         } else if (data['data'] is Map) {
-//           // data['data'] is a single product map
-//           Product product = Product.fromJson(data['data']);
-//           product.defaultValue = 1; // Set defaultValue to 1
-//           await addToCart(product);
-//         }
-//
-//         setState(() {
-//           _fetchSalesReturnDataComplete = true;
-//         });
-//       }
-//     } else {
-//       throw Exception('Failed to load sales return data');
-//     }
-//   }
-//
-//
-//
-//   Future<void> fetchCartItems() async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     List<String>? cartItemsJson = prefs.getStringList('cartItemsreturn');
-//
-//     if (cartItemsJson != null) {
-//       // Clear cartItems to avoid duplicates
-//       cartItems.clear();
-//
-//       // Convert JSON strings to Product objects
-//       List<Product> products = cartItemsJson
-//           .map((json) => Product.fromJson(jsonDecode(json)))
-//           .toList();
-//
-//       cartItems.sort((a, b) {
-//         return a.isSelected ? -1 : (b.isSelected ? 1 : 0);
-//       });
-//       setState(() {
-//         cartItems.addAll(products);
-//         selectedProductTypes = List.generate(
-//           cartItems.length,
-//               (index) => null,
-//         );
-//         _fetchCartItemsComplete = true;
-//       });
-//     }
-//     print('cartItemsJson');
-//     print(cartItemsJson);
-//   }
-//
-//   void setInitialQty() {
-//     if (cartItems.isNotEmpty && cartItems[specificIndex].units.isNotEmpty) {
-//       initialQty = cartItems[specificIndex].units[0].stock?.toString() ?? '1';
-//     } else {
-//       initialQty = '1'; // Fallback value if cartItems or units is empty
-//     }
-//   }
-//
-//
-//   Future<void> fetchReasons() async {
-//     final response = await http.get(Uri.parse(
-//         'http://68.183.92.8:3699/api/get-water-reason?store_id=${AppState().storeId}'));
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-//       if (data['data'] != null) {
-//         setState(() {
-//           _reasonList = List<String>.from(
-//               data['data'].map((item) => item['reasone'] as String));
-//         });
-//       } else {
-//         throw Exception('Reasons not found in the response');
-//       }
-//     } else {
-//       throw Exception('Failed to load reasons');
-//     }
-//   }
-//
-//   double calculateTotalRate() {
-//     double total = 0;
-//     for (int index = 0; index < cartItems.length; index++) {
-//       double rate = double.tryParse(
-//           amounts[index] ?? cartItems[index].price.toString()) ??
-//           0;
-//       int quantity = int.tryParse(qtys[index] ?? '1') ?? 1;
-//       total += rate * quantity;
-//     }
-//     return total;
-//   }
-//
-//   double calculateTax() {
-//     double tax = 0;
-//     for (int index = 0; index < cartItems.length; index++) {
-//       String discountValue = _discountData.text.trim();
-//       double totalAmount = calculateTotalRate();
-//       double discountAmount = double.tryParse(discountValue) ?? 0;
-//       double amt = totalAmount - discountAmount;
-//       double discountfrtax = (totalAmount * discountAmount) / 100;
-//       double netTotal = totalAmount - discountfrtax;
-//       num taxPercentage = 5;
-//       double Tax = _isPercentage
-//           ? ((netTotal * taxPercentage) / 100)
-//           : (amt * taxPercentage) / 100;
-//       tax = Tax;
-//     }
-//     return tax;
-//   }
-//
-//   Map<String, dynamic> grandTotal() {
-//     double taxamt = calculateTax();
-//     roundoff = _roundoff.text;
-//     double rundff = double.tryParse(roundoff) ?? 0;
-//     String discountValue = _discountData.text.trim();
-//     double discountAmount = double.tryParse(discountValue) ?? 0;
-//     double totalTax = 5;
-//     double totalAmount = calculateTotalRate();
-//     double discountinpercent = (totalAmount * discountAmount) / 100;
-//     double nettotal = totalAmount - discountinpercent;
-//     double taxamtperc = (nettotal * totalTax) / 100;
-//     double grandTotal = _ifVat == 1
-//         ? _isPercentage
-//         ? totalAmount - ((totalAmount * discountAmount) / 100) + taxamtperc
-//         : (totalAmount - discountAmount) + taxamt
-//         : _isPercentage
-//         ? totalAmount - (totalAmount * discountAmount) / 100
-//         : totalAmount - discountAmount;
-//     num roundedGrandTotal1 =
-//     roundoff == '' ? customRound(grandTotal) : grandTotal + rundff;
-//     double roundOffValue = roundedGrandTotal1 - grandTotal;
-//     return {
-//       'rounded': roundedGrandTotal1,
-//       'roundOffValue': roundOffValue,
-//     };
-//   }
-//
-//   int customRound(double value) {
-//     double fractionalPart = value - value.toInt();
-//
-//     if (fractionalPart >= 0.5) {
-//       return value.ceil();
-//     } else {
-//       return value.floor();
-//     }
-//   }
-//
-//   // Future<void> removeFromCart(int index) async {
-//   //   SharedPreferences prefs = await SharedPreferences.getInstance();
-//   //   List<String>? cartItemsJson = prefs.getStringList('cartItemsreturn');
-//   //
-//   //   if (cartItemsJson != null) {
-//   //     List<Product> products = cartItemsJson
-//   //         .map((json) => Product.fromJson(jsonDecode(json)))
-//   //         .toList();
-//   //
-//   //     products.removeAt(index); // Remove the item at the specific index
-//   //
-//   //     List<String> updatedCartItemsJson =
-//   //         products.map((product) => jsonEncode(product.toJson())).toList();
-//   //
-//   //     await prefs.setStringList('cartItemsreturn', updatedCartItemsJson);
-//   //
-//   //     fetchCartItems(); // Refresh UI after deletion
-//   //   }
-//   // }
-//   Future<void> removeFromCart(int index) async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     List<String>? cartItemsJson = prefs.getStringList('cartItemsreturn');
-//
-//     if (cartItemsJson != null) {
-//       // Decode the JSON strings to Product objects
-//       List<Product> products = cartItemsJson
-//           .map((json) => Product.fromJson(jsonDecode(json)))
-//           .toList();
-//
-//       // Validate index and remove product
-//       if (index >= 0 && index < products.length) {
-//         products.removeAt(index);
-//
-//         // Encode the updated list back to JSON and save it
-//         List<String> updatedCartItemsJson =
-//         products.map((product) => jsonEncode(product.toJson())).toList();
-//         await prefs.setStringList('cartItemsreturn', updatedCartItemsJson);
-//
-//         // Remove item-specific shared preferences entries for this index
-//         await prefs.remove('productTypereturn$index');
-//         await prefs.remove('unitNamereturn$index');
-//         await prefs.remove('qtyreturn$index');
-//         await prefs.remove('amountreturn$index');
-//
-//         // Refresh cartItems list in UI
-//         fetchCartItems();
-//       }
-//     }
-//   }
-//
-//   Future<void> clearCart() async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     await prefs.remove('cartItemsreturn');
-//     setState(() {
-//       cartItems.clear();
-//     });
 //   }
 //
 //   Future<void> saveToSharedPreferences(String key, dynamic value) async {
@@ -375,138 +66,148 @@
 //     }
 //   }
 //
-//   // Future<void> initializeValues() async {
-//   //   SharedPreferences prefs = await SharedPreferences.getInstance();
-//   //   setState(() {
-//   //     for (int i = 0; i < cartItems.length; i++) {
-//   //       qtys[i] = prefs.getString('qtyreturn$i') ?? '1';
-//   //       amounts[i] =
-//   //           prefs.getString('amountreturn$i') ?? cartItems[i].price.toString();
-//   //     }
-//   //   });
-//   // }
-//   Future<void> initializeValues() async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//
-//     if (productTypes.isNotEmpty && cartItems.isNotEmpty) {
-//       setState(() {
-//         for (int i = 0; i < cartItems.length; i++) {
-//           qtys[i] = prefs.getString('qtyreturn$i') ?? '1';
-//           amounts[i] = prefs.getString('amountreturn$i') ??
-//               cartItems[i].price.toString();
-//
-//           if (cartItems[i].units.isNotEmpty) {
-//             cartItems[i].selectedUnitName =
-//                 prefs.getString('unitNamereturn$i') ??
-//                     cartItems[i].units.first.name;
-//           }
-//
-//           selectedProductTypes[i] = productTypes.firstWhere(
-//                 (type) => type.name == prefs.getString('productTypereturn$i'),
-//             orElse: () => productTypes.first,
-//           );
-//         }
-//       });
-//     }
-//   }
-//
 //   Future<void> clearSharedPreferences() async {
 //     SharedPreferences prefs = await SharedPreferences.getInstance();
 //     await prefs.clear();
 //   }
 //
-//   Future<void> _onBackPressed() async {
-//     clearSharedPreferences();
-//     // Your custom function logic here
-//     print('Back button pressed');
-//     // You can also show a dialog, navigate to another page, etc.
+//   Future<void> initializeValues() async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//
+//     setState(() {
+//       for (int i = 0; i < cartItems.length; i++) {
+//         qtys[i] = prefs.getString('qtyreq$i') ?? '1';
+//         amounts[i] =
+//             prefs.getString('amountreq$i') ?? cartItems[i].price.toString();
+//
+//         if (cartItems[i].units.isNotEmpty) {
+//           cartItems[i].selectedUnitName =
+//               prefs.getString('unitNamereq$i') ?? cartItems[i].units.first.name;
+//         }
+//       }
+//     });
+//   }
+//
+//   Future<void> fetchCartItems() async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     List<String>? cartItemsJson = prefs.getStringList('cartItemsvanstock');
+//
+//     if (cartItemsJson != null) {
+//       List<Product> products = cartItemsJson
+//           .map((json) => Product.fromJson(jsonDecode(json)))
+//           .toList();
+//
+//       setState(() {
+//         cartItems = products;
+//         selectedProductTypes = List.generate(
+//           cartItems.length,
+//               (index) => null,
+//         );
+//       });
+//     }
+//   }
+//
+//   Future<void> removeFromCart(int index) async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     List<String>? cartItemsJson = prefs.getStringList('cartItemsvanstock');
+//
+//     if (cartItemsJson != null) {
+//       List<Product> products = cartItemsJson
+//           .map((json) => Product.fromJson(jsonDecode(json)))
+//           .toList();
+//
+//       // Remove the item at the specific index
+//       products.removeAt(index);
+//
+//       // Remove quantity and amount for the removed product
+//       qtys.remove(index);
+//       amounts.remove(index);
+//
+//       // Update the keys of the qtys and amounts maps
+//       Map<int, String> newQtys = {};
+//       Map<int, String> newAmounts = {};
+//       for (int i = 0; i < products.length; i++) {
+//         newQtys[i] =
+//             qtys[i + (i >= index ? 1 : 0)] ?? '1'; // Adjusting the index
+//         newAmounts[i] = amounts[i + (i >= index ? 1 : 0)] ??
+//             products[i].price.toString(); // Adjusting the index
+//       }
+//
+//       qtys = newQtys;
+//       amounts = newAmounts;
+//
+//       List<String> updatedCartItemsJson =
+//       products.map((product) => jsonEncode(product.toJson())).toList();
+//
+//       await prefs.setStringList('cartItemsvanstock', updatedCartItemsJson);
+//       fetchCartItems(); // Refresh UI after deletion
+//     }
+//   }
+//
+//   Future<void> clearCart() async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     await prefs.remove('cartItemsvanstock');
+//     setState(() {
+//       cartItems.clear();
+//     });
 //   }
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     Map<String, dynamic> grandTotalMap = grandTotal();
-//
-//     double total = calculateTotalRate();
-//     double tax = _ifVat == 1 ? calculateTax() : 0;
-//     var roundedGrandTotal = grandTotalMap['rounded'];
-//     double roundOffValue = grandTotalMap['roundOffValue'];
-//
 //     void postDataToApi() async {
-//       if (!_fetchCartItemsComplete && !_fetchSalesReturnDataComplete) {
-//         print("Data sources are not fully loaded yet.");
-//         return;
-//       }
-//
-//       var url =
-//       Uri.parse('${RestDatasource().BASE_URL}/api/vansales_return.store');
+//       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vanrequest.store');
 //       List<int> quantities = [];
-//       List<Object> productTypesList = [];
 //       List<int> selectedUnitIds = [];
 //
 //       for (int index = 0; index < cartItems.length; index++) {
-//         String? selectedUnitName = cartItems[index].selectedUnitName;
-//         int selectedUnitId = selectedUnitName != null
-//             ? cartItems[index]
-//             .units
-//             .firstWhere((unit) => unit.name == selectedUnitName)
-//             .unit!
-//             : cartItems[index].units.first.unit!;
-//
-//         selectedUnitIds.add(selectedUnitId);
 //         String? qty = qtys[index];
 //         int quantity = qty != null ? int.parse(qty) : 1;
 //         quantities.add(quantity);
+//         String? selectedUnitName = cartItems[index].selectedUnitName;
+//         int selectedUnitId;
+//         if (selectedUnitName != null) {
+//           selectedUnitId = cartItems[index]
+//               .units
+//               .firstWhere((unit) => unit.name == selectedUnitName)
+//               .unit!;
+//         } else {
+//           selectedUnitId = cartItems[index].units.first.unit!;
+//         }
 //
-//         ProductType? selectedProductType = selectedProductTypes[index];
-//         Object productType =
-//         selectedProductType != null ? selectedProductType.id : 1;
-//         productTypesList.add(productType);
+//         selectedUnitIds.add(selectedUnitId);
 //       }
-//
 //       var data = {
-//         'van_id': AppState().vanId ?? 0,
-//         'store_id': AppState().storeId ?? 0,
-//         'user_id': AppState().userId ?? 0,
-//         'item_id': cartItems.map((item) => item.id ?? 0).toList(),
+//         'van_id': AppState().vanId,
+//         'store_id': AppState().storeId,
+//         'user_id': AppState().userId,
+//         'item_id': cartItems.map((item) => item.id).toList(),
 //         'quantity': quantities,
 //         'unit': selectedUnitIds,
-//         'mrp': amounts.entries.map((entry) {
-//           return double.tryParse(entry.value) ?? 0.0;
-//         }).toList(),
-//         'customer_id': id ?? 0,
-//         'if_vat': _ifVat == 1 ? 1 : 0,
-//         'product_type': productTypesList,
-//         'total_tax': tax,
-//         'discount_type': _isPercentage ? '1' : '0',
-//         'discount': _discountData.text.isEmpty ? '0' : _discountData.text,
-//         'total': total,
-//         'round_off': roundOffValue,
-//         'grand_total': roundedGrandTotal,
-//         'remarks': _remarksText,
-//         'payment_terms': payment ?? 'N/A',
 //       };
+//       // print(_remarksText);
+//       // print('wwwwwwwwwwwwwwwwwwwwwwwww');
+//       var body = json.encode(data);
 //
 //       var response = await http.post(
 //         url,
 //         headers: <String, String>{
 //           'Content-Type': 'application/json; charset=UTF-8',
 //         },
-//         body: json.encode(data),
+//         body: body,
 //       );
 //
 //       if (response.statusCode == 200) {
-//         print(data);
 //         print('Post successful');
 //         if (mounted) {
 //           CommonWidgets.showDialogueBox(
-//             context: context,
-//             title: "Alert",
-//             msg: "Created Successfully",
-//           ).then((value) {
-//             clearCart();
-//             Navigator.pushReplacementNamed(context, HomereturnScreen.routeName);
-//           });
+//               context: context, title: "Alert", msg: "Created Successfully")
+//               .then(
+//                 (value) {
+//               clearCart();
+//             },
+//           );
 //         }
+//         print(response.body);
 //       } else {
 //         print('Post failed with status: ${response.statusCode}');
 //         print(response.body);
@@ -518,885 +219,303 @@
 //       ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 //       id = params!['customerId'];
 //       name = params['name'];
-//       code = params!['code'];
-//       payment = params!['paymentTerms'];
-//       dataId = params!['dataId'];
 //     }
 //
-//     return WillPopScope(
-//       onWillPop: () async {
-//         // Call your custom function here
-//         await _onBackPressed();
-//         // Return true to allow the page to be popped
-//         // Return false to prevent the page from being popped
-//         return true;
-//       },
-//       child: Scaffold(
-//         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-//         floatingActionButton: SizedBox(
-//           width: 100.w,
-//           height: 30.h,
-//           child: _hasData
-//               ? ElevatedButton(
-//             style: ButtonStyle(
-//               shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-//                 RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(7.0),
-//                 ),
+//     return Scaffold(
+//       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+//       floatingActionButton: SizedBox(
+//         width: SizeConfig.blockSizeHorizontal * 35,
+//         height: SizeConfig.blockSizeVertical * 5,
+//         child: ElevatedButton(
+//           style: ButtonStyle(
+//             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+//               RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(7.0),
 //               ),
-//               backgroundColor: (cartItems.isNotEmpty)
-//                   ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-//                   : const WidgetStatePropertyAll(
-//                   AppConfig.buttonDeactiveColor),
 //             ),
-//             onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
-//                 ? () async {
-//               setState(() {
-//                 _isButtonDisabled =
-//                 true; // Disable the button after it's pressed
-//               });
-//               postDataToApi();
-//             }
-//                 : null,
-//             child: Text(
-//               'SAVE',
-//               style: TextStyle(
-//                   fontSize: AppConfig.textCaption3Size,
-//                   color: AppConfig.backgroundColor,
-//                   fontWeight: AppConfig.headLineWeight),
+//             backgroundColor: (cartItems.isNotEmpty)
+//                 ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
+//                 : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+//           ),
+//           onPressed: (cartItems.isNotEmpty)
+//               ? () async {
+//             postDataToApi();
+//           }
+//               : null,
+//           child: Text(
+//             'SAVE',
+//             style: TextStyle(
+//                 fontSize: AppConfig.textCaption3Size,
+//                 color: AppConfig.backgroundColor,
+//                 fontWeight: AppConfig.headLineWeight),
+//           ),
+//         ),
+//       ),
+//       appBar: AppBar(
+//         leading: GestureDetector(
+//             onTap: () {
+//               Navigator.pop(context);
+//               clearSharedPreferences();
+//             },
+//             child: Icon(Icons.arrow_back_rounded)),
+//         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
+//         title: const Text(
+//           'Van Stocks Requests',
+//           style: TextStyle(color: AppConfig.backgroundColor),
+//         ),
+//         backgroundColor: AppConfig.colorPrimary,
+//         actions: [
+//           (_search)
+//               ? Container(
+//             height: SizeConfig.blockSizeVertical * 5,
+//             width: SizeConfig.blockSizeHorizontal * 76,
+//             decoration: BoxDecoration(
+//               color: AppConfig.colorPrimary,
+//               borderRadius: const BorderRadius.all(
+//                 Radius.circular(10),
+//               ),
+//               border: Border.all(color: AppConfig.colorPrimary),
+//             ),
+//             child: TextField(
+//               controller: _searchData,
+//               decoration: const InputDecoration(
+//                 contentPadding: EdgeInsets.all(5),
+//                 hintText: "Search...",
+//                 hintStyle: TextStyle(color: AppConfig.backgroundColor),
+//                 border: InputBorder.none,
+//               ),
 //             ),
 //           )
-//               : Text('Return Type Not\n      Available'),
-//         ),
-//         appBar: AppBar(
-//           leading: GestureDetector(
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 clearSharedPreferences();
-//               },
-//               child: Icon(Icons.arrow_back_rounded)),
-//           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
-//           title: const Text(
-//             'Return',
-//             style: TextStyle(color: AppConfig.backgroundColor),
+//               : Container(),
+//           CommonWidgets.horizontalSpace(1),
+//           GestureDetector(
+//             onTap: () {
+//               Navigator.pushReplacementNamed(
+//                 context,
+//                 SelectProductsScreen.routeName,
+//               );
+//             },
+//             child: Icon(
+//               _search ? Icons.close : Icons.search,
+//               size: 30,
+//               color: AppConfig.backgroundColor,
+//             ),
 //           ),
-//           backgroundColor: AppConfig.colorPrimary,
-//           actions: [
-//             (_search)
-//                 ? Container(
-//               height: SizeConfig.blockSizeVertical * 5,
-//               width: SizeConfig.blockSizeHorizontal * 76,
-//               decoration: BoxDecoration(
-//                 color: AppConfig.colorPrimary,
-//                 borderRadius: const BorderRadius.all(
-//                   Radius.circular(10),
-//                 ),
-//                 border: Border.all(color: AppConfig.colorPrimary),
-//               ),
-//               child: TextField(
-//                 controller: _searchData,
-//                 decoration: const InputDecoration(
-//                   contentPadding: EdgeInsets.all(5),
-//                   hintText: "Search...",
-//                   hintStyle: TextStyle(color: AppConfig.backgroundColor),
-//                   border: InputBorder.none,
-//                 ),
-//               ),
-//             )
-//                 : Container(),
-//             CommonWidgets.horizontalSpace(1),
-//             GestureDetector(
-//               onTap: () {
-//                 Navigator.pushReplacementNamed(
-//                     context, Salesselectproductreturn.routeName,
-//                     arguments: {
-//                       'customerId': id,
-//                       'name': name,
-//                       'code': code,
-//                       'paymentTerms': payment,
-//                       'dataId': dataId
-//                     }).then((value) {
-//                   // _initDone = false;
-//                   // _getTypes();
-//                 });
-//               },
-//               child: Icon(
-//                 _search ? Icons.close : Icons.search,
-//                 size: 30,
-//                 color: AppConfig.backgroundColor,
-//               ),
-//             ),
-//             CommonWidgets.horizontalSpace(3),
-//           ],
-//         ),
-//         body: cartItems.isEmpty
-//             ? Center(
-//           child: Text('No items.'),
-//         )
-//             : Column(
+//           CommonWidgets.horizontalSpace(3),
+//         ],
+//       ),
+//       body: cartItems.isEmpty
+//           ? Center(
+//         child: Text('No items.'),
+//       )
+//           : SingleChildScrollView(
+//         child: Column(
 //           children: [
-//             Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: Row(
-//                 children: [
-//                   Text(
-//                     (name ?? '').toUpperCase(),
-//                     style: TextStyle(
-//                       fontSize: AppConfig.textCaption3Size,
-//                       color: AppConfig.buttonDeactiveColor,
-//                     ),
-//                   ),
-//                   const Spacer(),
-//                   AppState().vatState != 'Disable'
-//                       ? Row(
-//                     children: [
-//                       InkWell(
-//                         onTap: () {
-//                           setState(() {
-//                             _ifVat = 1;
-//                           });
-//                           total = 0;
-//                           tax = 0;
-//                           // _calculateTotal();
-//                         },
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                               border:
-//                               Border.all(color: Colors.black),
-//                               color: (_ifVat == 1)
-//                                   ? AppConfig.colorPrimary
-//                                   : AppConfig.backButtonColor,
-//                               borderRadius: const BorderRadius.only(
-//                                   topLeft: Radius.circular(3),
-//                                   bottomLeft: Radius.circular(3))),
-//                           width:
-//                           SizeConfig.blockSizeHorizontal * 13,
-//                           height: SizeConfig.blockSizeVertical * 3,
-//                           child: Center(
-//                             child: Text(
-//                               'VAT',
-//                               style: TextStyle(
-//                                 fontSize:
-//                                 AppConfig.textCaption3Size,
-//                                 color: (_ifVat == 1)
-//                                     ? AppConfig.backButtonColor
-//                                     : AppConfig.textBlack,
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                       InkWell(
-//                         onTap: () {
-//                           setState(() {
-//                             _ifVat = 0;
-//                           });
-//                           total = 0;
-//                           tax = 0;
-//                           // _calculateTotal();
-//                         },
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                               border:
-//                               Border.all(color: Colors.black),
-//                               color: (_ifVat == 0)
-//                                   ? AppConfig.colorPrimary
-//                                   : AppConfig.backButtonColor,
-//                               borderRadius: const BorderRadius.only(
-//                                   topRight: Radius.circular(3),
-//                                   bottomRight: Radius.circular(3))),
-//                           width:
-//                           SizeConfig.blockSizeHorizontal * 13,
-//                           height: SizeConfig.blockSizeVertical * 3,
-//                           child: Center(
-//                             child: Text(
-//                               'NO VAT',
-//                               style: TextStyle(
-//                                 fontSize:
-//                                 AppConfig.textCaption3Size,
-//                                 color: (_ifVat == 0)
-//                                     ? AppConfig.backButtonColor
-//                                     : AppConfig.textBlack,
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   )
-//                       : SizedBox.shrink()
-//                 ],
-//               ),
-//             ),
-//             SizedBox(
-//               height: SizeConfig.blockSizeVertical * 58,
-//               child: ListView.builder(
-//                 physics: BouncingScrollPhysics(),
-//                 shrinkWrap: true,
-//                 itemCount: cartItems.length,
-//                 itemBuilder: (context, index) {
-//                   print(cartItems[index].defaultValue);
-//                   List<String> unitNames = cartItems[index]
-//                       .units
-//                       .where((unit) => unit.name != null)
-//                       .map((unit) => unit.name!)
-//                       .toList();
-//                   if (unitNames.isEmpty) {
-//                     return SizedBox.shrink();
-//                   }
-//                   String? selectedUnitName =
-//                       cartItems[index].selectedUnitName ??
-//                           unitNames.first;
-//                   String quantity = qtys[index] ?? '1';
-//                   String rate =
-//                       amounts[index] ?? cartItems[index].price.toString();
-//                   double ttlamount =
-//                       double.parse(quantity) * double.parse(rate);
-//                   bool isUnitNameDuplicated(String unitName) {
-//                     // Get the product ID of the current item
-//                     var currentProductId = cartItems[index].id;
+//             ListView.builder(
+//               physics: BouncingScrollPhysics(),
+//               shrinkWrap: true,
+//               itemCount: cartItems.length,
+//               itemBuilder: (context, index) {
+//                 List<String> unitNames = cartItems[index]
+//                     .units
+//                     .where((unit) => unit.name != null)
+//                     .map((unit) => unit.name!)
+//                     .toList();
 //
-//                     // Check for duplicates only within the same product ID
-//                     for (var item in cartItems) {
-//                       if (item.id == currentProductId &&
-//                           item != cartItems[index] &&
-//                           item.selectedUnitName == unitName) {
-//                         return true;
-//                       }
-//                     }
-//                     return false;
-//                   }
+//                 if (unitNames.isEmpty) {
+//                   return SizedBox.shrink();
+//                 }
 //
-//                   return Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                         horizontal: 12.0, vertical: 2),
-//                     child: Card(
-//                       elevation: 1,
-//                       child: Container(
-//                         padding: const EdgeInsets.all(5),
-//                         width: SizeConfig.blockSizeHorizontal * 90,
-//                         decoration: BoxDecoration(
-//                           color: AppConfig.backgroundColor,
-//                           border: Border.all(
-//                             color: AppConfig.buttonDeactiveColor
-//                                 .withOpacity(0.5),
-//                           ),
-//                           borderRadius:
-//                           const BorderRadius.all(Radius.circular(10)),
+//                 // Ensure each item has its own selected unit name state
+//                 String? selectedUnitName =
+//                     cartItems[index].selectedUnitName ?? unitNames.first;
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(
+//                       horizontal: 12.0, vertical: 2),
+//                   child: Card(
+//                     elevation: 1,
+//                     child: Container(
+//                       padding: const EdgeInsets.all(5),
+//                       width: SizeConfig.blockSizeHorizontal * 90,
+//                       decoration: BoxDecoration(
+//                         color: AppConfig.backgroundColor,
+//                         border: Border.all(
+//                           color: AppConfig.buttonDeactiveColor
+//                               .withOpacity(0.5),
 //                         ),
-//                         child: Column(
-//                           children: [
-//                             Row(
-//                               crossAxisAlignment:
-//                               CrossAxisAlignment.start,
-//                               children: [
-//                                 SizedBox(
-//                                   width: 50,
-//                                   height: 60,
-//                                   child: ClipRRect(
-//                                     borderRadius:
-//                                     BorderRadius.circular(10),
-//                                     child: FadeInImage(
-//                                       image: NetworkImage(
-//                                         '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-//                                       ),
-//                                       placeholder: const AssetImage(
-//                                         'Assets/Images/no_image.jpg',
-//                                       ),
-//                                       imageErrorBuilder:
-//                                           (context, error, stackTrace) {
-//                                         return Image.asset(
-//                                           'Assets/Images/no_image.jpg',
-//                                           fit: BoxFit.fitWidth,
-//                                         );
-//                                       },
-//                                       fit: BoxFit.fitWidth,
+//                         borderRadius:
+//                         const BorderRadius.all(Radius.circular(10)),
+//                       ),
+//                       child: Column(
+//                         children: [
+//                           Row(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               SizedBox(
+//                                 width: 50,
+//                                 height: 60,
+//                                 child: ClipRRect(
+//                                   borderRadius: BorderRadius.circular(10),
+//                                   child: FadeInImage(
+//                                     image: NetworkImage(
+//                                       '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
 //                                     ),
+//                                     placeholder: const AssetImage(
+//                                       'Assets/Images/no_image.jpg',
+//                                     ),
+//                                     imageErrorBuilder:
+//                                         (context, error, stackTrace) {
+//                                       return Image.asset(
+//                                         'Assets/Images/no_image.jpg',
+//                                         fit: BoxFit.fitWidth,
+//                                       );
+//                                     },
+//                                     fit: BoxFit.fitWidth,
 //                                   ),
 //                                 ),
-//                                 CommonWidgets.horizontalSpace(1),
-//                                 Column(
-//                                   children: [
-//                                     // CommonWidgets.verticalSpace(1),
-//                                     Row(
-//                                       crossAxisAlignment:
-//                                       CrossAxisAlignment.start,
-//                                       children: [
-//                                         // CommonWidgets.horizontalSpace(1),
-//                                         SizedBox(
-//                                           width: 245.w,
-//                                           child: Row(
-//                                             children: [
-//                                               Text(
-//                                                 '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()} | ${cartItems[index].defaultValue}',
-//                                                 style: TextStyle(
-//                                                   fontSize: AppConfig
-//                                                       .textCaption3Size,
-//                                                 ),
-//                                               ),
-//                                             ],
+//                               ),
+//                               CommonWidgets.horizontalSpace(1),
+//                               Column(
+//                                 children: [
+//                                   CommonWidgets.verticalSpace(1),
+//                                   Row(
+//                                     crossAxisAlignment:
+//                                     CrossAxisAlignment.start,
+//                                     children: [
+//                                       CommonWidgets.horizontalSpace(1),
+//                                       SizedBox(
+//                                         width: SizeConfig
+//                                             .blockSizeHorizontal *
+//                                             70,
+//                                         child: Text(
+//                                           '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
+//                                           style: TextStyle(
+//                                             fontSize: AppConfig
+//                                                 .textCaption3Size,
 //                                           ),
 //                                         ),
-//                                       ],
-//                                     ),
-//                                   ],
-//                                 ),
-//                                 CircleAvatar(
-//                                   backgroundColor:
-//                                   Colors.grey.withOpacity(0.2),
-//                                   radius: 10,
-//                                   child: GestureDetector(
-//                                     onTap: () async {
-//                                       removeFromCart(index);
-//                                       print(dataId);
-//                                     },
-//                                     child: const Icon(
-//                                       Icons.close,
-//                                       size: 15,
-//                                       color: Colors.red,
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                             Row(
-//                               children: [
-//                                 SizedBox(
-//                                   width: 45.w,
-//                                   height: 20.h,
-//                                   child: DropdownButtonHideUnderline(
-//                                     child: DropdownButton<ProductType>(
-//                                       alignment: Alignment.center,
-//                                       isExpanded: true,
-//                                       style: TextStyle(
-//                                         fontSize: 10.sp,
-//                                         color: AppConfig.colorPrimary,
-//                                         fontWeight: FontWeight.bold,
 //                                       ),
-//                                       hint: const Center(
-//                                           child: Text('Select')),
-//                                       value:
-//                                       selectedProductTypes[index] ??
-//                                           (productTypes.isNotEmpty
-//                                               ? productTypes.first
-//                                               : null),
-//                                       onChanged: (ProductType? newValue) {
-//                                         setState(() {
-//                                           selectedProductTypes[index] =
-//                                               newValue;
-//                                           saveToSharedPreferences(
-//                                               'productTypereturn$index',
-//                                               newValue!.name);
-//                                         });
-//                                       },
-//                                       items: productTypes
-//                                           .map((ProductType productType) {
-//                                         return DropdownMenuItem<
-//                                             ProductType>(
-//                                           value: productType,
-//                                           child: Center(
-//                                               child: Text(productType
-//                                                   .name)), // Center align the item text
-//                                         );
-//                                       }).toList(),
-//                                       icon: SizedBox.shrink(),
-//                                     ),
+//                                     ],
+//                                   ),
+//                                 ],
+//                               ),
+//                               CircleAvatar(
+//                                 backgroundColor:
+//                                 Colors.grey.withOpacity(0.2),
+//                                 radius: 10,
+//                                 child: GestureDetector(
+//                                   onTap: () async {
+//                                     removeFromCart(index);
+//                                   },
+//                                   child: const Icon(
+//                                     Icons.close,
+//                                     size: 15,
+//                                     color: Colors.red,
 //                                   ),
 //                                 ),
-//                                 Text(' | '),
-//                                 Flexible(
-//                                   child: DropdownButtonHideUnderline(
-//                                     child: DropdownButton<String>(
-//                                       isDense: true,
-//                                       alignment: Alignment.center,
-//                                       isExpanded: false,
-//                                       value: selectedUnitName,
-//                                       items: unitNames
-//                                           .map<DropdownMenuItem<String>>(
-//                                               (String value) {
-//                                             bool isDuplicated =
-//                                             isUnitNameDuplicated(value);
-//                                             return DropdownMenuItem<String>(
-//                                               value: value,
-//                                               child: Center(
-//                                                 child: Text(
-//                                                   value,
-//                                                   style: TextStyle(
-//                                                     fontSize: 10.sp,
-//                                                     color: isDuplicated
-//                                                         ? Colors.red
-//                                                         : AppConfig
-//                                                         .colorPrimary,
-//                                                     fontWeight:
-//                                                     FontWeight.bold,
-//                                                   ),
+//                               ),
+//                             ],
+//                           ),
+//                           Row(
+//                             children: [
+//                               Flexible(
+//                                 child: DropdownButtonHideUnderline(
+//                                   child: DropdownButton<String>(
+//                                     isDense: true,
+//                                     isExpanded: false,
+//                                     alignment: Alignment.center,
+//                                     value: selectedUnitName,
+//                                     items: unitNames
+//                                         .map<DropdownMenuItem<String>>(
+//                                             (String value) {
+//                                           return DropdownMenuItem<String>(
+//                                             value: value,
+//                                             child: Center(
+//                                               child: Text(
+//                                                 value,
+//                                                 style: TextStyle(
+//                                                   fontSize: 12,
+//                                                   color:
+//                                                   AppConfig.colorPrimary,
+//                                                   fontWeight: FontWeight.bold,
 //                                                 ),
 //                                               ),
-//                                             );
-//                                           }).toList(),
-//                                       onChanged: (String? newValue) {
-//                                         setState(() {
-//                                           cartItems[index]
-//                                               .selectedUnitName =
-//                                               newValue;
-//
-//                                           // Find the selected unit and update the rate
-//                                           for (var unit
-//                                           in cartItems[index].units) {
-//                                             if (unit.name == newValue) {
-//                                               amounts[index] =
-//                                                   unit.price.toString();
-//                                               saveToSharedPreferences(
-//                                                   'amountreturn$index',
-//                                                   amounts[index]);
-//                                               break;
-//                                             }
-//                                           }
-//                                           saveToSharedPreferences(
-//                                               'unitNamereturn$index',
-//                                               newValue);
-//                                         });
-//                                       },
-//                                       icon: SizedBox.shrink(),
-//                                     ),
+//                                             ),
+//                                           );
+//                                         }).toList(),
+//                                     onChanged: (String? newValue) {
+//                                       setState(() {
+//                                         cartItems[index]
+//                                             .selectedUnitName = newValue;
+//                                         saveToSharedPreferences(
+//                                             'unitNamereq$index',
+//                                             newValue);
+//                                       });
+//                                     },
+//                                     icon: SizedBox.shrink(),
 //                                   ),
 //                                 ),
-//                                 Text(' | '),
-//                                 GestureDetector(
+//                               ),
+//                               Text(' | '),
+//                               GestureDetector(
 //                                   onTap: () {
-//                                     // Determine the initial quantity based on item source
-//                                     String initialQty;
-//                                     if (dataId != null) {
-//                                       // Assuming dataId is the condition for fetchSalesReturnData
-//                                       initialQty = cartItems[index]
-//                                           .units[0]
-//                                           .stock
-//                                           ?.toString() ??
-//                                           '1';
-//                                     } else {
-//                                       initialQty = qtys[index] ?? '1';
-//                                     }
-//
 //                                     showDialog(
-//                                       context: context,
-//                                       builder: (context) {
-//                                         // Use initial quantity as the default text in TextField
-//                                         TextEditingController
-//                                         qtyController =
-//                                         TextEditingController(
-//                                             text: initialQty);
-//
-//                                         return AlertDialog(
-//                                           title: Text('Quantity'),
-//                                           content: TextField(
-//                                             controller: qtyController,
-//                                             onChanged: (value) {
-//                                               setState(() {
-//                                                 qtys[index] = value;
-//                                                 saveToSharedPreferences(
-//                                                     'qtyreturn$index',
-//                                                     value);
-//                                               });
-//                                             },
-//                                             keyboardType:
-//                                             TextInputType.number,
-//                                           ),
-//                                           actions: <Widget>[
-//                                             MaterialButton(
-//                                               color:
-//                                               AppConfig.colorPrimary,
-//                                               textColor: Colors.white,
-//                                               child: Text('OK'),
-//                                               onPressed: () {
+//                                         context: context,
+//                                         builder: (context) {
+//                                           return AlertDialog(
+//                                             title: const Text('Quantity'),
+//                                             content: TextField(
+//                                               controller:
+//                                               TextEditingController(
+//                                                 text: qtys[index] ?? '',
+//                                               ),
+//                                               onChanged: (value) {
 //                                                 setState(() {
-//                                                   qtys[index] = qtyController
-//                                                       .text; // Update qtys with new value
+//                                                   qtys[index] = value;
+//                                                   saveToSharedPreferences(
+//                                                       'qtyreq$index',
+//                                                       value);
 //                                                 });
-//                                                 Navigator.pop(context);
 //                                               },
+//                                               keyboardType:
+//                                               TextInputType.number,
+//                                               // controller: _discountData,
 //                                             ),
-//                                           ],
-//                                         );
-//                                       },
-//                                     );
+//                                             actions: <Widget>[
+//                                               MaterialButton(
+//                                                 color: AppConfig
+//                                                     .colorPrimary,
+//                                                 textColor: Colors.white,
+//                                                 child: const Text('OK'),
+//                                                 onPressed: () {
+//                                                   quantity =
+//                                                       qtysctrl.text;
+//                                                   Navigator.pop(context);
+//                                                 },
+//                                               ),
+//                                             ],
+//                                           );
+//                                         });
 //                                   },
 //                                   child: Row(
 //                                     children: [
 //                                       Text('Qty: '),
 //                                       Text(
-//                                         qtys[index] ??
-//                                             '1', // Display the quantity here
+//                                         '${qtys[index] ?? '1'}',
 //                                         style: TextStyle(
-//                                           color: AppConfig.colorPrimary,
-//                                           fontWeight: FontWeight.bold,
-//                                         ),
+//                                             color: AppConfig.colorPrimary,
+//                                             fontWeight: FontWeight.bold),
 //                                       ),
 //                                     ],
-//                                   ),
-//                                 ),
-//                                 Text(' | '),
-//                                 GestureDetector(
-//                                     onTap: () {
-//                                       showDialog(
-//                                           context: context,
-//                                           builder: (context) {
-//                                             return AlertDialog(
-//                                               title: const Text('Amount'),
-//                                               content: TextField(
-//                                                 controller:
-//                                                 TextEditingController(
-//                                                   text:
-//                                                   '${amounts[index] ?? cartItems[index].price}',
-//                                                 ),
-//                                                 onChanged: (value) {
-//                                                   setState(() {
-//                                                     amounts[index] =
-//                                                         value;
-//                                                     saveToSharedPreferences(
-//                                                         'amountreturn$index',
-//                                                         value);
-//                                                   });
-//                                                 },
-//                                                 keyboardType:
-//                                                 TextInputType.number,
-//                                                 // controller: _discountData,
-//                                               ),
-//                                               actions: <Widget>[
-//                                                 MaterialButton(
-//                                                   color: AppConfig
-//                                                       .colorPrimary,
-//                                                   textColor: Colors.white,
-//                                                   child: const Text('OK'),
-//                                                   onPressed: () {
-//                                                     amount =
-//                                                         amountctrl.text;
-//                                                     Navigator.pop(
-//                                                         context);
-//                                                   },
-//                                                 ),
-//                                               ],
-//                                             );
-//                                           });
-//                                     },
-//                                     child: Row(
-//                                       children: [
-//                                         Text('Rate: '),
-//                                         Text(
-//                                           '${amounts[index] ?? cartItems[index].price}',
-//                                           style: TextStyle(
-//                                               color:
-//                                               AppConfig.colorPrimary,
-//                                               fontWeight:
-//                                               FontWeight.bold),
-//                                         ),
-//                                       ],
-//                                     )),
-//                                 Text(' | '),
-//                                 Text(
-//                                   'Amt: ${ttlamount}',
-//                                   style: TextStyle(color: Colors.grey),
-//                                 )
-//                               ],
-//                             ),
-//                           ],
-//                         ),
+//                                   )),
+//                             ],
+//                           ),
+//                         ],
 //                       ),
 //                     ),
-//                   );
-//                 },
-//               ),
-//             ),
-//             Padding(
-//               padding: const EdgeInsets.only(
-//                 right: 18.0,
-//               ),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.end,
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       if (dataId != null &&
-//                           cartItems[0].defaultValue ==
-//                               1) // Conditional check
-//                         Column(
-//                           crossAxisAlignment: CrossAxisAlignment.end,
-//                           children: [
-//                             SizedBox(width: 5),
-//                             DropdownButton<String>(
-//                               hint: Text('Reason'),
-//                               value: _selectedReason,
-//                               onChanged: (String? newValue) {
-//                                 setState(() {
-//                                   _selectedReason = newValue;
-//                                 });
-//                               },
-//                               items: _reasonList
-//                                   .map<DropdownMenuItem<String>>(
-//                                       (String value) {
-//                                     return DropdownMenuItem<String>(
-//                                       value: value,
-//                                       child: Text(value),
-//                                     );
-//                                   }).toList(),
-//                             ),
-//                           ],
-//                         ),
-//                       if (dataId == null ||
-//                           cartItems[0].defaultValue !=
-//                               0) // Optionally, you can hide it when conditions aren't met.
-//                         SizedBox
-//                             .shrink(), // Empty widget to keep the layout clean when dropdown is hidden
-//                     ],
 //                   ),
-//                   SizedBox(height: 10),
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       Text(
-//                         "Remarks",
-//                         style: TextStyle(
-//                           fontSize: AppConfig.textCaption3Size,
-//                         ),
-//                       ),
-//                       SizedBox(
-//                         width: 2,
-//                       ),
-//                       InkWell(
-//                         onTap: () {
-//                           showDialog(
-//                             context: context,
-//                             builder: (context) {
-//                               return AlertDialog(
-//                                 title: const Text('Remarks'),
-//                                 content: TextField(
-//                                   controller: _remarksController,
-//                                   onChanged: (value) {
-//                                     setState(() {
-//                                       _remarksText = value;
-//                                     });
-//                                   },
-//                                   keyboardType: TextInputType.text,
-//                                   decoration: const InputDecoration(
-//                                     hintText: "Enter your remarks",
-//                                   ),
-//                                 ),
-//                                 actions: <Widget>[
-//                                   MaterialButton(
-//                                     color: AppConfig.colorPrimary,
-//                                     textColor: Colors.white,
-//                                     child: const Text('OK'),
-//                                     onPressed: () {
-//                                       setState(() {
-//                                         _remarksText =
-//                                             _remarksController.text;
-//                                       });
-//                                       Navigator.pop(context);
-//                                     },
-//                                   ),
-//                                 ],
-//                               );
-//                             },
-//                           );
-//                         },
-//                         child: Container(
-//                           width: MediaQuery.of(context).size.width * 0.67,
-//                           // padding: EdgeInsets.symmetric(
-//                           //     horizontal: 10, vertical: 3),
-//                           decoration: BoxDecoration(
-//                             border: Border.all(
-//                                 color: AppConfig.buttonDeactiveColor),
-//                             borderRadius: const BorderRadius.all(
-//                                 Radius.circular(5)),
-//                           ),
-//                           child: Center(
-//                             child: Text(
-//                               _remarksText,
-//                               style: TextStyle(
-//                                 color: Colors.black,
-//                                 // fontWeight: FontWeight.bold,
-//                               ),
-//                               maxLines: 1,
-//                               overflow: TextOverflow.ellipsis,
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(
-//                     height: 10,
-//                   ),
-//                   AppState().discountState == 'Enable'
-//                       ? Row(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       Text(
-//                         'Discount ',
-//                         style: TextStyle(
-//                           fontSize: AppConfig.textCaption3Size,
-//                         ),
-//                       ),
-//                       InkWell(
-//                         onTap: () => setState(() {
-//                           _isPercentage = !_isPercentage;
-//                         }),
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                               border:
-//                               Border.all(color: Colors.black),
-//                               color: (!_isPercentage)
-//                                   ? AppConfig.colorPrimary
-//                                   : AppConfig.backButtonColor,
-//                               borderRadius: const BorderRadius.only(
-//                                   topLeft: Radius.circular(3),
-//                                   bottomLeft: Radius.circular(3))),
-//                           width:
-//                           SizeConfig.blockSizeHorizontal * 24,
-//                           height: SizeConfig.blockSizeVertical * 3,
-//                           child: Center(
-//                             child: Text(
-//                               'AMOUNT',
-//                               style: TextStyle(
-//                                 fontSize:
-//                                 AppConfig.textCaption3Size,
-//                                 color: (!_isPercentage)
-//                                     ? AppConfig.backButtonColor
-//                                     : AppConfig.textBlack,
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                       InkWell(
-//                         onTap: () => setState(() {
-//                           _isPercentage = !_isPercentage;
-//                         }),
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                               border:
-//                               Border.all(color: Colors.black),
-//                               color: (_isPercentage)
-//                                   ? AppConfig.colorPrimary
-//                                   : AppConfig.backButtonColor,
-//                               borderRadius: const BorderRadius.only(
-//                                   topRight: Radius.circular(3),
-//                                   bottomRight: Radius.circular(3))),
-//                           width:
-//                           SizeConfig.blockSizeHorizontal * 24,
-//                           height: SizeConfig.blockSizeVertical * 3,
-//                           child: Center(
-//                               child: Text(
-//                                 'PERCENTAGE',
-//                                 style: TextStyle(
-//                                   fontSize: AppConfig.textCaption3Size,
-//                                   color: (_isPercentage)
-//                                       ? AppConfig.backButtonColor
-//                                       : AppConfig.textBlack,
-//                                 ),
-//                               )),
-//                         ),
-//                       ),
-//                       CommonWidgets.horizontalSpace(2),
-//                       InkWell(
-//                         onTap: () {
-//                           showDialog(
-//                               context: context,
-//                               builder: (context) {
-//                                 return AlertDialog(
-//                                   title: const Text('Discount'),
-//                                   content: TextField(
-//                                     keyboardType:
-//                                     TextInputType.number,
-//                                     controller: _discountData,
-//                                     decoration:
-//                                     const InputDecoration(
-//                                         hintText: "Discount"),
-//                                   ),
-//                                   actions: <Widget>[
-//                                     MaterialButton(
-//                                       color: AppConfig.colorPrimary,
-//                                       textColor: Colors.white,
-//                                       child: const Text('OK'),
-//                                       onPressed: () {
-//                                         Navigator.pop(context);
-//                                       },
-//                                     ),
-//                                   ],
-//                                 );
-//                               });
-//                         },
-//                         child: Container(
-//                             width:
-//                             SizeConfig.blockSizeHorizontal * 17,
-//                             height:
-//                             SizeConfig.blockSizeVertical * 3,
-//                             decoration: BoxDecoration(
-//                                 border: Border.all(
-//                                     color: AppConfig
-//                                         .buttonDeactiveColor),
-//                                 borderRadius:
-//                                 const BorderRadius.all(
-//                                     Radius.circular(5))),
-//                             child: Center(
-//                               child: Text(_discountData.text.isEmpty
-//                                   ? ''
-//                                   : _discountData.text),
-//                             )),
-//                       ),
-//                     ],
-//                   )
-//                       : SizedBox.shrink(),
-//                   Text('Total: $total'),
-//                   Text('Tax: $tax'),
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       Text('Round off: '),
-//                       InkWell(
-//                         onTap: () {
-//                           showDialog(
-//                               context: context,
-//                               builder: (context) {
-//                                 return AlertDialog(
-//                                   title: const Text('Round off'),
-//                                   content: TextField(
-//                                     keyboardType: TextInputType.number,
-//                                     controller: _roundoff,
-//                                     decoration: const InputDecoration(
-//                                         hintText: "Round off"),
-//                                   ),
-//                                   actions: <Widget>[
-//                                     MaterialButton(
-//                                       color: AppConfig.colorPrimary,
-//                                       textColor: Colors.white,
-//                                       child: const Text('OK'),
-//                                       onPressed: () {
-//                                         Navigator.pop(context);
-//                                       },
-//                                     ),
-//                                   ],
-//                                 );
-//                               });
-//                         },
-//                         child: Container(
-//                             width: SizeConfig.blockSizeHorizontal * 17,
-//                             height: SizeConfig.blockSizeVertical * 3,
-//                             decoration: BoxDecoration(
-//                                 border: Border.all(
-//                                     color: AppConfig.buttonDeactiveColor),
-//                                 borderRadius: const BorderRadius.all(
-//                                     Radius.circular(5))),
-//                             child: Center(
-//                               child: Text(''
-//                                   '${roundoff == '' ? roundOffValue.toStringAsFixed(2) : roundoff}'),
-//                             )),
-//                       ),
-//                     ],
-//                   ),
-//                   Text('Grand Total: $roundedGrandTotal'),
-//                 ],
-//               ),
+//                 );
+//               },
 //             ),
 //           ],
 //         ),
@@ -1405,8 +524,8 @@
 //   }
 //
 //   Future<void> fetchProductTypes() async {
-//     final response = await http.get(Uri.parse(
-//         '${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}'));
+//     final response = await http
+//         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
 //
 //     if (response.statusCode == 200) {
 //       final data = json.decode(response.body);
@@ -1415,11 +534,9 @@
 //       for (var item in data['data']) {
 //         loadedProductTypes.add(ProductType.fromJson(item));
 //       }
-//       // print(_hasData);
+//
 //       setState(() {
 //         productTypes = loadedProductTypes;
-//         initializeValues();
-//         _hasData = data['data'].isNotEmpty;
 //       });
 //     } else {
 //       throw Exception('Failed to load product types');

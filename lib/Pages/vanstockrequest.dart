@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/selectProducts.dart';
 import 'package:mobizapp/Pages/newvanstockrequests.dart';
 import 'package:shimmer/shimmer.dart';
-
+import 'package:http/http.dart'as http;
 import '../Components/commonwidgets.dart';
 import '../Models/appstate.dart';
 import '../Models/requestmodelclass.dart';
@@ -24,14 +24,37 @@ class VanStockRequestsScreen extends StatefulWidget {
 class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
   bool _initDone = false;
   bool _nodata = false;
-  RequestModel request = RequestModel();
+  // RequestModel request = RequestModel();
+  List <VanRequest> request= [];
   List<Map<String, dynamic>> stocks = [];
   final TextEditingController _searchData = TextEditingController();
   bool _search = false;
+  bool _isButtonDisabled = false;
+  bool _isLoading = false;
+  int _page = 1;
+  bool _hasMore = true;
+  late ScrollController _scrollController;
   @override
   void initState() {
     super.initState();
     _getRequests();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+  }
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent &&
+        !_isLoading &&
+        _hasMore) {
+      _getRequests();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,12 +133,28 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
                   ? SizedBox(
                       height: SizeConfig.blockSizeVertical * 85,
                       child: ListView.separated(
+                        controller: _scrollController,
                         separatorBuilder: (BuildContext context, int index) =>
                             CommonWidgets.verticalSpace(1),
-                        itemCount: request.data!.length,
+                        itemCount: request.length+1,
                         shrinkWrap: true,
-                        itemBuilder: (context, index) =>
-                            _requestsTab(index, request.data![index]),
+                        itemBuilder: (context, index) {
+                          if (index < request.length) {
+                            return _requestsTab(index, request[index]);
+                          } else {
+                            if (_isLoading) {
+                              return Center(
+                                child: Text("Loading...",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic),),
+                              );
+                            } else if (!_hasMore) {
+                              return Center(
+                                child: Text("That's all",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic,fontWeight: FontWeight.w700),),
+                              );
+                            } else {
+                              return const SizedBox.shrink();
+                            }
+                          }
+                        },
                       ),
                     )
                   : (_nodata && _initDone)
@@ -163,7 +202,7 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
     );
   }
 
-  Widget _requestsTab(int index, Data data) {
+  Widget _requestsTab(int index, VanRequest data) {
     return Card(
       elevation: 3,
       child: Container(
@@ -325,10 +364,15 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
                                     borderRadius: BorderRadius.circular(20.0),
                                   ),
                                 ),
-                                backgroundColor: const MaterialStatePropertyAll(
-                                    AppConfig.colorPrimary),
+                                backgroundColor: WidgetStateProperty.all(
+                                  _isButtonDisabled
+                                      ? Colors.grey // Disabled button color
+                                      : AppConfig.colorPrimary, // Original button color
+                                ),
                               ),
-                              onPressed: () {
+                              onPressed:  _isButtonDisabled
+                                  ? null
+                                  : () {
                                 _conformrequest(data.id!);
                               },
                               child: Text(
@@ -417,30 +461,68 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
   }
 
   Future<void> _getRequests() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     RestDatasource api = RestDatasource();
     stocks = await StockHistory.getStockHistory();
-    dynamic resJson = await api.getDetails(
-        '/api/vanrequest.index?store_id=${AppState().storeId}&van_id=${AppState().vanId}',
-        AppState().token);
+    final String apiUrl =
+        "${RestDatasource().BASE_URL}/api/vanrequest.index.api?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$_page";
 
-    if (resJson['data'] != null) {
-      request = RequestModel.fromJson(resJson);
-      if (mounted) {
-        setState(
-          () {
+    // if (resJson['data'] != null) {
+    //   final newRequests = VanRequestModel.fromJson(resJson).data.vanRequests;
+    //   if (mounted && newRequests.isNotEmpty) {
+    //     setState(
+    //       () {
+    //         request.addAll(newRequests);
+    //         _initDone = true;
+    //         _page++;
+    //       },
+    //     );
+    //   }
+    // } else {
+    //   setState(() {
+    //     _initDone = true;
+    //     _nodata = true;
+    //     _hasMore = false;
+    //   });
+    // }
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        print(response.request);
+        final jsonData = json.decode(response.body);
+        final newRequests = VanRequestModel.fromJson(jsonData).data.vanRequests;
+
+        setState(() {
+          if (newRequests.isNotEmpty) {
+            request.addAll(newRequests);
             _initDone = true;
-          },
-        );
+            _page++;
+          } else {
+            _initDone = true;
+            _hasMore = false;
+          }
+        });
+      } else {
+        print("Error: Failed to load data (${response.statusCode})");
       }
-    } else {
+    } catch (e) {
+      print("Error: $e");
+    } finally {
       setState(() {
-        _initDone = true;
-        _nodata = true;
+        _isLoading = false;
       });
     }
   }
 
   Future<void> _conformrequest(int id) async {
+    setState(() {
+      _isButtonDisabled = true; // Disable button
+    });
+
     RestDatasource api = RestDatasource();
 
     dynamic bodyJson = {
@@ -460,6 +542,287 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
         });
         _getRequests();
       }
+    }finally {
+      // Optionally re-enable the button if required
+      setState(() {
+        _isButtonDisabled = false; // Enable button if needed
+      });
     }
   }
 }
+
+class VanRequestModel {
+  final bool success;
+  final Data data;
+  final List<dynamic> messages;
+
+  VanRequestModel({
+    required this.success,
+    required this.data,
+    required this.messages,
+  });
+
+  factory VanRequestModel.fromJson(Map<String, dynamic> json) {
+    return VanRequestModel(
+      success: json['success'] ?? false,
+      data: json['data'] != null ? Data.fromJson(json['data']) : Data.empty(),
+      messages: json['messages'] ?? [],
+    );
+  }
+}
+
+class Data {
+  final int currentPage;
+  final List<VanRequest> vanRequests;
+  final String firstPageUrl;
+  final int from;
+  final int lastPage;
+  final String lastPageUrl;
+  final List<PageLink> links;
+  final String? nextPageUrl;
+  final int perPage;
+  final int to;
+  final int total;
+
+  Data({
+    required this.currentPage,
+    required this.vanRequests,
+    required this.firstPageUrl,
+    required this.from,
+    required this.lastPage,
+    required this.lastPageUrl,
+    required this.links,
+    required this.nextPageUrl,
+    required this.perPage,
+    required this.to,
+    required this.total,
+  });
+
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      currentPage: json['current_page'] ?? 0,
+      vanRequests: (json['data'] as List?)
+          ?.map((e) => VanRequest.fromJson(e))
+          .toList() ??
+          [],
+      firstPageUrl: json['first_page_url'] ?? '',
+      from: json['from'] ?? 0,
+      lastPage: json['last_page'] ?? 0,
+      lastPageUrl: json['last_page_url'] ?? '',
+      links: (json['links'] as List?)
+          ?.map((e) => PageLink.fromJson(e))
+          .toList() ??
+          [],
+      nextPageUrl: json['next_page_url'],
+      perPage: json['per_page'] ?? 0,
+      to: json['to'] ?? 0,
+      total: json['total'] ?? 0,
+    );
+  }
+
+  factory Data.empty() {
+    return Data(
+      currentPage: 0,
+      vanRequests: [],
+      firstPageUrl: '',
+      from: 0,
+      lastPage: 0,
+      lastPageUrl: '',
+      links: [],
+      nextPageUrl: null,
+      perPage: 0,
+      to: 0,
+      total: 0,
+    );
+  }
+}
+
+class VanRequest {
+  int? id;
+  int? vanId;
+  int? userId;
+  String? inDate;
+  String? inTime;
+  String? invoiceNo;
+  String? approvedDate;
+  String? approvedTime;
+  int? approvedUser;
+  int? storeId;
+  int? status;
+  String? createdAt;
+  String? updatedAt;
+  String? deletedAt;
+  List<VanDetail>? detail;
+
+  VanRequest({
+    this.id,
+    this.vanId,
+    this.userId,
+    this.inDate,
+    this.inTime,
+    this.invoiceNo,
+    this.approvedDate,
+    this.approvedTime,
+    this.approvedUser,
+    this.storeId,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.detail
+  });
+
+  VanRequest.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    vanId = json['van_id'];
+    userId = json['user_id'];
+    inDate = json['in_date'];
+    inTime = json['in_time'];
+    invoiceNo = json['invoice_no'];
+    approvedDate = json['approved_date'];
+    approvedTime = json['approved_time'];
+    approvedUser = json['approved_user'];
+    storeId = json['store_id'];
+    status = json['status'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+    deletedAt = json['deleted_at'];
+    if (json['detail'] != null) {
+      detail = <VanDetail>[];
+      json['detail'].forEach((v) {
+        detail!.add(new VanDetail.fromJson(v));
+      });
+    }
+  }
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['van_id'] = this.vanId;
+    data['user_id'] = this.userId;
+    data['in_date'] = this.inDate;
+    data['in_time'] = this.inTime;
+    data['invoice_no'] = this.invoiceNo;
+    data['approved_date'] = this.approvedDate;
+    data['approved_time'] = this.approvedTime;
+    data['approved_user'] = this.approvedUser;
+    data['store_id'] = this.storeId;
+    data['status'] = this.status;
+    data['created_at'] = this.createdAt;
+    data['updated_at'] = this.updatedAt;
+    data['deleted_at'] = this.deletedAt;
+    if (this.detail != null) {
+      data['detail'] = this.detail!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class VanDetail {
+  int? id;
+  int? vanRequestId;
+  int? itemId;
+  String? unit;
+  String? product_type;
+  String? name;
+  double? quantity;
+  int? editedQuantity;
+  String? approvedQuantity;
+  int? convertQty;
+  int? vanId;
+  int? userId;
+  int? storeId;
+  int? status;
+  String? createdAt;
+  String? updatedAt;
+  String? deletedAt;
+  int? productId;
+  String? productName;
+  String? productCode;
+
+  VanDetail({
+    this.id,
+    this.vanRequestId,
+    this.product_type,
+    this.name,
+    this.itemId,
+    this.unit,
+    this.quantity,
+    this.editedQuantity,
+    this.approvedQuantity,
+    this.convertQty,
+    this.vanId,
+    this.userId,
+    this.storeId,
+    this.status,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.productId,
+    this.productCode,
+    this.productName
+  });
+
+  VanDetail.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    vanRequestId = json['van_request_id'];
+    product_type = json['product_type'];
+    name = json['name'];
+    itemId = json['item_id'];
+    unit = json['unit'];
+    quantity = (json['quantity'] as num?)?.toDouble();
+    approvedQuantity = json['approved_quantity'];
+    convertQty = json['convert_qty'];
+    vanId = json['van_id'];
+    userId = json['user_id'];
+    storeId = json['store_id'];
+    status = json['status'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+    deletedAt = json['deleted_at'];
+    productId = json['product_id'];
+    productName = json['product_name'];
+    productCode = json['product_code'];
+  }
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['van_request_id'] = this.vanRequestId;
+    data['item_id'] = this.itemId;
+    data['unit'] = this.unit;
+    data['quantity'] = this.quantity;
+    data['approved_quantity'] = this.approvedQuantity;
+    data['convert_qty'] = this.convertQty;
+    data['van_id'] = this.vanId;
+    data['user_id'] = this.userId;
+    data['store_id'] = this.storeId;
+    data['status'] = this.status;
+    data['created_at'] = this.createdAt;
+    data['updated_at'] = this.updatedAt;
+    data['deleted_at'] = this.deletedAt;
+    data['product_id'] = this.productId;
+    data['product_name'] = this.productName;
+    data['product_code'] = this.productCode;
+    return data;
+  }
+}
+
+class PageLink {
+  final String? url;
+  final String label;
+  final bool active;
+
+  PageLink({
+    required this.url,
+    required this.label,
+    required this.active,
+  });
+
+  factory PageLink.fromJson(Map<String, dynamic> json) {
+    return PageLink(
+      url: json['url'],
+      label: json['label'] ?? '',
+      active: json['active'] ?? false,
+    );
+  }
+}
+

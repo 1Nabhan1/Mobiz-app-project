@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Models/appstate.dart';
+import 'package:mobizapp/Pages/Stock/StockName_RequestScreen.dart';
 import 'package:mobizapp/Pages/saleinvoices.dart';
 import 'package:mobizapp/Pages/salesselectproducts.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
@@ -16,6 +17,7 @@ import '../../confg/sizeconfig.dart';
 import 'package:http/http.dart' as http;
 
 import '../homepage.dart';
+import 'Stock_SelectProducts.dart';
 
 class Stock_Name extends StatefulWidget {
   static const routeName = "/StockName";
@@ -266,6 +268,7 @@ class _Stock_NameState extends State<Stock_Name> {
       final headers = {"Content-Type": "application/json"};
 
       final body = jsonEncode({
+        'id': dataId == null ? 0 : dataId,
         "van_id": AppState().vanId,
         "store_id": AppState().storeId,
         "user_id": AppState().userId,
@@ -278,20 +281,40 @@ class _Stock_NameState extends State<Stock_Name> {
       });
 
       final response = await http.post(url, headers: headers, body: body);
-
       if (response.statusCode == 200) {
-        print(response.body);
+        print("PostData${response.body}");
         print(body);
-        // print('ggggggggggggggggggggggggggggggggg');
+
         if (mounted) {
-          CommonWidgets.showDialogueBox(
-              context: context, title: "Alert", msg: "Added Successfully");
-          // StockHistory.clearAllStockHistory().then(
-          //         (value) =>
-          Navigator.of(context).pushNamed(HomeScreen.routeName);
-          clearCart();
+          // Show the dialog box
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Alert"),
+                content: Text("Added Successfully"),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      // Close the dialog
+                      Navigator.of(context).pop();
+
+                      // Navigate to StockName_RequestScreen
+                      Navigator.pushNamedAndRemoveUntil(context, '/StockRequest', (route) => false);
+
+
+                      // Clear the cart
+                      clearCart();
+                    },
+                    child: Text("OK"),
+                  ),
+                ],
+              );
+            },
+          );
         }
-      } else {
+      }
+      else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Failed to save data')));
       }
@@ -403,7 +426,7 @@ class _Stock_NameState extends State<Stock_Name> {
             GestureDetector(
               onTap: () {
                 Navigator.pushReplacementNamed(
-                    context, SelectProductsScreenoff.routeName,
+                    context, Stock_SelectProducts.routeName,
                     arguments: {'customerId': id, 'name': name,'id':dataId}).then((value) {
                   // _initDone = false;
                   // _getTypes();
@@ -525,31 +548,31 @@ class _Stock_NameState extends State<Stock_Name> {
                 ),
               ),
 
-              if (dataId != null)
-                SizedBox(
-                  width: SizeConfig.blockSizeHorizontal * 30,
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(7.0),
-                        ),
-                      ),
-                      backgroundColor: WidgetStatePropertyAll(AppConfig.colorPrimary),
-                    ),
-                    onPressed: () {
-                      saveCompleteData();
-                    },
-                    child: Text(
-                      'COMPLETE',
-                      style: TextStyle(
-                        fontSize: AppConfig.textCaption3Size,
-                        color: AppConfig.backgroundColor,
-                        fontWeight: AppConfig.headLineWeight,
-                      ),
-                    ),
-                  ),
-                ),
+              // if (dataId != null)
+              //   SizedBox(
+              //     width: SizeConfig.blockSizeHorizontal * 30,
+              //     child: ElevatedButton(
+              //       style: ButtonStyle(
+              //         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+              //           RoundedRectangleBorder(
+              //             borderRadius: BorderRadius.circular(7.0),
+              //           ),
+              //         ),
+              //         backgroundColor: WidgetStatePropertyAll(AppConfig.colorPrimary),
+              //       ),
+              //       onPressed: () {
+              //         saveCompleteData();
+              //       },
+              //       child: Text(
+              //         'COMPLETE',
+              //         style: TextStyle(
+              //           fontSize: AppConfig.textCaption3Size,
+              //           color: AppConfig.backgroundColor,
+              //           fontWeight: AppConfig.headLineWeight,
+              //         ),
+              //       ),
+              //     ),
+              //   ),
             ],
           ),
         ),
@@ -560,100 +583,6 @@ class _Stock_NameState extends State<Stock_Name> {
                   ? Center(child: Text('No saved products'))
                   : Column(
                 children: [
-                  // AppState().vatState != 'Disable'
-                  // Padding(
-                  //   padding: const EdgeInsets.all(8.0),
-                  //   child: Row(
-                  //     children: [
-                  //       Text(
-                  //         (name ?? '').toUpperCase(),
-                  //         style: TextStyle(
-                  //           fontSize: AppConfig.textCaption3Size,
-                  //           color: AppConfig.buttonDeactiveColor,
-                  //         ),
-                  //       ),
-                  //       const Spacer(),
-                  //       AppState().vatState != 'Disable'
-                  //           ? Row(
-                  //               children: [
-                  //                 InkWell(
-                  //                   onTap: () {
-                  //                     setState(() {
-                  //                       _ifVat = 1;
-                  //                     });
-                  //                     total = 0;
-                  //                     tax = 0;
-                  //                     // _calculateTotal();
-                  //                   },
-                  //                   child: Container(
-                  //                     decoration: BoxDecoration(
-                  //                         border:
-                  //                             Border.all(color: Colors.black),
-                  //                         color: (_ifVat == 1)
-                  //                             ? AppConfig.colorPrimary
-                  //                             : AppConfig.backButtonColor,
-                  //                         borderRadius: const BorderRadius.only(
-                  //                             topLeft: Radius.circular(3),
-                  //                             bottomLeft: Radius.circular(3))),
-                  //                     width:
-                  //                         SizeConfig.blockSizeHorizontal * 13,
-                  //                     height: SizeConfig.blockSizeVertical * 3,
-                  //                     child: Center(
-                  //                       child: Text(
-                  //                         'VAT',
-                  //                         style: TextStyle(
-                  //                           fontSize:
-                  //                               AppConfig.textCaption3Size,
-                  //                           color: (_ifVat == 1)
-                  //                               ? AppConfig.backButtonColor
-                  //                               : AppConfig.textBlack,
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //                 InkWell(
-                  //                   onTap: () {
-                  //                     setState(() {
-                  //                       _ifVat = 0;
-                  //                     });
-                  //                     total = 0;
-                  //                     tax = 0;
-                  //                     // _calculateTotal();
-                  //                   },
-                  //                   child: Container(
-                  //                     decoration: BoxDecoration(
-                  //                         border:
-                  //                             Border.all(color: Colors.black),
-                  //                         color: (_ifVat == 0)
-                  //                             ? AppConfig.colorPrimary
-                  //                             : AppConfig.backButtonColor,
-                  //                         borderRadius: const BorderRadius.only(
-                  //                             topRight: Radius.circular(3),
-                  //                             bottomRight: Radius.circular(3))),
-                  //                     width:
-                  //                         SizeConfig.blockSizeHorizontal * 13,
-                  //                     height: SizeConfig.blockSizeVertical * 3,
-                  //                     child: Center(
-                  //                       child: Text(
-                  //                         'NO VAT',
-                  //                         style: TextStyle(
-                  //                           fontSize:
-                  //                               AppConfig.textCaption3Size,
-                  //                           color: (_ifVat == 0)
-                  //                               ? AppConfig.backButtonColor
-                  //                               : AppConfig.textBlack,
-                  //                         ),
-                  //                       ),
-                  //                     ),
-                  //                   ),
-                  //                 ),
-                  //               ],
-                  //             )
-                  //           : SizedBox.shrink()
-                  //     ],
-                  //   ),
-                  // ),
                   ListView.builder(
                     physics: BouncingScrollPhysics(),
                     scrollDirection: Axis.vertical,
@@ -780,299 +709,6 @@ class _Stock_NameState extends State<Stock_Name> {
                     },
                   ),
                 ],
-              ),
-              FutureBuilder<Offload>(
-                future: _Offload,
-                builder: (context, AsyncSnapshot<Offload> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    // Loading state
-                    return Shimmer.fromColors(
-                      baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      highlightColor: AppConfig.backButtonColor,
-                      child: Center(
-                        child: Column(
-                          children: [
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    // Error state
-                    return Center(
-                      child: Text('Error occurred: ${snapshot.error}'),
-                    );
-                  } else if (!snapshot.hasData || snapshot.data!.data.isEmpty) {
-                    // No data state
-                    return Center(
-                      child: Text(''),
-                    );
-                  } else {
-                    _loaded = true;
-                    // Data loaded successfully
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Return',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                          child: ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.data.length,
-                            itemBuilder: (context, index) {
-                              final salesReturnItem = snapshot.data!.data[index];
-                              return Container(
-                                width: SizeConfig.blockSizeHorizontal * 90,
-                                child: Card(
-                                  color: AppConfig.backgroundColor,
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(height: 8.0),
-                                        Row(
-                                          children: [
-                                            // SizedBox(
-                                            //   width: 50,
-                                            //   height: 60,
-                                            //   child: ClipRRect(
-                                            //     borderRadius:
-                                            //         BorderRadius.circular(10),
-                                            //     child: FadeInImage(
-                                            //       image: NetworkImage(
-                                            //         '${RestDatasource().Product_URL}/uploads/product/${salesReturnItem.product.first.proImage}',
-                                            //       ),
-                                            //       placeholder: AssetImage(
-                                            //         'Assets/Images/no_image.jpg',
-                                            //       ),
-                                            //       imageErrorBuilder: (context,
-                                            //           error, stackTrace) {
-                                            //         return Image.asset(
-                                            //           'Assets/Images/no_image.jpg',
-                                            //           fit: BoxFit.fitWidth,
-                                            //         );
-                                            //       },
-                                            //       fit: BoxFit.fitWidth,
-                                            //     ),
-                                            //   ),
-                                            // ),
-                                            // CommonWidgets.horizontalSpace(1),
-                                            Flexible(
-                                              child: Text(
-                                                '${salesReturnItem.product.first.code} | ${salesReturnItem.product.first.name}',
-                                                style: TextStyle(
-                                                    fontSize: AppConfig
-                                                        .textCaption3Size,
-                                                    fontWeight:
-                                                    FontWeight.bold
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 8.0),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name} | Qty: ${salesReturnItem.quantity} ',
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                },
-              ),
-              FutureBuilder<Offload>(
-                future: _Offloadchange,
-                builder: (context, AsyncSnapshot<Offload> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    // Loading state
-                    return Shimmer.fromColors(
-                      baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                      highlightColor: AppConfig.backButtonColor,
-                      child: Center(
-                        child: Column(
-                          children: [
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                            CommonWidgets.loadingContainers(
-                                height: SizeConfig.blockSizeVertical * 10,
-                                width: SizeConfig.blockSizeHorizontal * 90),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    // Error state
-                    return Center(
-                      child: Text('Error occurred: ${snapshot.error}'),
-                    );
-                  } else if (!snapshot.hasData || snapshot.data!.data.isEmpty) {
-                    // No data state
-                    return Center(
-                      child: Text(''),
-                    );
-                  } else {
-                    _loaded = true;
-                    // Data loaded successfully
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Change',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                          child: ListView.builder(
-                            scrollDirection: Axis.vertical,
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.data.length,
-                            itemBuilder: (context, index) {
-                              final salesReturnItem =
-                              snapshot.data!.data[index];
-                              // Add your logic here to build each item in the list
-                              return Container(
-                                width: SizeConfig.blockSizeHorizontal * 90,
-                                child: Card(
-                                  color: AppConfig.backgroundColor,
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(height: 8.0),
-                                        Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 50,
-                                              height: 60,
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                BorderRadius.circular(10),
-                                                child: FadeInImage(
-                                                  image: NetworkImage(
-                                                    '${RestDatasource().Product_URL}/uploads/product/${salesReturnItem.product.first.proImage}',
-                                                  ),
-                                                  placeholder: AssetImage(
-                                                    'Assets/Images/no_image.jpg',
-                                                  ),
-                                                  imageErrorBuilder: (context,
-                                                      error, stackTrace) {
-                                                    return Image.asset(
-                                                      'Assets/Images/no_image.jpg',
-                                                      fit: BoxFit.fitWidth,
-                                                    );
-                                                  },
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                            CommonWidgets.horizontalSpace(1),
-                                            Flexible(
-                                              child: Text(
-                                                '${salesReturnItem.product.first.code} | ${salesReturnItem.product.first.name}',
-                                                style: TextStyle(
-                                                  fontSize: 14.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 8.0),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '${salesReturnItem.returntype[0].name} | ${salesReturnItem.units[0].name} | Qty: ${salesReturnItem.quantity} ',
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                },
               ),
             ],
           ),

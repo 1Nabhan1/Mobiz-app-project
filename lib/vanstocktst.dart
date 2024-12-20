@@ -44,6 +44,8 @@ class _VanStocksoffState extends State<VanStocksoff> {
   int _ifVat = 1;
   String? name;
   bool returnDataIsNotEmpty = false;
+  bool _isButtonDisabled = false;
+
 
   String roundoff = '';
   @override
@@ -244,7 +246,12 @@ class _VanStocksoffState extends State<VanStocksoff> {
       id = params!['customerId'];
       name = params['name'];
     }
+
     Future<void> saveData() async {
+      setState(() {
+        _isButtonDisabled = true; // Disable the button immediately when pressed.
+      });
+
       List<int> productIds = savedProducts.map<int>((product) {
         return product['id'];
       }).toList();
@@ -255,7 +262,6 @@ class _VanStocksoffState extends State<VanStocksoff> {
         return double.parse(product['quantity'].toString());
       }).toList();
       List<int> unitIds = savedProducts.map<int>((product) {
-        // Assuming product['unit_id'] already contains the selected unit ID
         return int.parse(product['unit_id']);
       }).toList();
       final url =
@@ -270,29 +276,54 @@ class _VanStocksoffState extends State<VanStocksoff> {
         "quantity": quantity,
         "unit": unitIds,
         "goods_return_id": savedProducts.map((item) => 1).toList(),
-        // "return_type": savedProducts.map((item) => 1).toList(),
         "return_type": productTypeId,
       });
 
-      final response = await http.post(url, headers: headers, body: body);
+      try {
+        final response = await http.post(url, headers: headers, body: body);
 
-      if (response.statusCode == 200) {
-        print(response.body);
-        print(body);
-        // print('ggggggggggggggggggggggggggggggggg');
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-              context: context, title: "Alert", msg: "Added Successfully");
-          // StockHistory.clearAllStockHistory().then(
-          //         (value) =>
-          Navigator.of(context).pushNamed(HomeScreen.routeName);
-          clearCart();
+        if (response.statusCode == 200) {
+          print(response.body);
+          print(body);
+          if (mounted) {
+            // Show the dialog box
+            await showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Alert"),
+                  content: Text("Added Successfully"),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close the dialog
+                      },
+                      child: Text("OK"),
+                    ),
+                  ],
+                );
+              },
+            );
+            Navigator.of(context).pushNamed(HomeScreen.routeName);
+            clearCart();
+          }
         }
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save data')));
+        else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save data')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
+      } finally {
+        setState(() {
+          _isButtonDisabled = false; // Enable the button after the process completes.
+        });
       }
     }
+
 
     return WillPopScope(
       onWillPop: () async {
@@ -370,11 +401,16 @@ class _VanStocksoffState extends State<VanStocksoff> {
                   borderRadius: BorderRadius.circular(7.0),
                 ),
               ),
-              backgroundColor: (savedProducts.isNotEmpty || returnDataIsNotEmpty)
-                  ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                  : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+              backgroundColor: WidgetStateProperty.all(
+                _isButtonDisabled
+                    ? Colors.grey // Change to grey when pressed
+                    : (savedProducts.isNotEmpty || returnDataIsNotEmpty
+                    ? AppConfig.colorPrimary
+                    : AppConfig.buttonDeactiveColor),
+              ),
             ),
-            onPressed: (savedProducts.isNotEmpty || returnDataIsNotEmpty)
+            onPressed: (!_isButtonDisabled &&
+                (savedProducts.isNotEmpty || returnDataIsNotEmpty))
                 ? () async {
               setState(() {
                 _loaded == false ? null : saveData();
@@ -391,6 +427,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
               ),
             ),
           ),
+
         ),
         body: SingleChildScrollView(
           child: Column(
@@ -857,31 +894,31 @@ class _VanStocksoffState extends State<VanStocksoff> {
                                         SizedBox(height: 8.0),
                                         Row(
                                           children: [
-                                            SizedBox(
-                                              width: 50,
-                                              height: 60,
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                child: FadeInImage(
-                                                  image: NetworkImage(
-                                                    '${RestDatasource().Product_URL}/uploads/product/${salesReturnItem.product.first.proImage}',
-                                                  ),
-                                                  placeholder: AssetImage(
-                                                    'Assets/Images/no_image.jpg',
-                                                  ),
-                                                  imageErrorBuilder: (context,
-                                                      error, stackTrace) {
-                                                    return Image.asset(
-                                                      'Assets/Images/no_image.jpg',
-                                                      fit: BoxFit.fitWidth,
-                                                    );
-                                                  },
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                            CommonWidgets.horizontalSpace(1),
+                                            // SizedBox(
+                                            //   width: 50,
+                                            //   height: 60,
+                                            //   child: ClipRRect(
+                                            //     borderRadius:
+                                            //         BorderRadius.circular(10),
+                                            //     child: FadeInImage(
+                                            //       image: NetworkImage(
+                                            //         '${RestDatasource().Product_URL}/uploads/product/${salesReturnItem.product.first.proImage}',
+                                            //       ),
+                                            //       placeholder: AssetImage(
+                                            //         'Assets/Images/no_image.jpg',
+                                            //       ),
+                                            //       imageErrorBuilder: (context,
+                                            //           error, stackTrace) {
+                                            //         return Image.asset(
+                                            //           'Assets/Images/no_image.jpg',
+                                            //           fit: BoxFit.fitWidth,
+                                            //         );
+                                            //       },
+                                            //       fit: BoxFit.fitWidth,
+                                            //     ),
+                                            //   ),
+                                            // ),
+                                            // CommonWidgets.horizontalSpace(1),
                                             Flexible(
                                               child: Text(
                                                 '${salesReturnItem.product.first.code} | ${salesReturnItem.product.first.name}',

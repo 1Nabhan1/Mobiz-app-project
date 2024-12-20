@@ -160,7 +160,6 @@ class RestDatasource {
 
   Future<Response> customerRegister(String? token, dynamic bodyJson,
       [File? imageFile, BuildContext? context, bool? isUpdate = false]) async {
-    List<MapEntry<String, MultipartFile>> uploadList = [];
     var extradetails = await getHeader();
 
     String url = (isUpdate!) ? "/api/customer.edit" : "/api/customer.post";
@@ -168,81 +167,83 @@ class RestDatasource {
     final SIGNUP__URL = BASE_URL +
         url +
         "?timeZone=${extradetails["Time_zone"]}&appVersion=${extradetails["App_Version"]}";
-    FormData data;
-    data = FormData.fromMap({
+
+    FormData data = FormData.fromMap({
       'name': bodyJson['name'],
-      'code':
-          // 'AR0004',
-          bodyJson['code'],
+      'code': bodyJson['code'],
       'address': bodyJson['address'],
       'contact_number': bodyJson['contact_number'],
       'location': bodyJson['location'],
       'whatsapp_number': bodyJson['whatsapp_number'],
       'email': bodyJson['email'],
+      'Building': bodyJson['Building'],
+      'Flat_no': bodyJson['Flat_no'],
       'trn': bodyJson['trn'],
       'route_id': bodyJson['route_id'],
       'id': bodyJson['id'],
-      'province_id':
-          // 1,
-          bodyJson['provience_id'],
+      'province_id': bodyJson['provience_id'],
       'store_id': bodyJson['store_id'],
       'payment_terms': bodyJson['payment_terms'],
-      if (bodyJson['credi_limit'] != null && bodyJson['credi_limit'] != "")
+      if (bodyJson['credi_limit'] != null && bodyJson['credi_limit'].isNotEmpty)
         'credi_limit': bodyJson['credi_limit'],
-      if (bodyJson['credi_days'] != null && bodyJson['credi_days'] != "")
+      if (bodyJson['credi_days'] != null && bodyJson['credi_days'].isNotEmpty)
         'credi_days': bodyJson['credi_days'],
     });
 
     if (imageFile != null) {
-      String fileName = imageFile.path.split('/').last;
-      print("Before dio ${imageFile.path} , $fileName");
-      uploadList.add(MapEntry(
-          "cust_image",
-          await MultipartFile.fromFile(
-            imageFile.path,
-            filename: fileName,
-            contentType: MediaType("image", "jpg"),
-          )));
-      data.files.addAll(uploadList);
+      try {
+        String fileName = imageFile.path.split('/').last;
+        data.files.add(
+          MapEntry(
+            "cust_image",
+            await MultipartFile.fromFile(
+              imageFile.path,
+              filename: fileName,
+              contentType: MediaType("image", "jpeg"), // Adjust MIME type if needed
+            ),
+          ),
+        );
+      } catch (e) {
+        print("Error adding image file: $e");
+        if (context != null) {
+          CommonWidgets.showDialogueBox(
+            context: context,
+            title: "Error",
+            msg: "Unable to add the selected image. Please try again.",
+          );
+        }
+        throw e;
+      }
     }
-    Dio dio = new Dio();
-    //dio.options.headers['content-Type'] = 'application/json';
-    //dio.options.headers["authorization"] = null;
-    print(data.fields);
-    print("data  :  $data");
-    print("data.file  : ${data.files}");
+
+    Dio dio = Dio();
+
     dio.interceptors.add(InterceptorsWrapper(
       onError: (DioException e, handler) {
         if (e.response?.statusCode == 413) {
-          // Handle large sized data
-
           if (context != null) {
             CommonWidgets.showDialogueBox(
               context: context,
-              msg:
-                  "Please decrease the profile image size, as our limit allows a maximum of 10MB per document.",
               title: 'Alert',
+              msg: "Please decrease the image size. Maximum allowed size is 10MB.",
             );
           }
-        } else {
-          if (e.response?.statusCode! == 500 ||
-              e.response?.statusCode! == 502) {
-            print('server responded with an error');
-          }
+        } else if (e.response?.statusCode == 500 || e.response?.statusCode == 502) {
+          print('Server error: ${e.response?.statusCode}');
         }
         return handler.next(e);
       },
     ));
 
     try {
-      print('dio 1');
-      Response response;
-      response = await dio.post(SIGNUP__URL, data: data);
-      print(response);
+      Response response = await dio.post(SIGNUP__URL, data: data);
+      print("Response: $response");
+      print("bodyJson$imageFile");
       return response;
     } catch (e) {
-      print('Error: $e');
-      throw e;
+      print("Error posting data: $e");
+      rethrow;
     }
   }
+
 }

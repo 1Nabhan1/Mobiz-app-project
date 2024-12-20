@@ -13,6 +13,7 @@ import '../Models/sales_model.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'TestReturn.dart';
 import 'homereturn.dart';
 
 class Customerreturndetail extends StatefulWidget {
@@ -54,6 +55,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   // num tax = 0;
   String? code;
   int?dataId;
+  int?saleId;
+  int? pricegroupId;
   String? payment;
   String amount = '';
   String quantity = '';
@@ -61,6 +64,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   bool _hasData = false;
   bool _fetchCartItemsComplete = false;
   bool _fetchSalesReturnDataComplete = false;
+  bool _showButton = false;
+
   @override
   void initState() {
     super.initState();
@@ -80,8 +85,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
         code = params!['code'];
         payment = params!['paymentTerms'];
         dataId = params!['dataId'];
+        saleId = params!['saleId'];
         paydata = params!['outstandamt'];
-        print("OutStand:$code");
+        pricegroupId = params!['price_group_id'];
+        print("OutStand:$saleId");
       }
       fetchSalesReturnData();
     });
@@ -144,51 +151,113 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
     );
   }
 
-  Future<void> fetchSalesReturnData() async {
-    print("DataaIID");
-    print(dataId);
-    final url = Uri.parse(
-        'http://68.183.92.8:3699/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=$dataId');
-    final response = await http.get(url);
+  // Future<void> fetchSalesReturnData() async {
+  //   print("DataaIID");
+  //   print(dataId);
+  //   final url = Uri.parse(
+  //       '${RestDatasource().BASE_URL}/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=$dataId');
+  //   final response = await http.get(url);
+  //
+  //   if (response.statusCode == 200) {
+  //     print(response.request);
+  //     final data = jsonDecode(response.body);
+  //     if (data != null && data['data'] != null) {
+  //       if (dataId != null) {
+  //         SharedPreferences prefs = await SharedPreferences.getInstance();
+  //         await prefs.setString('dataId', dataId.toString());
+  //         List<Product> fetchedProducts = [];
+  //         if (data['data'] is List) {
+  //           fetchedProducts = (data['data'] as List).map((item) {
+  //             Product product = Product.fromJson(item);
+  //             product.defaultValue = 1;
+  //             return product;
+  //           }).toList();
+  //           cartItems.addAll(fetchedProducts);
+  //           for (var product in fetchedProducts) {
+  //             await addToCart(product);
+  //           }
+  //         } else if (data['data'] is Map) {
+  //           Product product = Product.fromJson(data['data']);
+  //           product.defaultValue = 1;
+  //           cartItems.add(product);
+  //           await addToCart(product);
+  //
+  //         }
+  //         selectedProductTypes = List.generate(
+  //           cartItems.length,
+  //           (index) => null,
+  //         );
+  //         setState(() {
+  //           _fetchSalesReturnDataComplete =
+  //               true;
+  //         });
+  //       }
+  //     }
+  //   } else {
+  //     throw Exception('Failed to load sales return data');
+  //   }
+  // }
 
-    if (response.statusCode == 200) {
-      print(response.request);
-      final data = jsonDecode(response.body);
-      if (data != null && data['data'] != null) {
-        if (dataId != null) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('dataId', dataId.toString());
-          List<Product> fetchedProducts = [];
-          if (data['data'] is List) {
-            fetchedProducts = (data['data'] as List).map((item) {
-              Product product = Product.fromJson(item);
+  // bool _showButton = false; // Add this flag at the class level.
+
+  Future<void> fetchSalesReturnData() async {
+    try {
+      print("DataaIID");
+      print(dataId);
+      final url = Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get-sales-return.empty-product?store_id=${AppState().storeId}&id=$dataId');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        print(response.request);
+        final data = jsonDecode(response.body);
+        if (data != null && data['data'] != null) {
+          if (dataId != null) {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('dataId', dataId.toString());
+            List<Product> fetchedProducts = [];
+            if (data['data'] is List && data['data'].isNotEmpty) {
+              fetchedProducts = (data['data'] as List).map((item) {
+                Product product = Product.fromJson(item);
+                product.defaultValue = 1;
+                return product;
+              }).toList();
+              cartItems.addAll(fetchedProducts);
+              for (var product in fetchedProducts) {
+                await addToCart(product);
+              }
+              _showButton = false; // No need to show the button if data exists.
+            } else if (data['data'] is Map) {
+              Product product = Product.fromJson(data['data']);
               product.defaultValue = 1;
-              return product;
-            }).toList();
-            cartItems.addAll(fetchedProducts);
-            for (var product in fetchedProducts) {
+              cartItems.add(product);
               await addToCart(product);
+              _showButton = false; // No need to show the button if data exists.
+            } else {
+              _showButton = true; // Show button if no data is found.
             }
-          } else if (data['data'] is Map) {
-            Product product = Product.fromJson(data['data']);
-            product.defaultValue = 1;
-            cartItems.add(product);
-            await addToCart(product);
+            selectedProductTypes = List.generate(
+              cartItems.length,
+                  (index) => null,
+            );
+            setState(() {
+              _fetchSalesReturnDataComplete = true;
+            });
           }
-          selectedProductTypes = List.generate(
-            cartItems.length,
-            (index) => null,
-          );
-          setState(() {
-            _fetchSalesReturnDataComplete =
-                true;
-          });
+        } else {
+          _showButton = true; // Show button if no data is found.
         }
+      } else {
+        throw Exception('Failed to load sales return data');
       }
-    } else {
-      throw Exception('Failed to load sales return data');
+    } catch (e) {
+      _showButton = true; // Show button in case of error.
+      print(e);
+    } finally {
+      setState(() {}); // Update the UI.
     }
   }
+
 
   Future<void> fetchCartItems() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -440,7 +509,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
     double total = calculateTotalRate();
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    var roundedGrandTotal = grandTotalMap['rounded'];
+    var roundedGrandTotal = grandTotalMap['rounded']?.toStringAsFixed(2) ?? '0.00';
+
     double roundOffValue = grandTotalMap['roundOffValue'];
 
     void postDataToApi() async {
@@ -451,7 +521,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
       var url =
           Uri.parse('${RestDatasource().BASE_URL}/api/vansales_return.store');
-      List<int> quantities = [];
+      List<double> quantities = [];
       List<Object> productTypesList = [];
       List<int> selectedUnitIds = [];
 
@@ -466,7 +536,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
         selectedUnitIds.add(selectedUnitId);
         String? qty = qtys[index];
-        int quantity = qty != null ? int.parse(qty) : 1;
+        double quantity =
+        qty != null ? double.parse(qty) : 1.0;
         quantities.add(quantity);
 
         ProductType? selectedProductType = selectedProductTypes[index];
@@ -483,11 +554,20 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
         'quantity': quantities,
         'unit': selectedUnitIds,
         'mrp': amounts.entries.map((entry) {
-          return double.tryParse(entry.value) ?? 0.0;
-        }).toList().isEmpty ? [0.0] : amounts.entries.map((entry) {
-          return double.tryParse(entry.value) ?? 0.0;
+          double value = double.tryParse(entry.value) ?? 0.0;
+          return double.parse(value.toStringAsFixed(2));
+        }).toList().isEmpty
+            ? [0.0]
+            : amounts.entries.map((entry) {
+          double value = double.tryParse(entry.value) ?? 0.0;
+          print("sdsds$value");
+          return double.parse(value.toStringAsFixed(2));
         }).toList(),
-
+        // 'mrp': amounts.entries.map((entry) {
+        //   return double.tryParse(entry.value) ?? 0.0;
+        // }).toList().isEmpty ? [0.0] : amounts.entries.map((entry) {
+        //   return double.tryParse(entry.value) ?? 0.0;
+        // }).toList(),
         'customer_id': id ?? 0,
         'if_vat': _ifVat == 1 ? 1 : 0,
         'product_type': productTypesList,
@@ -513,6 +593,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       if (response.statusCode == 200) {
         print(data);
         print('Post successful');
+        var responseBody = json.decode(response.body);
+        int returnId =  responseBody['data']['id'];
         print(id.toString());
         if (mounted) {
           CommonWidgets.showDialogueBox(
@@ -521,15 +603,27 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
             msg: "Created Successfully",
           ).then((value) {
             clearCart();
-            Navigator.pushReplacementNamed(
-                context, PaymentCollectionScreen.routeName,
+            if (pricegroupId != null) {
+              Navigator.pushReplacementNamed(
+                context,
+                PaymentCollectionScreen.routeName,
                 arguments: {
                   'customerId': id,
-                  'name':name,
-                  'code':code,
-                  'paymentTerms':payment,
-                  'outstandamt':paydata
-                });
+                  'name': name,
+                  'code': code,
+                  'saleId':saleId,
+                  'returnId':returnId,
+                  'paymentTerms': payment,
+                  'outstandamt': paydata,
+                  'price_group_id': pricegroupId
+                },
+              );
+            } else {
+              Navigator.pushReplacementNamed(
+                context,
+                HomereturnScreen.routeName, // Replace with the actual route name for HomeReturnPage
+              );
+            }
           });
         }
       } else {
@@ -561,38 +655,68 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: SizedBox(
-          width: 100.w,
+          width: 200.w,
           height: 30.h,
           child: _hasData
-              ? ElevatedButton(
-                  style: ButtonStyle(
-                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(7.0),
+              ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                      style: ButtonStyle(
+                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7.0),
+                          ),
+                        ),
+                        backgroundColor: (cartItems.isNotEmpty)
+                            ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
+                            : const WidgetStatePropertyAll(
+                                AppConfig.buttonDeactiveColor),
+                      ),
+                      onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
+                          ? () async {
+                              setState(() {
+                                _isButtonDisabled =
+                                    true; // Disable the button after it's pressed
+                              });
+                              postDataToApi();
+                            }
+                          : null,
+                      child: Text(
+                        'SAVE',
+                        style: TextStyle(
+                            fontSize: AppConfig.textCaption3Size,
+                            color: AppConfig.backgroundColor,
+                            fontWeight: AppConfig.headLineWeight),
                       ),
                     ),
-                    backgroundColor: (cartItems.isNotEmpty)
-                        ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                        : const WidgetStatePropertyAll(
-                            AppConfig.buttonDeactiveColor),
-                  ),
-                  onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
-                      ? () async {
-                          setState(() {
-                            _isButtonDisabled =
-                                true; // Disable the button after it's pressed
-                          });
-                          postDataToApi();
-                        }
-                      : null,
-                  child: Text(
-                    'SAVE',
-                    style: TextStyle(
-                        fontSize: AppConfig.textCaption3Size,
-                        color: AppConfig.backgroundColor,
-                        fontWeight: AppConfig.headLineWeight),
-                  ),
-                )
+                  SizedBox(width: 10,),
+                  _showButton
+                      ? ElevatedButton(
+                    style: ButtonStyle(shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    backgroundColor: WidgetStatePropertyAll(AppConfig.colorPrimary)),
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        PaymentCollectionScreen.routeName,
+                        arguments: {
+                          'customerId': id,
+                          'name': name,
+                          'code': code,
+                          'saleId':saleId,
+                          // 'returnId':returnId,
+                          'paymentTerms': payment,
+                          'outstandamt': paydata,
+                          'price_group_id': pricegroupId
+                        },
+                      );
+                    },
+                    child: Text('SKIP',style: TextStyle(color: Colors.white),),
+                  )
+                      : SizedBox.shrink(),
+
+                ],
+              )
               : Text('Return Type Not\n      Available'),
         ),
         appBar: AppBar(
@@ -640,8 +764,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                       'customerId': id,
                       'name': name,
                       'code': code,
+                      'saleId':saleId,
                       'paymentTerms': payment,
                       'outstandamt':paydata,
+                      'price_group_id':pricegroupId
                       // 'dataId': dataId
                     }).then((value) {
                   // _initDone = false;
@@ -816,32 +942,33 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                   Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      SizedBox(
-                                        width: 50,
-                                        height: 60,
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          child: FadeInImage(
-                                            image: NetworkImage(
-                                              '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-                                            ),
-                                            placeholder: const AssetImage(
-                                              'Assets/Images/no_image.jpg',
-                                            ),
-                                            imageErrorBuilder:
-                                                (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'Assets/Images/no_image.jpg',
-                                                fit: BoxFit.fitWidth,
-                                              );
-                                            },
-                                            fit: BoxFit.fitWidth,
-                                          ),
-                                        ),
-                                      ),
-                                      CommonWidgets.horizontalSpace(1),
+                                      // SizedBox(
+                                        // width: 50,
+                                        // height: 60,
+                                        // child: ClipRRect(
+                                        //   borderRadius:
+                                        //       BorderRadius.circular(10),
+                                        //   child: FadeInImage(
+                                        //     image: NetworkImage(
+                                        //       '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
+                                        //     ),
+                                        //     placeholder: const AssetImage(
+                                        //       'Assets/Images/no_image.jpg',
+                                        //     ),
+                                        //     imageErrorBuilder:
+                                        //         (context, error, stackTrace) {
+                                        //       return Image.asset(
+                                        //         'Assets/Images/no_image.jpg',
+                                        //         fit: BoxFit.fitWidth,
+                                        //       );
+                                        //     },
+                                        //     fit: BoxFit.fitWidth,
+                                        //   ),
+                                        // ),
+                                      // ),
+                                      // CommonWidgets.horizontalSpace(1),
                                       Column(
                                         children: [
                                           // CommonWidgets.verticalSpace(1),
@@ -887,6 +1014,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                         )
                                     ],
                                   ),
+                                  SizedBox(height: 20,),
                                   Row(
                                     children: [
                                       SizedBox(
@@ -1150,7 +1278,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                             if (cartItems.isNotEmpty &&
                                 cartItems[0].defaultValue == 1 &&
                                 qtys[specificIndex] != null &&
-                                int.parse(qtys[specificIndex]!) < int.parse(initialQty)) // Compare quantities for decrease
+                                double.parse(qtys[specificIndex]!) < double.parse(initialQty))
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -1378,7 +1506,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                               )
                             : SizedBox.shrink(),
                         Text('Total: $total'),
-                        Text('Tax: $tax'),
+                        Text('Tax: ${tax.toStringAsFixed(2)}'),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -1424,7 +1552,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                             ),
                           ],
                         ),
-                        Text('Grand Total: $roundedGrandTotal'),
+                        Text('Grand Total: ${roundedGrandTotal}'),
                       ],
                     ),
                   ),

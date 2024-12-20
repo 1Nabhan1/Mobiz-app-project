@@ -35,8 +35,8 @@ class _VanStocksState extends State<VanStocks> {
   int? id;
   String? selectedUnitName;
   List<ProductType> productTypes = [];
-  List<ProductType?> selectedProductTypes =
-  []; // List to store selected product types
+  List<ProductType?> selectedProductTypes = [];
+  bool _isButtonDisabled = false;
   String? name;
   int _ifVat = 1;
   // num tax = 0;
@@ -74,13 +74,11 @@ class _VanStocksState extends State<VanStocks> {
   Future<void> initializeValues() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Wait until productTypes and cartItems are populated
     setState(() {
       for (int i = 0; i < cartItems.length; i++) {
         qtys[i] = prefs.getString('qtyreq$i') ?? '1';
         amounts[i] =
             prefs.getString('amountreq$i') ?? cartItems[i].price.toString();
-
         if (cartItems[i].units.isNotEmpty) {
           cartItems[i].selectedUnitName =
               prefs.getString('unitNamereq$i') ?? cartItems[i].units.first.name;
@@ -102,7 +100,7 @@ class _VanStocksState extends State<VanStocks> {
         cartItems = products;
         selectedProductTypes = List.generate(
           cartItems.length,
-              (index) => null,
+          (index) => null,
         );
       });
     }
@@ -116,32 +114,31 @@ class _VanStocksState extends State<VanStocks> {
       List<Product> products = cartItemsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
-
-      // Remove the item at the specific index
       products.removeAt(index);
-
-      // Remove quantity and amount for the removed product
-      qtys.remove(index);
-      amounts.remove(index);
-
-      // Update the keys of the qtys and amounts maps
       Map<int, String> newQtys = {};
       Map<int, String> newAmounts = {};
       for (int i = 0; i < products.length; i++) {
-        newQtys[i] =
-            qtys[i + (i >= index ? 1 : 0)] ?? '1'; // Adjusting the index
-        newAmounts[i] = amounts[i + (i >= index ? 1 : 0)] ??
-            products[i].price.toString(); // Adjusting the index
+        newQtys[i] = qtys[i + (i >= index ? 1 : 0)] ?? '1';
+        newAmounts[i] =
+            amounts[i + (i >= index ? 1 : 0)] ?? products[i].price.toString();
       }
-
       qtys = newQtys;
       amounts = newAmounts;
-
       List<String> updatedCartItemsJson =
-      products.map((product) => jsonEncode(product.toJson())).toList();
-
+          products.map((product) => jsonEncode(product.toJson())).toList();
       await prefs.setStringList('cartItemsvanstock', updatedCartItemsJson);
-      fetchCartItems(); // Refresh UI after deletion
+      for (int i = 0; i < products.length; i++) {
+        await prefs.setString('qtyreq$i', qtys[i] ?? '1');
+        await prefs.setString(
+            'amountreq$i', amounts[i] ?? products[i].price.toString());
+        await prefs.setString('unitNamereq$i',
+            products[i].selectedUnitName ?? products[i].units.first.name);
+      }
+      await prefs.remove('qtyreq${products.length}');
+      await prefs.remove('amountreq${products.length}');
+      await prefs.remove('unitNamereq${products.length}');
+
+      fetchCartItems();
     }
   }
 
@@ -156,13 +153,24 @@ class _VanStocksState extends State<VanStocks> {
   @override
   Widget build(BuildContext context) {
     void postDataToApi() async {
+      if (_isButtonDisabled) {
+        print('Button is disabled. Cannot post data.');
+        return; // Prevent the function from executing if the button is disabled
+      }
+
+      setState(() {
+        _isButtonDisabled =
+            true; // Disable the button while the API call is in progress
+      });
+
       var url = Uri.parse('${RestDatasource().BASE_URL}/api/vanrequest.store');
-      List<int> quantities = [];
+      List<double> quantities = [];
       List<int> selectedUnitIds = [];
 
       for (int index = 0; index < cartItems.length; index++) {
         String? qty = qtys[index];
-        int quantity = qty != null ? int.parse(qty) : 1;
+        double quantity =
+            qty != null ? double.parse(qty) : 1.0; // Parse as double
         quantities.add(quantity);
         String? selectedUnitName = cartItems[index].selectedUnitName;
         int selectedUnitId;
@@ -177,6 +185,7 @@ class _VanStocksState extends State<VanStocks> {
 
         selectedUnitIds.add(selectedUnitId);
       }
+
       var data = {
         'van_id': AppState().vanId,
         'store_id': AppState().storeId,
@@ -185,39 +194,55 @@ class _VanStocksState extends State<VanStocks> {
         'quantity': quantities,
         'unit': selectedUnitIds,
       };
-      // print(_remarksText);
-      // print('wwwwwwwwwwwwwwwwwwwwwwwww');
+
       var body = json.encode(data);
 
-      var response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        print('Post successful');
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-              context: context, title: "Alert", msg: "Created Successfully")
-              .then(
-                (value) {
-              clearCart();
-            },
-          );
+      try {
+        var response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: body,
+        );
+        print("BBddy$body");
+        if (response.statusCode == 200) {
+          print("Body$body");
+          print('Post successful');
+          if (mounted) {
+            CommonWidgets.showDialogueBox(
+              context: context,
+              title: "Alert",
+              msg: "Created Successfully",
+            ).then(
+              (value) {
+                clearCart();
+                clearSharedPreferences();
+                setState(() {
+                  _isButtonDisabled = false; // Re-enable the button if needed
+                });
+              },
+            );
+          }
+          print(response.body);
+        } else {
+          print('Post failed with status: ${response.statusCode}');
+          print(response.body);
+          setState(() {
+            _isButtonDisabled = false; // Re-enable the button on failure
+          });
         }
-        print(response.body);
-      } else {
-        print('Post failed with status: ${response.statusCode}');
-        print(response.body);
+      } catch (e) {
+        print('An error occurred: $e');
+        setState(() {
+          _isButtonDisabled = false; // Re-enable the button on error
+        });
       }
     }
 
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params['name'];
     }
@@ -234,15 +259,25 @@ class _VanStocksState extends State<VanStocks> {
                 borderRadius: BorderRadius.circular(7.0),
               ),
             ),
-            backgroundColor: (cartItems.isNotEmpty)
-                ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+            backgroundColor: (_isButtonDisabled)
+                ? const WidgetStatePropertyAll(
+                    Colors.grey) // Disabled button color
+                : (cartItems.isNotEmpty)
+                    ? const WidgetStatePropertyAll(
+                        AppConfig.colorPrimary) // Active button color
+                    : const WidgetStatePropertyAll(
+                        AppConfig.buttonDeactiveColor), // Inactive button color
           ),
-          onPressed: (cartItems.isNotEmpty)
+          onPressed: (cartItems.isNotEmpty &&
+                  !_isButtonDisabled) // Ensure the button is not disabled
               ? () async {
-            postDataToApi();
-          }
-              : null,
+                  postDataToApi();
+                  setState(() {
+                    _isButtonDisabled = true;
+                  });
+                }
+              : null, // Disable the button if conditions are not met
+
           child: Text(
             'SAVE',
             style: TextStyle(
@@ -268,25 +303,25 @@ class _VanStocksState extends State<VanStocks> {
         actions: [
           (_search)
               ? Container(
-            height: SizeConfig.blockSizeVertical * 5,
-            width: SizeConfig.blockSizeHorizontal * 76,
-            decoration: BoxDecoration(
-              color: AppConfig.colorPrimary,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(10),
-              ),
-              border: Border.all(color: AppConfig.colorPrimary),
-            ),
-            child: TextField(
-              controller: _searchData,
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.all(5),
-                hintText: "Search...",
-                hintStyle: TextStyle(color: AppConfig.backgroundColor),
-                border: InputBorder.none,
-              ),
-            ),
-          )
+                  height: SizeConfig.blockSizeVertical * 5,
+                  width: SizeConfig.blockSizeHorizontal * 76,
+                  decoration: BoxDecoration(
+                    color: AppConfig.colorPrimary,
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(10),
+                    ),
+                    border: Border.all(color: AppConfig.colorPrimary),
+                  ),
+                  child: TextField(
+                    controller: _searchData,
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      hintText: "Search...",
+                      hintStyle: TextStyle(color: AppConfig.backgroundColor),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                )
               : Container(),
           CommonWidgets.horizontalSpace(1),
           GestureDetector(
@@ -307,220 +342,220 @@ class _VanStocksState extends State<VanStocks> {
       ),
       body: cartItems.isEmpty
           ? Center(
-        child: Text('No items.'),
-      )
+              child: Text('No items.'),
+            )
           : SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              physics: BouncingScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: cartItems.length,
-              itemBuilder: (context, index) {
-                List<String> unitNames = cartItems[index]
-                    .units
-                    .where((unit) => unit.name != null)
-                    .map((unit) => unit.name!)
-                    .toList();
+              child: Column(
+                children: [
+                  ListView.builder(
+                    physics: BouncingScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      List<String> unitNames = cartItems[index]
+                          .units
+                          .where((unit) => unit.name != null)
+                          .map((unit) => unit.name!)
+                          .toList();
 
-                if (unitNames.isEmpty) {
-                  return SizedBox.shrink();
-                }
+                      if (unitNames.isEmpty) {
+                        return SizedBox.shrink();
+                      }
 
-                // Ensure each item has its own selected unit name state
-                String? selectedUnitName =
-                    cartItems[index].selectedUnitName ?? unitNames.first;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 2),
-                  child: Card(
-                    elevation: 1,
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      width: SizeConfig.blockSizeHorizontal * 90,
-                      decoration: BoxDecoration(
-                        color: AppConfig.backgroundColor,
-                        border: Border.all(
-                          color: AppConfig.buttonDeactiveColor
-                              .withOpacity(0.5),
-                        ),
-                        borderRadius:
-                        const BorderRadius.all(Radius.circular(10)),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 50,
-                                height: 60,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: FadeInImage(
-                                    image: NetworkImage(
-                                      '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-                                    ),
-                                    placeholder: const AssetImage(
-                                      'Assets/Images/no_image.jpg',
-                                    ),
-                                    imageErrorBuilder:
-                                        (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'Assets/Images/no_image.jpg',
-                                        fit: BoxFit.fitWidth,
-                                      );
-                                    },
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
+                      // Ensure each item has its own selected unit name state
+                      String? selectedUnitName =
+                          cartItems[index].selectedUnitName ?? unitNames.first;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 2),
+                        child: Card(
+                          elevation: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            width: SizeConfig.blockSizeHorizontal * 90,
+                            decoration: BoxDecoration(
+                              color: AppConfig.backgroundColor,
+                              border: Border.all(
+                                color: AppConfig.buttonDeactiveColor
+                                    .withOpacity(0.5),
                               ),
-                              CommonWidgets.horizontalSpace(1),
-                              Column(
-                                children: [
-                                  CommonWidgets.verticalSpace(1),
-                                  Row(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      CommonWidgets.horizontalSpace(1),
-                                      SizedBox(
-                                        width: SizeConfig
-                                            .blockSizeHorizontal *
-                                            70,
-                                        child: Text(
-                                          '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
-                                          style: TextStyle(
-                                            fontSize: AppConfig
-                                                .textCaption3Size,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(10)),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 50,
+                                      height: 60,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: FadeInImage(
+                                          image: NetworkImage(
+                                            '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
                                           ),
+                                          placeholder: const AssetImage(
+                                            'Assets/Images/no_image.jpg',
+                                          ),
+                                          imageErrorBuilder:
+                                              (context, error, stackTrace) {
+                                            return Image.asset(
+                                              'Assets/Images/no_image.jpg',
+                                              fit: BoxFit.fitWidth,
+                                            );
+                                          },
+                                          fit: BoxFit.fitWidth,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              CircleAvatar(
-                                backgroundColor:
-                                Colors.grey.withOpacity(0.2),
-                                radius: 10,
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    removeFromCart(index);
-                                  },
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 15,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Flexible(
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    isDense: true,
-                                    isExpanded: false,
-                                    alignment: Alignment.center,
-                                    value: selectedUnitName,
-                                    items: unitNames
-                                        .map<DropdownMenuItem<String>>(
-                                            (String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Center(
+                                    ),
+                                    CommonWidgets.horizontalSpace(1),
+                                    Column(
+                                      children: [
+                                        CommonWidgets.verticalSpace(1),
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            CommonWidgets.horizontalSpace(1),
+                                            SizedBox(
+                                              width: SizeConfig
+                                                      .blockSizeHorizontal *
+                                                  70,
                                               child: Text(
-                                                value,
+                                                '${cartItems[index].code} | ${cartItems[index].name.toString().toUpperCase()}',
                                                 style: TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                  AppConfig.colorPrimary,
-                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: AppConfig
+                                                      .textCaption3Size,
                                                 ),
                                               ),
                                             ),
-                                          );
-                                        }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        cartItems[index]
-                                            .selectedUnitName = newValue;
-                                        saveToSharedPreferences(
-                                            'unitNamereq$index',
-                                            newValue);
-                                      });
-                                    },
-                                    icon: SizedBox.shrink(),
-                                  ),
-                                ),
-                              ),
-                              Text(' | '),
-                              GestureDetector(
-                                  onTap: () {
-                                    showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const Text('Quantity'),
-                                            content: TextField(
-                                              controller:
-                                              TextEditingController(
-                                                text: qtys[index] ?? '',
-                                              ),
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  qtys[index] = value;
-                                                  saveToSharedPreferences(
-                                                      'qtyreq$index',
-                                                      value);
-                                                });
-                                              },
-                                              keyboardType:
-                                              TextInputType.number,
-                                              // controller: _discountData,
-                                            ),
-                                            actions: <Widget>[
-                                              MaterialButton(
-                                                color: AppConfig
-                                                    .colorPrimary,
-                                                textColor: Colors.white,
-                                                child: const Text('OK'),
-                                                onPressed: () {
-                                                  quantity =
-                                                      qtysctrl.text;
-                                                  Navigator.pop(context);
-                                                },
-                                              ),
-                                            ],
-                                          );
-                                        });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Text('Qty: '),
-                                      Text(
-                                        '${qtys[index] ?? '1'}',
-                                        style: TextStyle(
-                                            color: AppConfig.colorPrimary,
-                                            fontWeight: FontWeight.bold),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    CircleAvatar(
+                                      backgroundColor:
+                                          Colors.grey.withOpacity(0.2),
+                                      radius: 10,
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          removeFromCart(index);
+                                        },
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 15,
+                                          color: Colors.red,
+                                        ),
                                       ),
-                                    ],
-                                  )),
-                            ],
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          isDense: true,
+                                          isExpanded: false,
+                                          alignment: Alignment.center,
+                                          value: selectedUnitName,
+                                          items: unitNames
+                                              .map<DropdownMenuItem<String>>(
+                                                  (String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Center(
+                                                child: Text(
+                                                  value,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        AppConfig.colorPrimary,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              cartItems[index]
+                                                  .selectedUnitName = newValue;
+                                              saveToSharedPreferences(
+                                                  'unitNamereq$index',
+                                                  newValue);
+                                            });
+                                          },
+                                          icon: SizedBox.shrink(),
+                                        ),
+                                      ),
+                                    ),
+                                    Text(' | '),
+                                    GestureDetector(
+                                        onTap: () {
+                                          showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  title: const Text('Quantity'),
+                                                  content: TextField(
+                                                    controller:
+                                                        TextEditingController(
+                                                      text: qtys[index] ?? '',
+                                                    ),
+                                                    onChanged: (value) {
+                                                      setState(() {
+                                                        qtys[index] = value;
+                                                        saveToSharedPreferences(
+                                                            'qtyreq$index',
+                                                            value);
+                                                      });
+                                                    },
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    // controller: _discountData,
+                                                  ),
+                                                  actions: <Widget>[
+                                                    MaterialButton(
+                                                      color: AppConfig
+                                                          .colorPrimary,
+                                                      textColor: Colors.white,
+                                                      child: const Text('OK'),
+                                                      onPressed: () {
+                                                        quantity =
+                                                            qtysctrl.text;
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              });
+                                        },
+                                        child: Row(
+                                          children: [
+                                            Text('Qty: '),
+                                            Text(
+                                              '${qtys[index] ?? '1'}',
+                                              style: TextStyle(
+                                                  color: AppConfig.colorPrimary,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        )),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 

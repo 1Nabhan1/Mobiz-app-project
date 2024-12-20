@@ -39,6 +39,8 @@ class _VanTransferState extends State<VanTransfer> {
   String amount = '';
   String quantity = '';
   bool _isDialogOpen = false;
+  bool _isButtonDisabled = false;
+
   final TextEditingController amountctrl = TextEditingController();
   List<Map<String, dynamic>> savedProducts = [];
   @override
@@ -745,11 +747,13 @@ class _VanTransferState extends State<VanTransfer> {
               Center(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConfig.colorPrimary),
-                  onPressed: (savedProducts.isNotEmpty)
+                    backgroundColor: _isButtonDisabled
+                        ? Colors.grey: AppConfig.colorPrimary
+                  ),
+                  onPressed: (savedProducts.isNotEmpty && !_isButtonDisabled)
                       ? () async {
-                          postDataToApi();
-                        }
+                    postDataToApi();
+                  }
                       : null,
                   child: Text(
                     'TRANSFER',
@@ -768,33 +772,10 @@ class _VanTransferState extends State<VanTransfer> {
   }
 
   void postDataToApi() async {
+    setState(() {
+      _isButtonDisabled = true;
+    });
     var url = Uri.parse('${RestDatasource().BASE_URL}/api/vantransfar.store');
-    // List<int> quantities = [];
-    // List<Object> productTypesList = [];
-    // List<int> selectedUnitIds = [];
-
-    // for (int index = 0; index < cartItems.length; index++) {
-    //   String? selectedUnitName = cartItems[index].selectedUnitName;
-    //   int selectedUnitId;
-    //   if (selectedUnitName != null) {
-    //     selectedUnitId = cartItems[index]
-    //         .units
-    //         .firstWhere((unit) => unit.name == selectedUnitName)
-    //         .unit!;
-    //   } else {
-    //     selectedUnitId = cartItems[index].units.first.unit!;
-    //   }
-    //
-    //   selectedUnitIds.add(selectedUnitId);
-    //   String? qty = qtys[index];
-    //   int quantity = qty != null ? int.parse(qty) : 1;
-    //   quantities.add(quantity);
-    //
-    //   ProductType? selectedProductType = selectedProductTypes[index];
-    //   Object productType =
-    //       selectedProductType != null ? selectedProductType.id : 1;
-    //   productTypesList.add(productType);
-    // }
     List<int> unitIds = savedProducts.map<int>((product) {
       // Assuming product['unit_id'] already contains the selected unit ID
       return int.parse(product['unit_id']);
@@ -821,37 +802,40 @@ class _VanTransferState extends State<VanTransfer> {
     };
     var body = json.encode(data);
 
-    var response = await http.post(
-      url,
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: body,
-    );
+    try {
+      var response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: body,
+      );
 
-    if (response.statusCode == 200) {
-      // print(cartItems.map((item) => item.id).toList(),);
-      // print(AppState().userId);
-      // print(selectedUnitIds);
-      // print(selectedVanId);
-      print('Post successful');
-      if (mounted) {
-        CommonWidgets.showDialogueBox(
-                context: context, title: "Alert", msg: "Created Successfully")
-            .then(
-          (value) {
-            clearCart();
-            Navigator.pushReplacementNamed(
-              context,
-              HomeScreen.routeName,
-            );
-          },
-        );
+      if (response.statusCode == 200) {
+        print('Post successful');
+        if (mounted) {
+          await CommonWidgets.showDialogueBox(
+            context: context,
+            title: "Alert",
+            msg: "Created Successfully",
+          );
+          clearCart();
+          Navigator.pushReplacementNamed(
+            context,
+            HomeScreen.routeName,
+          );
+        }
+      } else {
+        print('Post failed with status: ${response.statusCode}');
+        print(response.body);
       }
-      print(response.body);
-    } else {
-      print('Post failed with status: ${response.statusCode}');
-      print(response.body);
+    } catch (e) {
+      print('An error occurred: $e');
+    } finally {
+      // Re-enable the button after the API call completes
+      setState(() {
+        _isButtonDisabled = false;
+      });
     }
   }
 

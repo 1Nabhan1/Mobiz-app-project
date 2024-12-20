@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -5,8 +7,9 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:http/http.dart'as http;
 import '../Components/commonwidgets.dart';
+import '../Models/Store_model.dart';
 import '../Models/appstate.dart';
 import '../Models/customerdetails.dart';
 import '../Utilities/rest_ds.dart';
@@ -29,13 +32,29 @@ class _SchedulePageState extends State<SchedulePage> {
   DateTime focusedDate = DateTime.now();
 
   CustomerData customer = CustomerData();
+  CustomerData customer1 = CustomerData();
   bool _initDone = false;
   bool _nodata = false;
+  bool showFields = false;
 
   @override
   void initState() {
     super.initState();
     getCustomerDetails();
+    getCustomerEmergencyDetails();
+    fetchStoreDetail() .then((storeDetail) {
+      if (storeDetail != null && storeDetail.comapny_id == 5) {
+        setState(() {
+          showFields = true; // Show fields for company_id 5
+        });
+      } else {
+        setState(() {
+          showFields = false; // Hide fields otherwise
+        });
+      }
+      print("SSSSS${storeDetail!.comapny_id}");
+      print("Fields$showFields");
+    });
   }
 
   @override
@@ -62,6 +81,7 @@ class _SchedulePageState extends State<SchedulePage> {
               setState(() {
                 selectedDate = DateTime.now();
                 getCustomerDetails();
+                getCustomerEmergencyDetails();
               });
             },
             child: Icon(
@@ -111,6 +131,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   setState(() {
                     selectedDate = pickedDate;
                     getCustomerDetails();
+                    getCustomerEmergencyDetails();
                   });
                 }
               },
@@ -126,6 +147,7 @@ class _SchedulePageState extends State<SchedulePage> {
                         selectedDate = selectedDay;
                         focusedDate = focusedDay;
                         getCustomerDetails();
+                        getCustomerEmergencyDetails();
                       });
                     },
                     calendarFormat: CalendarFormat.week,
@@ -172,10 +194,14 @@ class _SchedulePageState extends State<SchedulePage> {
               child: ListView.separated(
                 separatorBuilder: (BuildContext context, int index) =>
                     CommonWidgets.verticalSpace(1),
-                itemCount: customer.data!.length!,
+                itemCount: (customer.data ?? []).length + (customer1.data ?? []).length,
                 shrinkWrap: true,
-                itemBuilder: (context, index) =>
-                    _customersCard(customer.data![index]),
+                itemBuilder: (context, index) {
+                  // Combine the data from both lists
+                  final combinedData = [...(customer.data ?? []), ...(customer1.data ?? [])];
+                  // Return the customer card for the current index
+                  return _customersCard(combinedData[index]);
+                },
               ),
             )
                 : (_nodata && _initDone)
@@ -274,6 +300,7 @@ class _SchedulePageState extends State<SchedulePage> {
       );
     }
 
+    bool hasEmergency = customer1.data != null && customer1.data!.isNotEmpty;
     return InkWell(
       onTap: () {
         Navigator.of(context)
@@ -381,6 +408,38 @@ class _SchedulePageState extends State<SchedulePage> {
                         ],
                       ),
                     ),
+                    // Visibility(
+                    //   visible: hasEmergency,
+                    //   child: SizedBox(
+                    //     width: SizeConfig.blockSizeHorizontal * 72,
+                    //     child: Text(
+                    //       'Emergency',
+                    //       overflow: TextOverflow.ellipsis, // Shrink text if needed
+                    //       style: TextStyle(fontSize: AppConfig.textCaption3Size),
+                    //     ),
+                    //   ),
+                    // ),
+                    Visibility(
+                      visible: showFields,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: SizeConfig.blockSizeHorizontal * 72,
+                            child: Text(
+                              'Building: ${data.building ?? 'N/A'}',
+                              style: TextStyle(fontSize: AppConfig.textCaption3Size),
+                            ),
+                          ),
+                          SizedBox(
+                            width: SizeConfig.blockSizeHorizontal * 72,
+                            child: Text(
+                              'Flat Number: ${data.flatNo ?? 'N/A'}',
+                              style: TextStyle(fontSize: AppConfig.textCaption3Size),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -389,6 +448,37 @@ class _SchedulePageState extends State<SchedulePage> {
         ),
       ),
     );
+  }
+
+  Future<StoreDetail?> fetchStoreDetail() async {
+    final url = Uri.parse('${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // print("data:::${data['company_id']}");
+        // print(showFields);
+        if (data['company_id'] == 5) {
+          setState(() {
+            showFields = true;
+          });
+        } else {
+          setState(() {
+            showFields = false;
+          });
+        }
+        return StoreDetail.fromJson(data);
+      } else {
+        // Handle error
+        print('Failed to fetch data: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return null;
+    }
   }
 
   Future<void> getCustomerDetails() async {
@@ -401,6 +491,28 @@ class _SchedulePageState extends State<SchedulePage> {
     if (resJson['data'] != null && resJson['data'].length > 0) {
       customer = CustomerData.fromJson(resJson);
 
+      setState(() {
+        _initDone = true;
+        _nodata = false;
+      });
+    } else {
+      setState(() {
+        _nodata = true;
+        _initDone = true;
+      });
+    }
+  }
+
+  Future<void> getCustomerEmergencyDetails() async {
+    RestDatasource api = RestDatasource();
+
+    dynamic resJson = await api.getDetails(
+        '/api/get_emargency_scheduled_customer_by_user_with_date?date=${DateFormat('yyyy-MM-dd').format(selectedDate)}&store_id=${AppState().storeId}&user_id=${AppState().userId}',
+        AppState().token);
+    print('Cust $resJson');
+    if (resJson['data'] != null && resJson['data'].length > 0) {
+      customer1 = CustomerData.fromJson(resJson);
+      customer1.data![0].defaultValue==1;
       setState(() {
         _initDone = true;
         _nodata = false;

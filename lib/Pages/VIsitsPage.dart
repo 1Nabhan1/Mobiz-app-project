@@ -99,6 +99,7 @@ class _VisitspageState extends State<Visitspage> {
               ),
             );
           } else if (snapshot.hasError) {
+            print(snapshot.error);
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No customer visits found'));

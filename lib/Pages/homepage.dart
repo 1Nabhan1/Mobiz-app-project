@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -7,6 +9,7 @@ import 'package:mobizapp/Components/commonwidgets.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
 import 'package:mobizapp/Pages/ExpensesPage.dart';
+import 'package:mobizapp/Pages/Group_Print.dart';
 import 'package:mobizapp/Pages/Stock/StockName_RequestScreen.dart';
 import 'package:mobizapp/Pages/VIsitsPage.dart';
 import 'package:mobizapp/Pages/customerscreen.dart';
@@ -24,16 +27,23 @@ import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/Water.dart';
 import 'package:mobizapp/Models/VanStockDataModel.dart';
+import 'package:mobizapp/confg/textconfig.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pie_chart/pie_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:shimmer/shimmer.dart';
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
+import 'TestExpensePage.dart';
 import 'Cheque/Cheque_Colection.dart';
+import 'Cheque_Receipt.dart';
+import 'Delivery_details_driver.dart';
 import 'Schedule_page.dart';
+import 'TestInvoice.dart';
+import 'TestReturn.dart';
 import 'VanTransfer_option.dart';
 import 'homeorder.dart';
 import 'homereturn.dart';
@@ -52,6 +62,26 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> savedCartItems = [];
   bool _restrict = false;
   String _appVersion = 'Loading...';
+  var selectedDate = DateTime.now();
+  List<dynamic> appIcons = [];
+  List<List<dynamic>> paginatedIcons = [];
+  List<dynamic> IconDatas = [];
+  int completedTodaySchedule = 0;
+  int totalTodaySchedule = 0;
+  int completedEmergencySchedule = 0;
+  int totalEmergencySchedule = 0;
+  double couponSale = 0.0;
+  int usedCoupons = 0;
+  double expenses = 0.0;
+  int filledBottle = 0;
+  int emptyBottle = 0;
+  double cashInHand = 0.0;
+  double cashSale = 0.0;
+  double creditSale = 0.0;
+  double amountPending = 0.0;
+  double amountCollected = 0.0;
+  double totalSale = 0.0;
+
   bool performLogout() {
     try {
       SharedPref().clear();
@@ -73,6 +103,78 @@ class _HomeScreenState extends State<HomeScreen> {
     _getUserDetails();
     super.initState();
     _fetchAppVersion();
+    fetchDashboardData();
+    fetchAppIcons();
+  }
+
+  Map<String, double> dataMap = {};
+  Future<void> fetchDashboardData() async {
+    final String url =
+        '${RestDatasource().BASE_URL}/api/second_dashbord?store_id=${AppState().storeId}&date=${DateFormat('yyyy-MM-dd').format(selectedDate)}&user_id=${AppState().userId}';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      if (jsonResponse['success']) {
+        setState(() {
+          var data = jsonResponse['data'];
+          completedTodaySchedule = data['todays_schedule']['completed'] ?? 0;
+          totalTodaySchedule = data['todays_schedule']['total'] ?? 0;
+          completedEmergencySchedule =
+              data['emergency_schedule']['completed'] ?? 0;
+          totalEmergencySchedule = data['emergency_schedule']['total'] ?? 0;
+          couponSale =
+              (data['coupon_sale'] ?? 0).toDouble(); // Ensure it's a double
+          usedCoupons = data['used_coupons'] ?? 0;
+          expenses = (data['expenses'] ?? 0).toDouble(); // Ensure it's a double
+          filledBottle = data['filled_bottle'] ?? 0;
+          emptyBottle = data['empty_bottle'] ?? 0;
+          cashInHand =
+              (data['cash_in_hand'] ?? 0).toDouble(); // Ensure it's a double
+          cashSale =
+              (data['cash_sale'] ?? 0).toDouble(); // Ensure it's a double
+          creditSale =
+              (data['credit_sale'] ?? 0).toDouble(); // Ensure it's a double
+          amountPending =
+              (data['amount_pending'] ?? 0).toDouble(); // Ensure it's a double
+          amountCollected = (data['amount_collected'] ?? 0)
+              .toDouble(); // Ensure it's a double
+          totalSale =
+              (data['total_sale'] ?? 0).toDouble(); // Ensure it's a double
+          dataMap = {
+            "Amount Pending": amountPending,
+            "Amount Collected": amountCollected,
+            // "Total Sale": totalSale,
+          };
+        });
+      }
+    } else {
+      throw Exception('Failed to load dashboard data');
+    }
+  }
+
+  Future<void> fetchAppIcons() async {
+    final response = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/store_app_icons?store_id=${AppState().storeId}'));
+
+    if (response.statusCode == 200) {
+      print(response.request);
+      final data = json.decode(response.body);
+      setState(() {
+        if (data['success'] == null) {
+          appIcons = [];
+        } else if (data['success'] is List) {
+          appIcons = data['success'];
+        } else if (data['success'] is Map) {
+          appIcons = (data['success'] as Map<String, dynamic>).values.toList();
+        } else {
+          appIcons = [];
+        }
+        paginatedIcons = _paginateList(appIcons, 15);
+      });
+    } else {
+      throw Exception('Failed to load app icons');
+    }
   }
 
   Future<void> _fetchAppVersion() async {
@@ -82,14 +184,79 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Map<String, double> dataMap = {
-    "60.0": 60,
-    "80.0": 80,
-  };
+  List<List<dynamic>> _paginateList(List<dynamic> list, int chunkSize) {
+    List<List<dynamic>> chunks = [];
+    for (var i = 0; i < list.length; i += chunkSize) {
+      chunks.add(list.sublist(
+        i,
+        i + chunkSize > list.length ? list.length : i + chunkSize,
+      ));
+    }
+    return chunks;
+  }
+
+  IconData? getIconData(String? iconName) {
+    if (iconName == null) return null;
+
+    switch (iconName) {
+      case 'Icons.directions_bus':
+        return Icons.directions_bus;
+      case 'people':
+        return Icons.people;
+      case 'shopping_cart':
+        return Icons.shopping_cart;
+      case 'menu_book':
+        return Icons.menu_book;
+      case 'water_drop':
+        return Icons.water_drop;
+      case 'document_scanner':
+        return Icons.document_scanner;
+      case 'receipt':
+        return Icons.receipt;
+      case 'inventory':
+        return Icons.inventory;
+      case 'calendar_today':
+        return Icons.calendar_today;
+      case 'groups':
+        return Icons.groups;
+      case 'question_answer':
+        return Icons.question_answer;
+      case 'receipt_long':
+        return Icons.receipt_long;
+      case 'handshake':
+        return Icons.handshake;
+      case 'local_shipping':
+        return Icons.local_shipping;
+      case 'free_cancellation':
+        return Icons.free_cancellation;
+      case 'local_mall':
+        return Icons.local_mall;
+      case 'credit_card_sharp':
+        return Icons.credit_card_sharp;
+      case 'insert_drive_file_rounded':
+        return Icons.insert_drive_file_rounded;
+      default:
+        return Icons.help;
+    }
+  }
+
+  // Map<String, double> dataMap = {
+  //   "60.0": 60,
+  //   "80.0": 80,
+  //   "20.0": 20, // Added the new value for white color
+  // };
+
+  List<Color> colorList = [
+    Colors.green.shade300,
+    Colors.blue,
+    Colors.white, // Added the new color
+  ];
 
   @override
   Widget build(BuildContext context) {
     String currentDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+    // final paginatedIcons = paginateIcons(appIcons, 15);
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 40,
@@ -212,287 +379,109 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ]),
                           ),
-                          CommonWidgets.verticalSpace(4),
+                          CommonWidgets.verticalSpace(8),
                           Container(
-                            height: MediaQuery.of(context).size.height * 0.715,
-                            child: PageView(
-                              children: [
-                                Container(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (_restrict) {
-                                                    CommonWidgets.showDialogueBox(
-                                                        context: context,
-                                                        title: "Alert",
-                                                        msg:
-                                                            "Van not allocated to this user");
-                                                  } else {
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        VanStockScreen
-                                                            .routeName);
-                                                  }
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.directions_bus,
-                                                    title: 'Van Stock'),
-                                              ),
-                                              GestureDetector(
-                                                  onTap: () {
-                                                    if (_restrict) {
-                                                      CommonWidgets.showDialogueBox(
-                                                          context: context,
-                                                          title: "Alert",
-                                                          msg:
-                                                              "Van not allocated to this user");
-                                                    } else {
-                                                      Navigator.pushNamed(
-                                                          context,
-                                                          CustomersDataScreen
-                                                              .routeName);
-                                                    }
-                                                  },
-                                                  child: _iconButtons(
-                                                      icon: Icons.people,
-                                                      title: 'Customer')),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (_restrict) {
-                                                    CommonWidgets.showDialogueBox(
-                                                        context: context,
-                                                        title: "Alert",
-                                                        msg:
-                                                            "Van not allocated to this user");
-                                                  } else {
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        ProductsScreen
-                                                            .routeName);
-                                                  }
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.shopping_cart,
-                                                    title: 'Product'),
-                                              )
-                                            ]),
-                                        CommonWidgets.verticalSpace(2),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            GestureDetector(
-                                                onTap: () {
-                                                  Navigator.of(context)
-                                                      .pushNamed(Expensespage
-                                                          .routeName);
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.menu_book,
-                                                    title: 'Expense')),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.of(context).pushNamed(
-                                                    Tststs.routeName);
-                                              },
-                                              child: _iconButtons(
-                                                  icon: Icons.water_drop,
-                                                  title: 'Coupon'),
+                            height: MediaQuery.of(context).size.height * 0.68,
+                            child: paginatedIcons.isNotEmpty
+                                ? PageView.builder(
+                                    itemCount: paginatedIcons.length,
+                                    itemBuilder: (context, pageIndex) {
+                                      final pageData =
+                                          paginatedIcons[pageIndex];
+                                      return SingleChildScrollView(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 15),
+                                          child: GridView.builder(
+                                            shrinkWrap: true,
+                                            physics:
+                                                NeverScrollableScrollPhysics(),
+                                            gridDelegate:
+                                                SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: 3,
+                                              crossAxisSpacing: 13,
+                                              childAspectRatio: .95,
+                                              mainAxisSpacing: 10,
                                             ),
-                                            InkWell(
-                                              onTap: () => Navigator.pushNamed(
-                                                  context,
-                                                  SaleInvoiceScrreen.routeName),
-                                              child: _iconButtons(
-                                                  icon: Icons.document_scanner,
-                                                  title: 'Invoice'),
-                                            )
-                                          ],
-                                        ),
-                                        CommonWidgets.verticalSpace(2),
-                                        Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              InkWell(
-                                                onTap: () =>
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        ReceiptScreen
-                                                            .receiptScreen),
-                                                child: _iconButtons(
-                                                    icon: Icons.receipt,
-                                                    title: 'Receipt'),
-                                              ),
-                                              GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.pushNamed(
-                                                        context,
-                                                        HomereturnScreen
-                                                            .routeName);
-                                                  },
-                                                  child: _iconButtons(
-                                                      icon: Icons.inventory,
-                                                      title: 'Return')),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  Navigator.of(context)
-                                                      .pushNamed(SchedulePage
-                                                          .routeName);
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.calendar_today,
-                                                    title: 'Schedule'),
-                                              ),
-                                            ]),
-                                        CommonWidgets.verticalSpace(2),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            GestureDetector(
-                                                onTap: () {
-                                                  Navigator.of(context)
-                                                      .pushNamed(
-                                                          Attendance.routeName);
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.groups,
-                                                    title: 'Attendance')),
-                                            GestureDetector(
-                                              onTap: () {
-                                                if (_restrict) {
-                                                  CommonWidgets.showDialogueBox(
-                                                      context: context,
-                                                      title: "Alert",
-                                                      msg:
-                                                          "Van not allocated to this user");
-                                                } else {
-                                                  Navigator.of(context)
-                                                      .pushNamed(
-                                                          VanStockRequestsScreen
-                                                              .routeName);
-                                                }
-                                              },
-                                              child: _iconButtons(
-                                                  icon: Icons.question_answer,
-                                                  title: 'Van Stock Request'),
-                                            ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.pushNamed(
-                                                    context,
-                                                    OffLoadRequestScreen
-                                                        .routeName);
-                                              },
-                                              child: _iconButtons(
-                                                icon: Icons.receipt_long,
-                                                title: 'Off Load Request',
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        CommonWidgets.verticalSpace(2),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            GestureDetector(
-                                                onTap: () {
-                                                  Navigator.of(context)
-                                                      .pushNamed(
-                                                          Visitspage.routeName);
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.handshake,
-                                                    title: 'Visit')),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.of(context).pushNamed(
-                                                    VantransferOption
-                                                        .routeName);
-                                              },
-                                              child: _iconButtons(
-                                                  image:
-                                                      'Assets/Images/van stock.png',
-                                                  title: 'Transfer'),
-                                            ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.of(context).pushNamed(
-                                                    Dayclose.routeName);
-                                              },
-                                              child: _iconButtons(
-                                                  image:
-                                                      'Assets/Images/day close.png',
-                                                  title: 'Day Close'),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            GestureDetector(
-                                                onTap: () {
-                                                  Navigator.pushNamed(
-                                                      context,
-                                                      HomeorderScreen
-                                                          .routeName);
-                                                },
-                                                child: _iconButtons(
-                                                    icon: Icons.local_mall,
-                                                    title: 'Order')),
+                                            itemCount: pageData.length,
+                                            itemBuilder: (context, index) {
+                                              final iconData = pageData[index];
+                                              final iconList = iconData['icon']
+                                                  as List<dynamic>?;
+                                              final firstIconObject =
+                                                  iconList != null &&
+                                                          iconList.isNotEmpty
+                                                      ? iconList[0]
+                                                      : null;
 
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.pushNamed(
-                                                    context,
-                                                    StockName_RequestScreen
-                                                        .routeName);
-                                              },
-                                              child: _iconButtons(
-                                                icon: Icons.receipt_long,
-                                                title: 'Stoke Take',
-                                              ),
-                                            ),
-                                            GestureDetector(
-                                              onTap: () {
-                                                Navigator.pushNamed(
-                                                    context,
-                                                    ChequeCollectionPage
-                                                        .routeName);
-                                              },
-                                              child: _iconButtons(
-                                                icon: Icons.credit_card_sharp,
-                                                title: 'Cheque Collection',
+                                              final iconName =
+                                                  firstIconObject != null
+                                                      ? firstIconObject['icon']
+                                                          as String?
+                                                      : null;
+                                              final name =
+                                                  firstIconObject != null
+                                                      ? firstIconObject['name']
+                                                          as String?
+                                                      : 'Unknown';
+                                              final url =
+                                                  firstIconObject != null
+                                                      ? firstIconObject['url']
+                                                          as String?
+                                                      : '';
+
+                                              return _iconButtons(
+                                                title: name ?? 'Unknown',
+                                                routeName: url ?? '',
+                                                icon: getIconData(iconName),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Shimmer.fromColors(
+                                      baseColor: Colors.grey.shade300,
+                                      highlightColor: Colors.white,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(35.0),
+                                        child: Column(
+                                          children: [
+                                            Expanded(
+                                              child: GridView.builder(
+                                                scrollDirection: Axis.vertical,
+                                                shrinkWrap: true,
+                                                physics:
+                                                    BouncingScrollPhysics(),
+                                                itemCount: 12,
+                                                gridDelegate:
+                                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                                  crossAxisCount: 3,
+                                                  mainAxisExtent: 120,
+                                                  crossAxisSpacing: 20,
+                                                  mainAxisSpacing: 30,
+                                                ),
+                                                itemBuilder: (context, index) {
+                                                  return Container(
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                )
-                              ],
-                            ),
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -562,8 +551,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 10,
                     ),
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: AppConfig.textSubTitleSize,
+                          vertical: AppConfig.textCaption3Size),
                       decoration: BoxDecoration(
                         color: AppConfig.colorPrimary,
                         borderRadius: BorderRadius.circular(10),
@@ -572,13 +562,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         currentDate, // Show the current date
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontSize: AppConfig.textCaption3Size,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     SizedBox(
-                      height: 15,
+                      height: SizeConfig.safeBlockVertical! * 2,
                     ),
                     Container(
                       child: Padding(
@@ -589,8 +579,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  height: 190,
-                                  width: 190,
+                                  height: SizeConfig.safeBlockVertical! * 22,
+                                  width: SizeConfig.blockSizeHorizontal * 45,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     color: AppConfig.colorPrimary,
@@ -598,7 +588,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Column(
                                     children: [
                                       SizedBox(
-                                        height: 20,
+                                        height:
+                                            SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       Text(
                                         'TODAY\'S SCHEDULE',
@@ -607,18 +598,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                             fontWeight: FontWeight.w700),
                                       ),
                                       SizedBox(
-                                        height: 20,
+                                        height:
+                                            SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       CircularPercentIndicator(
                                         radius: 50.0, // Size of the circle
                                         lineWidth:
                                             10.0, // Width of the circle's stroke
-                                        percent: 2 /
-                                            70, // Progress percentage (2 out of 70)
+                                        percent: completedTodaySchedule /
+                                            totalTodaySchedule, // Progress percentage (2 out of 70)
                                         center: Text(
-                                          "2/70", // Text inside the circle
+                                          "$completedTodaySchedule/$totalTodaySchedule", // Text inside the circle
                                           style: TextStyle(
-                                              fontSize: 20.0,
+                                              fontSize:
+                                                  AppConfig.textSubtitle3Size,
                                               color: Colors.white),
                                         ),
                                         progressColor: Colors
@@ -632,8 +625,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Container(
-                                  height: 190,
-                                  width: 190,
+                                  height: SizeConfig.safeBlockVertical! * 22,
+                                  width: SizeConfig.blockSizeHorizontal * 45,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     color: AppConfig.colorPrimary,
@@ -641,28 +634,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Column(
                                     children: [
                                       SizedBox(
-                                        height: 20,
+                                        height:
+                                            SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       Text(
                                         'EMERGENCY\'S SCHEDULE',
                                         style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13),
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                       SizedBox(
-                                        height: 20,
+                                        height:
+                                            SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       CircularPercentIndicator(
                                         radius: 50.0, // Size of the circle
                                         lineWidth:
                                             10.0, // Width of the circle's stroke
-                                        percent: 0 /
-                                            70, // Progress percentage (2 out of 70)
+                                        percent: completedEmergencySchedule /
+                                            totalEmergencySchedule, // Progress percentage (2 out of 70)
                                         center: Text(
-                                          "0/0", // Text inside the circle
+                                          "$completedEmergencySchedule/$totalEmergencySchedule", // Text inside the circle
                                           style: TextStyle(
-                                              fontSize: 20.0,
+                                              fontSize:
+                                                  AppConfig.textSubtitle3Size,
                                               color: Colors.white),
                                         ),
                                         progressColor: Colors
@@ -678,13 +674,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             SizedBox(
-                              height: 10,
+                              height: SizeConfig.safeBlockVertical! * 1.5,
                             ),
                             Row(
                               children: [
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -697,11 +693,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'COUPON SALE',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('0',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                      Text(
+                                        couponSale.toStringAsFixed(
+                                            2), // Converts double to a string with 2 decimal places
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize:
+                                              AppConfig.textParagraph2Size,
+                                        ),
+                                      )
                                     ],
                                   ),
                                 ),
@@ -709,8 +710,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -723,11 +724,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'USED COUPONS',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('0',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                      Text(
+                                        usedCoupons.toStringAsFixed(
+                                            2), // Converts double to a string with 2 decimal places
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize:
+                                              AppConfig.textParagraph2Size,
+                                        ),
+                                      )
                                     ],
                                   ),
                                 ),
@@ -735,8 +741,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -749,24 +755,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'EXPENSES',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('0',
+                                      Text(expenses.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                              fontSize:
+                                                  AppConfig.textParagraph2Size))
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                             SizedBox(
-                              height: 10,
-                            ),
+                                height: SizeConfig.safeBlockVertical! * 1.5),
                             Row(
                               children: [
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -779,11 +785,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'FILLED BOTTLE',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('65',
+                                      Text(filledBottle.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                              fontSize:
+                                                  AppConfig.textParagraph2Size))
                                     ],
                                   ),
                                 ),
@@ -791,8 +798,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -805,11 +812,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'EMPTY BOTTLE',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('35',
+                                      Text(emptyBottle.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                              fontSize:
+                                                  AppConfig.textParagraph2Size))
                                     ],
                                   ),
                                 ),
@@ -817,8 +825,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: 70,
-                                  width: 127,
+                                  height: SizeConfig.safeBlockVertical! * 8,
+                                  width: SizeConfig.safeBlockHorizontal! * 30,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
                                       borderRadius: BorderRadius.circular(20)),
@@ -831,21 +839,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'CASH IN HAND',
                                         style: TextStyle(color: Colors.white),
                                       ),
-                                      Text('80.0',
+                                      Text(cashInHand.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
-                                              fontSize: 25))
+                                              fontSize:
+                                                  AppConfig.textParagraph2Size))
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                             SizedBox(
-                              height: 10,
+                              height: SizeConfig.safeBlockVertical! * 1.5,
                             ),
                             Container(
-                              height: 300,
+                              height: SizeConfig.safeBlockVertical! * 37,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                   color: AppConfig.colorPrimary,
@@ -860,11 +869,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Column(
                                           children: [
                                             SizedBox(
-                                              height: 15,
+                                              height: SizeConfig
+                                                      .safeBlockVertical! *
+                                                  2,
                                             ),
                                             Container(
                                               padding: EdgeInsets.symmetric(
-                                                  horizontal: 25, vertical: 10),
+                                                  horizontal: SizeConfig
+                                                          .blockSizeHorizontal! *
+                                                      8,
+                                                  vertical: SizeConfig
+                                                          .blockSizeVertical! *
+                                                      1.2),
                                               decoration: BoxDecoration(
                                                 color: Colors.indigo.shade300,
                                                 borderRadius:
@@ -883,21 +899,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                               height: 15,
                                             ),
                                             Container(
-                                              height: 200,
-                                              width: 200,
+                                              height: SizeConfig
+                                                      .safeBlockVertical! *
+                                                  24,
+                                              width: SizeConfig
+                                                      .safeBlockHorizontal! *
+                                                  50,
                                               child: PieChart(
                                                 dataMap: dataMap,
-                                                colorList: [
-                                                  Colors.green.shade300,
-                                                  Colors.blue
-                                                ], // Colors for the pie sections
+                                                colorList: colorList,
                                                 chartRadius:
                                                     MediaQuery.of(context)
                                                             .size
                                                             .width *
                                                         .5,
-                                                centerText:
-                                                    "", // Optional center text
+                                                centerText: "",
                                                 chartValuesOptions:
                                                     ChartValuesOptions(
                                                   showChartValues: true,
@@ -983,11 +999,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     .white, // White color for "Total Sales"
                                               ),
                                               SizedBox(width: 10),
-                                              Text(
-                                                'Total Sales: 140.0',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    'Total Sales: ',
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12),
+                                                  ),
+                                                  Text(
+                                                    totalSale
+                                                        .toStringAsFixed(2),
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  )
+                                                ],
                                               ),
                                             ],
                                           ),
@@ -996,7 +1022,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                   Text(
-                                    'Total sales amount: 140.0',
+                                    'Total sales amount: $totalSale',
                                     style: TextStyle(color: Colors.white),
                                   )
                                 ],
@@ -1016,43 +1042,138 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _iconButtons({IconData? icon, required String title, String? image}) {
-    return Container(
-      width: SizeConfig.blockSizeHorizontal * 25,
-      height: SizeConfig.blockSizeVertical * 12.5,
-      decoration: const BoxDecoration(
+  Widget _iconButtons({
+    IconData? icon,
+    required String title,
+    String? image,
+    String? routeName,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (routeName != null) {
+          switch (routeName) {
+            case 'VanStockScreen':
+              if (_restrict) {
+                CommonWidgets.showDialogueBox(
+                    context: context,
+                    title: "Alert",
+                    msg: "Van not allocated to this user");
+              } else {
+                Navigator.pushNamed(context, VanStockScreen.routeName);
+              }
+              break;
+            case 'CustomersDataScreen':
+              if (_restrict) {
+                CommonWidgets.showDialogueBox(
+                    context: context,
+                    title: "Alert",
+                    msg: "Van not allocated to this user");
+              } else {
+                Navigator.pushNamed(context, CustomersDataScreen.routeName);
+              }
+              break;
+            case 'ProductsScreen':
+              if (_restrict) {
+                CommonWidgets.showDialogueBox(
+                    context: context,
+                    title: "Alert",
+                    msg: "Van not allocated to this user");
+              } else {
+                Navigator.pushNamed(context, ProductsScreen.routeName);
+              }
+              break;
+            case 'Expensespage':
+              Navigator.pushNamed(context, Expensespage.routeName);
+              break;
+            case 'HomeWater':
+              Navigator.pushNamed(context, HomeWater.routeName);
+              break;
+            case 'SaleInvoiceScrreen':
+              Navigator.pushNamed(context, SaleInvoiceScrreen.routeName);
+              break;
+            case 'ReceiptScreen':
+              Navigator.pushNamed(context, ReceiptScreen.receiptScreen);
+              break;
+            case 'HomereturnScreen':
+              Navigator.pushNamed(context, HomereturnScreen.routeName);
+              break;
+            case 'SchedulePage':
+              Navigator.pushNamed(context, SchedulePage.routeName);
+              break;
+            case 'Attendance':
+              Navigator.pushNamed(context, Attendance.routeName);
+              break;
+            case 'VanStockRequestsScreen':
+              Navigator.pushNamed(context, VanStockRequestsScreen.routeName);
+              break;
+            case 'OffLoadRequestScreen':
+              Navigator.pushNamed(context, OffLoadRequestScreen.routeName);
+              break;
+            case 'Visitspage':
+              Navigator.pushNamed(context, Visitspage.routeName);
+              break;
+            case 'VantransferOption':
+              Navigator.pushNamed(context, VantransferOption.routeName);
+              break;
+            case 'Dayclose':
+              Navigator.pushNamed(context, Dayclose.routeName);
+              break;
+            case 'HomeorderScreen':
+              Navigator.pushNamed(context, HomeorderScreen.routeName);
+              break;
+            case 'StockName_RequestScreen':
+              Navigator.pushNamed(context, StockName_RequestScreen.routeName);
+              break;
+            case 'ChequeReceipt':
+              Navigator.pushNamed(context, ChequeReceipt.routeName);
+              break;
+            case 'DeliveryDetailsDriver':
+              Navigator.pushNamed(context, DeliveryDetailsDriver.routeName);
+              break;
+            default:
+              Navigator.pushNamed(context, routeName);
+          }
+        }
+      },
+      child: Container(
+        width: SizeConfig.blockSizeHorizontal * 25,
+        height: SizeConfig.blockSizeVertical * 12.5,
+        decoration: const BoxDecoration(
           borderRadius: BorderRadius.all(Radius.circular(10)),
-          color: AppConfig.colorPrimary),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (icon != null)
-            Icon(
-              icon,
-              color: AppConfig.backgroundColor,
-              size: 40,
-            )
-          else if (image != null)
-            Image.asset(
-              image,
-              width: 50,
-              height: 40,
-              fit: BoxFit.contain,
-            ),
-          SizedBox(
-            width: SizeConfig.blockSizeHorizontal * 18,
-            child: Center(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
+          color: AppConfig.colorPrimary,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (icon != null)
+              Icon(
+                icon,
+                color: AppConfig.backgroundColor,
+                size: 40,
+              )
+            else if (image != null)
+              Image.asset(
+                image,
+                width: 50,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
+            SizedBox(
+              width: SizeConfig.blockSizeHorizontal * 18,
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
                     color: AppConfig.backgroundColor,
-                    fontSize: AppConfig.textCaption3Size),
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                ),
               ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }

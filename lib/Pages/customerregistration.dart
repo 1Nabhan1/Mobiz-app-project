@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,7 +9,8 @@ import 'package:mobizapp/Utilities/rest_ds.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
-
+import 'package:http/http.dart' as http;
+import '../Models/Store_model.dart';
 import '../Models/customercodemodel.dart';
 import '../Models/provincemodelclass.dart';
 import '../Models/routedatamodelclass.dart';
@@ -24,8 +26,8 @@ class CustomerRegistration extends StatefulWidget {
 
 class _CustomerRegistrationState extends State<CustomerRegistration> {
   File? _image;
+  bool showFields = false;
   bool _initDone = false;
-
   int cud = 0;
 
   Future<void> _pickImage() async {
@@ -39,6 +41,34 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         print('No image selected.');
       }
     });
+  }
+
+  Future<String> _loadImage(String img) async {
+    String productUrl = '${RestDatasource().Product_URL}/uploads/customer/$img';
+    String baseUrl = '${RestDatasource().BASE_URL}/uploads/customer/$img';
+
+    // Try loading the image from the product URL first
+    try {
+      final response = await http.head(Uri.parse(productUrl));
+      if (response.statusCode == 200) {
+        return productUrl;
+      }
+    } catch (e) {
+      // Log error if needed
+    }
+
+    // If the product URL fails, try loading from the base URL
+    try {
+      final response = await http.head(Uri.parse(baseUrl));
+      if (response.statusCode == 200) {
+        return baseUrl;
+      }
+    } catch (e) {
+      // Log error if needed
+    }
+
+    // If both fail, return an empty string or throw an error
+    throw Exception('Image not found');
   }
 
   void _getLocation() async {
@@ -67,6 +97,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   var _contactNumberController = TextEditingController();
   var _whatsappNumberController = TextEditingController();
   var _emailController = TextEditingController();
+  var _buildingController = TextEditingController();
+  var _flatNumberController = TextEditingController();
   var _locationController = TextEditingController();
   final _trnController = TextEditingController();
   final _creditDays = TextEditingController();
@@ -77,6 +109,8 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   late FocusNode contactfocus;
   late FocusNode whatsappfocus;
   late FocusNode emailfocus;
+  late FocusNode buildingfocus;
+  late FocusNode flatfocus;
   late FocusNode trnfocus;
 
   String? _selectPaymentTerms;
@@ -116,13 +150,17 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _nameController.text = params['name'] ?? '';
         _customercode = params['code'];
         _addressController.text = params['address'] ?? '';
+        _buildingController.text = params['building'] ?? '';
+        _flatNumberController.text = params['flat_no'] ?? '';
         _contactNumberController.text = params['phone'] ?? '';
         _whatsappNumberController.text = params['whatsappNumber'] ?? '';
         _trnController.text = params['trn'] ?? '';
         img = params['cust_image'];
         _location = params['location'] ?? 'Click the icon to fetch the data';
-        _selectPaymentTerms = params['paymentTerms'] == '' ? null : params['paymentTerms'];
-        _selectedProvinceid = params['provinceId'] == 0 ? null : params['provinceId'];
+        _selectPaymentTerms =
+            params['paymentTerms'] == '' ? null : params['paymentTerms'];
+        _selectedProvinceid =
+            params['provinceId'] == 0 ? null : params['provinceId'];
         print('object');
         print(params['provinceId']);
         _selectedrouteid = params['routeId'];
@@ -136,18 +174,34 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         _emailController.text = params['email'] ?? '';
         _isUpdate = true;
       }
-
     });
     namefocus = FocusNode();
     addressfocus = FocusNode();
     contactfocus = FocusNode();
     whatsappfocus = FocusNode();
     emailfocus = FocusNode();
+    buildingfocus = FocusNode();
+    flatfocus = FocusNode();
     trnfocus = FocusNode();
 
     super.initState();
     _getRoutes()
-        .then((value) => _getProvince().then((value) => _getCodeData()));
+        .then((value) => _getProvince())
+        .then((value) => _getCodeData())
+        .then((value) => fetchStoreDetail())
+        .then((storeDetail) {
+      if (storeDetail != null && storeDetail.comapny_id == 5) {
+        setState(() {
+          showFields = true; // Show fields for company_id 5
+        });
+      } else {
+        setState(() {
+          showFields = false; // Hide fields otherwise
+        });
+      }
+      print("SSSSS${storeDetail!.comapny_id}");
+    });
+    // fetchStoreDetail();
     // _getProvince();
     // print(_selectPaymentTerms);
   }
@@ -161,11 +215,14 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     _contactNumberController.dispose();
     _whatsappNumberController.dispose();
     _emailController.dispose();
+    _buildingController.dispose();
+    _flatNumberController.dispose();
     _trnController.dispose();
     _creditDays.dispose();
     _creditLimit.dispose();
     trnfocus.dispose();
-
+    buildingfocus.dispose();
+    flatfocus.dispose();
     namefocus.dispose();
     contactfocus.dispose();
     addressfocus.dispose();
@@ -273,27 +330,44 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                     ),
                                     child: _image == null
                                         ? (img != null && img!.isNotEmpty)
-                                            ? ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                                child: Image.network(
-                                                  'http://68.183.92.8:3696/uploads/customer/cust_image/$img',
-                                                  width: 150,
-                                                  height: 150,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
+                                            ? FutureBuilder(
+                                                future: _loadImage(img!),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot
+                                                          .connectionState ==
+                                                      ConnectionState.waiting) {
                                                     return const Center(
-                                                      child:
-                                                          Text('Select Image'),
+                                                        child:
+                                                            CircularProgressIndicator());
+                                                  } else if (snapshot
+                                                      .hasError) {
+                                                    return const Center(
+                                                        child: Text(
+                                                            'Select Image'));
+                                                  } else {
+                                                    return ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20),
+                                                      child: Image.network(
+                                                        snapshot.data!,
+                                                        width: 150,
+                                                        height: 150,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context,
+                                                            error, stackTrace) {
+                                                          return const Center(
+                                                              child: Text(
+                                                                  'Select Image'));
+                                                        },
+                                                      ),
                                                     );
-                                                  },
-                                                ),
+                                                  }
+                                                },
                                               )
                                             : const Center(
-                                                child: Text('Select Image'),
-                                              )
-                                        : null, // Display 'Select Image' only if no image is selected or no image URL
+                                                child: Text('Select Image'))
+                                        : null,
                                   ),
                                   if (_image != null)
                                     Positioned(
@@ -416,6 +490,45 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                       _validateNotEmpty(value, 'Address'),
                                 ),
                                 CommonWidgets.verticalSpace(2),
+                                if (showFields) ...[
+                                  TextFormField(
+                                    // keyboardType: TextInputType.phone,
+                                    focusNode: buildingfocus,
+                                    onEditingComplete: () {
+                                      buildingfocus.requestFocus();
+                                    },
+                                    controller: _buildingController,
+                                    decoration: const InputDecoration(
+                                      focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: AppConfig.colorPrimary)),
+                                      labelText: 'Building',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    // validator: (value) => _validateNotEmpty(
+                                    //     value, 'Building'),
+                                  ),
+                                  CommonWidgets.verticalSpace(2),
+                                  TextFormField(
+                                    // keyboardType: TextInputType.phone,
+                                    focusNode: flatfocus,
+                                    onEditingComplete: () {
+                                      flatfocus.requestFocus();
+                                    },
+                                    controller: _flatNumberController,
+                                    decoration: const InputDecoration(
+                                      focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: AppConfig.colorPrimary)),
+                                      labelText: 'Flat Number',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    // validator: (value) => _validateNotEmpty(
+                                    //     value, 'Flat Number'),
+                                  ),
+                                  CommonWidgets.verticalSpace(2),
+                                ],
+                                // CommonWidgets.verticalSpace(2),
                                 TextFormField(
                                   keyboardType: TextInputType.phone,
                                   focusNode: contactfocus,
@@ -561,36 +674,38 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                 CustomDropdown(
                                   items: routes,
                                   selectedValue: _selectedrouteid != null
-                                      ? routes.firstWhere((element) =>
-                                          element['id'] == _selectedrouteid)
+                                      ? routes.firstWhere(
+                                        (element) => element['id'] == _selectedrouteid,
+                                    orElse: () => {} // Return null if no match is found
+                                  )
                                       : null,
                                   onChanged: (selectedroute) {
                                     setState(() {
-                                      _selectedrouteid = selectedroute!['id'];
+                                      _selectedrouteid = selectedroute?['id']; // Safely handle null values
                                     });
                                   },
                                   hint: 'Select Routes',
                                   label: 'Route',
                                 ),
+
                                 CommonWidgets.verticalSpace(2),
                                 CustomDropdown(
                                   items: provinces,
                                   selectedValue: _selectedProvinceid != null
-                                      ? provinces.firstWhere((element) =>
-                                          element['id'] == _selectedProvinceid)
+                                      ? provinces.firstWhere(
+                                        (element) => element['id'] == _selectedProvinceid,
+                                    orElse: () => {}, // Return null if no match is found
+                                  )
                                       : null,
                                   onChanged: (selectedProvince) {
                                     setState(() {
-                                      // _selectedProvince =
-                                      //     selectedProvince!['name'];
-                                      _selectedProvinceid =
-                                          selectedProvince!['id'];
+                                      _selectedProvinceid = selectedProvince?['id'];
                                     });
-                                    // print(_selectedProvinceid);
                                   },
                                   hint: 'Select Province',
                                   label: 'Province',
                                 ),
+
                                 // CustomDropdown(
                                 //   items: provinces,
                                 //   selectedValue: _selectedProvinceid != null
@@ -720,6 +835,38 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     );
   }
 
+  Future<StoreDetail?> fetchStoreDetail() async {
+    final url = Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("data:::${data['company_id']}");
+        print(showFields);
+        if (data['company_id'] == 5) {
+          setState(() {
+            showFields = true;
+          });
+        } else {
+          setState(() {
+            showFields = false;
+          });
+        }
+        return StoreDetail.fromJson(data);
+      } else {
+        // Handle error
+        print('Failed to fetch data: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return null;
+    }
+  }
+
   Future<void> _getRoutes() async {
     RestDatasource api = RestDatasource();
     dynamic resJson = await api.getDetails(
@@ -786,41 +933,60 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     RestDatasource api = RestDatasource();
     Map<String, dynamic> bodyJson = {
       'id': id,
-      "name": _nameController.text,
-      "code": _customercode,
+      'name': _nameController.text,
+      'code': _customercode,
       'address': _addressController.text,
       'contact_number': _contactNumberController.text,
       'whatsapp_number': _whatsappNumberController.text,
       'email': _emailController.text,
-      'location':
-          _locationController.text == '' ? _location : _locationController.text,
+      'Building': _buildingController.text,
+      'Flat_no': _flatNumberController.text,
+      'location': _locationController.text.isNotEmpty
+          ? _locationController.text
+          : _location,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,
-      // rId.toString(),
       'provience_id': _selectedProvinceid,
       'store_id': AppState().storeId,
       if (_creditLimit.text.isNotEmpty) 'credi_limit': _creditLimit.text,
       if (_creditDays.text.isNotEmpty) 'credi_days': _creditDays.text,
     };
-    print('Body data $bodyJson');
-    dynamic resJson = await api.customerRegister(
-        AppState().token, bodyJson, _image, context, _isUpdate);
-    print('Response data $resJson');
-    // if (resJson["data"] != null) {
-    if (mounted) {
-      CommonWidgets.showDialogueBox(
-              context: context, title: "", msg: "Data Inserted Successfully")
-          .then((value) =>
-              Navigator.pushReplacementNamed(context, HomeScreen.routeName));
+
+    print('Body data: $bodyJson');
+    print('Image: $_image');
+
+    try {
+      dynamic resJson = await api.customerRegister(
+        AppState().token,
+        bodyJson,
+        _image,
+        context,
+        _isUpdate,
+      );
+      print('Response: $resJson');
+
+      if (mounted) {
+        CommonWidgets.showDialogueBox(
+          context: context,
+          title: "Success",
+          msg: "Data Inserted Successfully",
+        ).then(
+              (value) => Navigator.pushReplacementNamed(context, HomeScreen.routeName),
+        );
+      }
+    } catch (e) {
+      print("Error: $e");
+      if (mounted) {
+        CommonWidgets.showDialogueBox(
+          context: context,
+          title: "Error",
+          msg: "Something went wrong. Please try again.",
+        );
+      }
     }
-    // } else {
-    //   if (mounted) {
-    //     CommonWidgets.showDialogueBox(
-    //         context: context, title: "Alert", msg: "Something went wrong");
-    //   }
-    // }
   }
+
 }
 
 class CustomDropdown extends StatefulWidget {
@@ -866,7 +1032,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<Map<String, dynamic>>(
       hint: Text(widget.hint),
-      value: selectedItem,
+      value: widget.items.contains(selectedItem) ? selectedItem : null, // Ensure selectedItem matches an item or is null
       onChanged: (Map<String, dynamic>? newValue) {
         setState(() {
           selectedItem = newValue;
@@ -887,7 +1053,8 @@ class _CustomDropdownState extends State<CustomDropdown> {
         border: OutlineInputBorder(),
       ),
       validator: (value) =>
-          value == null ? 'Please select ${widget.label}' : null,
+      value == null ? 'Please select ${widget.label}' : null,
     );
+
   }
 }

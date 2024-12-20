@@ -26,13 +26,14 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
   final ScrollController _scrollController = ScrollController();
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
-
   int _currentPage = 1;
+  int?pricegroupId;
   bool _isLoading = false;
   bool _hasMore = true;
   bool _search = false;
   final TextEditingController _searchData = TextEditingController();
   int? id;
+  int? saleId;
   String? name;
   String? code;
   String? payment;
@@ -187,6 +188,9 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
       code = params!['code'];
       payment = params!['paymentTerms'];
       paydata = params!['outstandamt'];
+      pricegroupId = params!['price_group_id'];
+      saleId = params!['saleId'];
+      print(saleId);
       // dataId = params!['dataId'];
     }
     return Scaffold(
@@ -285,8 +289,10 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                               'customerId': id,
                               'name': name,
                               'code': code,
+                              'saleId':saleId,
                               'paymentTerms': payment,
-                              'outstandamt':paydata
+                              'outstandamt':paydata,
+                              'price_group_id':pricegroupId
                               // 'dataId': dataId
                             });
                       },
@@ -313,6 +319,7 @@ class _SalesselectproductreturnState extends State<Salesselectproductreturn> {
                               padding: const EdgeInsets.all(5.0),
                               child: Row(
                                 children: [
+
                                   SizedBox(
                                     width: 50,
                                     height: 50,

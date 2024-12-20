@@ -15,10 +15,11 @@ import 'package:mobizapp/Pages/salesscreen.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../Utilities/rest_ds.dart';
-import '../sales_screen.dart';
 import 'Copy/Copy.dart';
+import 'CustomerWater.dart';
 import 'Total_sales.dart';
 import 'customerreturndetails.dart';
 
@@ -41,6 +42,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     super.initState();
     fetchData();
     _fetchData();
+    fetchCustomerIcons();
     _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchData());
   }
 
@@ -55,13 +57,15 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? name;
   String? address;
   String? email;
+  String? building;
+  String? flat_no;
   String? phone;
   String? whatsappNumber;
   String? customerType;
   String? location;
   int? provinceId;
   int? routeId;
-  int?pricegroupId;
+  int? pricegroupId;
   int? id;
   String? img;
   String? code;
@@ -71,6 +75,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   String? totalOutstanding;
   String? paymentTerms;
   int? creditLimit;
+  List<List<dynamic>> paginatedIcons = [];
+  List<dynamic> appIcons = [];
+
   void _showSnackBar(BuildContext context) {
     final snackBar = SnackBar(
       content: Text(
@@ -82,6 +89,70 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Future<void> fetchCustomerIcons() async {
+    final response = await http.get(Uri.parse(
+        'http://68.183.92.8:3699/api/store_app_icons_customer?store_id=${AppState().storeId}'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      setState(() {
+        // Extracting the values of the `success` map
+        final successData = data['success'] as Map<String, dynamic>? ?? {};
+
+        // Flatten the map into a list of values
+        appIcons = successData.values.map((e) => e).toList();
+
+        // Paginate the icons
+        paginatedIcons = _paginateList(appIcons, 9);
+      });
+    } else {
+      throw Exception('Failed to load app icons');
+    }
+  }
+
+  List<List<dynamic>> _paginateList(List<dynamic> list, int chunkSize) {
+    List<List<dynamic>> chunks = [];
+    for (var i = 0; i < list.length; i += chunkSize) {
+      chunks.add(list.sublist(
+        i,
+        i + chunkSize > list.length ? list.length : i + chunkSize,
+      ));
+    }
+    return chunks;
+  }
+
+  IconData? getIconData(String? iconName) {
+    if (iconName == null) return null;
+
+    switch (iconName) {
+      case 'person_add':
+        return Icons.person_add;
+      case 'settings_suggest':
+        return Icons.settings_suggest;
+      case 'point_of_sale':
+        return Icons.point_of_sale;
+      case 'point_of_sale_sharp':
+        return Icons.point_of_sale_sharp;
+      case 'inventory':
+        return Icons.inventory;
+      case 'payments':
+        return Icons.payments;
+      case 'storefront_rounded':
+        return Icons.storefront_rounded;
+      case 'bar_chart':
+        return Icons.bar_chart;
+      case 'pie_chart':
+        return Icons.pie_chart;
+      case 'local_mall':
+        return Icons.local_mall;
+      case 'water_drop':
+        return Icons.water_drop;
+      default:
+        return Icons.help;
+    }
   }
 
   @override
@@ -108,9 +179,8 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       id = params['id'];
       code = params['code'];
       pricegroupId = params['price_group_id'];
-
-
     }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppConfig.colorPrimary,
@@ -262,10 +332,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               Row(
                 children: [
                   Text(
-                    'Total Outstanding: ${_data == '[]' ? '' : _data}',
+                    'Total Outstanding: ${_data == '[]' ? '' : (double.tryParse(_data) != null ? double.parse(_data).toStringAsFixed(3) : _data)}',
                     style: TextStyle(
-                        fontWeight: AppConfig.headLineWeight,
-                        color: Colors.black.withOpacity(0.7)),
+                      fontWeight: AppConfig.headLineWeight,
+                      color: Colors.black.withOpacity(0.7),
+                    ),
                   ),
                   CommonWidgets.horizontalSpace(2),
                   Text(
@@ -277,178 +348,276 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               CommonWidgets.verticalSpace(2),
               Container(
                 height: MediaQuery.of(context).size.height * 0.4,
-                child: PageView(
-                  children:[
-                  Column(
-                    children: [
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        InkWell(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                  context, CustomerRegistration.routeName,
-                                  arguments: {
-                                    'name': name,
-                                    'address': address,
-                                    'phone': phone,
-                                    'whatsappNumber': whatsappNumber,
-                                    'email': email,
-                                    'location': location,
-                                    'payment_terms': customerType,
-                                    'credit_days': creditDays,
-                                    'credit_limit': creditLimit,
-                                    'paymentTerms': paymentTerms,
-                                    'trn': trn,
-                                    'cust_image':img,
-                                    'code': code,
-                                    'provinceId': provinceId,
-                                    'routeId': routeId,
-                                    'id': id,
-                                  });
-                            },
-                            child: _iconButtons(icon: Icons.person_add, title: 'Edit')),
-                        GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, SOA.routeName, arguments: {
-                                'customerId': id,
-                                'name': name,
-                                'address': address,
-                                'code': code,
-                                'paymentTerms': paymentTerms
-                              });
-                            },
-                            child: _iconButtons(
-                                icon: Icons.settings_suggest, title: 'SOA')),
-                        InkWell(
-                            onTap: () {
-                              _showButton
-                                  ? _showSnackBar(context)
-                                  : Navigator.of(context)
-                                  .pushNamed(CopyScreen.routeName, arguments: {
-                                'customerId': id,
-                                'name': name,
-                                'price_group_id':pricegroupId,
-                                'code': code,
-                                'paymentTerms': paymentTerms,
-                                'outstandamt': _data
-                              });
-                            },
-                            child: _iconButtons(
-                                icon: Icons.point_of_sale, title: 'Sale')),
-                      ]),
-                      CommonWidgets.verticalSpace(2),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        InkWell(
-                            onTap: () {
-                              _showButton
-                                  ? _showSnackBar(context)
-                                  : Navigator.of(context)
-                                  .pushNamed(SalesScreen.routeName, arguments: {
-                                'customerId': id,
-                                'name': name,
-                              });
-                            },
-                            child: _iconButtons(
-                                icon: Icons.point_of_sale, title: 'Sales')),
-                        GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                  context, Customerreturndetail.routeName, arguments: {
-                                'customerId': id,
-                                'name': name,
-                                'code': code,
-                                'paymentTerms': paymentTerms,
-                                'outstandamt': _data
-                              });
-                            },
-                            child:
-                            _iconButtons(icon: Icons.inventory, title: 'Return')),
-                        InkWell(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                  context, PaymentCollectionScreen.routeName,
-                                  arguments: {
-                                    'customerId': id,
-                                    'name': name,
-                                    'code': code,
-                                    'paymentTerms': paymentTerms,
-                                    'outstandamt': _data
-                                  });
+                child: paginatedIcons.isNotEmpty
+                    ? PageView.builder(
+                        itemCount: paginatedIcons.length,
+                        itemBuilder: (context, pageIndex) {
+                          final pageData = paginatedIcons[pageIndex];
+                          return SingleChildScrollView(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 15),
+                              child: GridView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 13,
+                                  childAspectRatio: .95,
+                                  mainAxisSpacing: 10,
+                                ),
+                                itemCount: pageData.length,
+                                itemBuilder: (context, index) {
+                                  final iconData = pageData[index];
+                                  final iconList =
+                                      iconData['icon'] as List<dynamic>?;
+                                  final firstIconObject =
+                                      iconList != null && iconList.isNotEmpty
+                                          ? iconList[0]
+                                          : null;
 
-                              // Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (context) => PaymentCollectionScreen(
-                              //         id: 'customer',
-                              //         code: 'code',
-                              //         name: 'name',
-                              //       ),
-                              //     ));
-                            },
-                            child: _iconButtons(
-                                icon: Icons.payments, title: 'Payment Collection'))
-                      ]),
-                      CommonWidgets.verticalSpace(2),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, CustomerStock.routeName,arguments: {
-                              'customerId': id,
-                            });
-                          },
-                          child: _iconButtons(
-                              icon: Icons.storefront_rounded, title: 'Customer Stock'),
-                        ),
-                        GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, CustomerVisit.routeName,
-                                  arguments: {
-                                    'name': name,
-                                    'code': code,
-                                    'email': email,
-                                    'paymentTerms': paymentTerms,
-                                    'address': address,
-                                    'phone': phone,
-                                    'id': id,
-                                  });
-                            },
-                            child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
-                        GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, TotalSales.routeName,
-                                  arguments: {
-                                    'id': id,
-                                  });
-                            },
-                            child: _iconButtons(
-                                icon: Icons.pie_chart, title: 'Total Sales'))
-                      ]),
-                    ],
-                  ),
+                                  final iconName = firstIconObject != null
+                                      ? firstIconObject['icon'] as String?
+                                      : null;
+                                  final name = firstIconObject != null
+                                      ? firstIconObject['name'] as String?
+                                      : 'Unknown';
+                                  final url = firstIconObject != null
+                                      ? firstIconObject['url'] as String?
+                                      : '';
 
-                    Container(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                      context, Customerorderdetail.routeName, arguments: {
-                                    'customerId': id,
-                                    'name': name,
-                                    'code': code,
-                                    'paymentTerms': paymentTerms
-                                  });
+                                  return _iconButtons(
+                                    title: name ?? 'Unknown',
+                                    routeName: url ?? '',
+                                    icon: getIconData(iconName),
+                                  );
                                 },
-                                child:
-                                _iconButtons(icon: Icons.shopping_bag, title: 'Order'))
-                          ],
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.all(35.0),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: GridView.builder(
+                                    scrollDirection: Axis.vertical,
+                                    shrinkWrap: true,
+                                    physics: BouncingScrollPhysics(),
+                                    itemCount: 12,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      mainAxisExtent: 120,
+                                      crossAxisSpacing: 20,
+                                      mainAxisSpacing: 30,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    )
-                          ],
-                ),
+                // PageView(
+                //   children:[
+                //   Column(
+                //     children: [
+                //       Row(
+                //           mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                //         InkWell(
+                //             onTap: () {
+                //               Navigator.pushNamed(
+                //                   context, CustomerRegistration.routeName,
+                //                   arguments: {
+                //                     'name': name,
+                //                     'address': address,
+                //                     'building': building,
+                //                     'flat_no': flat_no,
+                //                     'phone': phone,
+                //                     'whatsappNumber': whatsappNumber,
+                //                     'email': email,
+                //                     'location': location,
+                //                     'payment_terms': customerType,
+                //                     'credit_days': creditDays,
+                //                     'credit_limit': creditLimit,
+                //                     'paymentTerms': paymentTerms,
+                //                     'trn': trn,
+                //                     'cust_image':img,
+                //                     'code': code,
+                //                     'provinceId': provinceId,
+                //                     'routeId': routeId,
+                //                     'id': id,
+                //                   });
+                //             },
+                //             child: _iconButtons(icon: Icons.person_add, title: 'Edit')),
+                //         GestureDetector(
+                //             onTap: () {
+                //               Navigator.pushNamed(context, SOA.routeName, arguments: {
+                //                 'customerId': id,
+                //                 'name': name,
+                //                 'address': address,
+                //                 'code': code,
+                //                 'paymentTerms': paymentTerms
+                //               });
+                //             },
+                //             child: _iconButtons(
+                //                 icon: Icons.settings_suggest, title: 'SOA')),
+                //         InkWell(
+                //             onTap: () {
+                //               _showButton
+                //                   ? _showSnackBar(context)
+                //                   : Navigator.of(context)
+                //                   .pushNamed(CopyScreen.routeName, arguments: {
+                //                 'customerId': id,
+                //                 'name': name,
+                //                 'price_group_id':pricegroupId,
+                //                 'code': code,
+                //                 'paymentTerms': paymentTerms,
+                //                 'outstandamt': _data
+                //               });
+                //             },
+                //             child: _iconButtons(
+                //                 icon: Icons.point_of_sale, title: 'Sale')),
+                //       ]),
+                //       CommonWidgets.verticalSpace(2),
+                //       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                //         InkWell(
+                //             onTap: () {
+                //               _showButton
+                //                   ? _showSnackBar(context)
+                //                   : Navigator.of(context)
+                //                   .pushNamed(SalesScreen.routeName, arguments: {
+                //                 'customerId': id,
+                //                 'name': name,
+                //               });
+                //             },
+                //             child: _iconButtons(
+                //                 icon: Icons.point_of_sale, title: 'Sales')),
+                //         GestureDetector(
+                //             onTap: () {
+                //               Navigator.pushNamed(
+                //                   context, Customerreturndetail.routeName, arguments: {
+                //                 'customerId': id,
+                //                 'name': name,
+                //                 'code': code,
+                //                 'paymentTerms': paymentTerms,
+                //                 'outstandamt': _data
+                //               });
+                //             },
+                //             child:
+                //             _iconButtons(icon: Icons.inventory, title: 'Return')),
+                //         InkWell(
+                //             onTap: () {
+                //               Navigator.pushNamed(
+                //                   context, PaymentCollectionScreen.routeName,
+                //                   arguments: {
+                //                     'customerId': id,
+                //                     'name': name,
+                //                     'code': code,
+                //                     'paymentTerms': paymentTerms,
+                //                     'outstandamt': _data
+                //                   });
+                //
+                //               // Navigator.push(
+                //               //     context,
+                //               //     MaterialPageRoute(
+                //               //       builder: (context) => PaymentCollectionScreen(
+                //               //         id: 'customer',
+                //               //         code: 'code',
+                //               //         name: 'name',
+                //               //       ),
+                //               //     ));
+                //             },
+                //             child: _iconButtons(
+                //                 icon: Icons.payments, title: 'Payment Collection'))
+                //       ]),
+                //       CommonWidgets.verticalSpace(2),
+                //       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                //         GestureDetector(
+                //           onTap: () {
+                //             Navigator.pushNamed(context, CustomerStock.routeName,arguments: {
+                //               'customerId': id,
+                //             });
+                //           },
+                //           child: _iconButtons(
+                //               icon: Icons.storefront_rounded, title: 'Customer Stock'),
+                //         ),
+                //         GestureDetector(
+                //             onTap: () {
+                //               Navigator.pushNamed(context, CustomerVisit.routeName,
+                //                   arguments: {
+                //                     'name': name,
+                //                     'code': code,
+                //                     'email': email,
+                //                     'paymentTerms': paymentTerms,
+                //                     'address': address,
+                //                     'phone': phone,
+                //                     'id': id,
+                //                   });
+                //             },
+                //             child: _iconButtons(icon: Icons.bar_chart, title: 'Visit')),
+                //         GestureDetector(
+                //             onTap: () {
+                //               Navigator.pushNamed(context, TotalSales.routeName,
+                //                   arguments: {
+                //                     'id': id,
+                //                   });
+                //             },
+                //             child: _iconButtons(
+                //                 icon: Icons.pie_chart, title: 'Total Sales'))
+                //       ]),
+                //     ],
+                //   ),
+                //
+                //     Container(
+                //       child: SingleChildScrollView(
+                //         child: Row(
+                //             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //           children: [
+                //             GestureDetector(
+                //                 onTap: () {
+                //                   Navigator.pushNamed(
+                //                       context, Customerorderdetail.routeName, arguments: {
+                //                     'customerId': id,
+                //                     'name': name,
+                //                     'code': code,
+                //                     'paymentTerms': paymentTerms
+                //                   });
+                //                 },
+                //                 child:
+                //                 _iconButtons(icon: Icons.shopping_bag, title: 'Order')),
+                //             GestureDetector(
+                //               onTap: () {
+                //                 Navigator.of(context).pushNamed(
+                //                     CustomerWater.routeName,arguments: {'customerId': id,});
+                //               },
+                //               child: _iconButtons(
+                //                   icon: Icons.water_drop,
+                //                   title: 'Coupon'),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //     )
+                //           ],
+                // ),
               ),
             ],
           ),
@@ -457,35 +626,203 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
     );
   }
 
-  Widget _iconButtons({required IconData icon, required String title}) {
-    return Container(
-      width: SizeConfig.blockSizeHorizontal * 22,
-      height: SizeConfig.blockSizeVertical * 11,
-      decoration: const BoxDecoration(
+  // Widget _iconButtons({required IconData icon, required String title}) {
+  //   return Container(
+  //     width: SizeConfig.blockSizeHorizontal * 22,
+  //     height: SizeConfig.blockSizeVertical * 11,
+  //     decoration: const BoxDecoration(
+  //         borderRadius: BorderRadius.all(Radius.circular(10)),
+  //         color: AppConfig.colorPrimary),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         Icon(
+  //           icon,
+  //           color: AppConfig.backgroundColor,
+  //           size: 40,
+  //         ),
+  //         SizedBox(
+  //           width: SizeConfig.blockSizeHorizontal * 18,
+  //           child: Center(
+  //             child: Text(
+  //               title,
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(
+  //                   color: AppConfig.backgroundColor,
+  //                   fontSize: AppConfig.textCaption3Size),
+  //             ),
+  //           ),
+  //         )
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget _iconButtons({
+    IconData? icon,
+    required String title,
+    String? image,
+    String? routeName,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        if (routeName != null) {
+          switch (routeName) {
+            case 'CustomerRegistration':
+              Navigator.pushNamed(context, CustomerRegistration.routeName,
+                  arguments: {
+                    'name': name,
+                    'address': address,
+                    'building': building,
+                    'flat_no': flat_no,
+                    'phone': phone,
+                    'whatsappNumber': whatsappNumber,
+                    'email': email,
+                    'location': location,
+                    'payment_terms': customerType,
+                    'credit_days': creditDays,
+                    'credit_limit': creditLimit,
+                    'paymentTerms': paymentTerms,
+                    'trn': trn,
+                    'cust_image': img,
+                    'code': code,
+                    'provinceId': provinceId,
+                    'routeId': routeId,
+                    'id': id,
+                  });
+              break;
+            case 'SOA':
+              Navigator.pushNamed(context, SOA.routeName, arguments: {
+                'customerId': id,
+                'name': name,
+                'address': address,
+                'code': code,
+                'paymentTerms': paymentTerms
+              });
+              break;
+            case 'CopyScreen':
+              _showButton
+                  ? _showSnackBar(context)
+                  : Navigator.of(context)
+                      .pushNamed(CopyScreen.routeName, arguments: {
+                      'customerId': id,
+                      'name': name,
+                      'price_group_id': pricegroupId,
+                      'code': code,
+                      'paymentTerms': paymentTerms,
+                      'outstandamt': _data
+                    });
+              break;
+            case 'SalesScreen':
+              _showButton
+                  ? _showSnackBar(context)
+                  : Navigator.of(context)
+                      .pushNamed(SalesScreen.routeName, arguments: {
+                      'customerId': id,
+                      'name': name,
+                    });
+              break;
+            case 'Customerreturndetail':
+              Navigator.pushNamed(context, Customerreturndetail.routeName,
+                  arguments: {
+                    'customerId': id,
+                    'name': name,
+                    'code': code,
+                    'paymentTerms': paymentTerms,
+                    'outstandamt': _data
+                  });
+              break;
+            case 'PaymentCollectionScreen':
+              Navigator.pushNamed(context, PaymentCollectionScreen.routeName,
+                  arguments: {
+                    'customerId': id,
+                    'name': name,
+                    'code': code,
+                    'paymentTerms': paymentTerms,
+                    'outstandamt': _data
+                  });
+              break;
+            case 'CustomerStock':
+              Navigator.pushNamed(context, CustomerStock.routeName, arguments: {
+                'customerId': id,
+              });
+              break;
+            case 'CustomerVisit':
+              Navigator.pushNamed(context, CustomerVisit.routeName, arguments: {
+                'name': name,
+                'code': code,
+                'email': email,
+                'paymentTerms': paymentTerms,
+                'address': address,
+                'phone': phone,
+                'id': id,
+              });
+              break;
+            case 'TotalSales':
+              Navigator.pushNamed(context, TotalSales.routeName, arguments: {
+                'id': id,
+              });
+              break;
+            case 'Customerorderdetail':
+              Navigator.pushNamed(context, Customerorderdetail.routeName,
+                  arguments: {
+                    'customerId': id,
+                    'name': name,
+                    'code': code,
+                    'paymentTerms': paymentTerms
+                  });
+              break;
+            case 'CustomerWater':
+              Navigator.of(context)
+                  .pushNamed(CustomerWater.routeName, arguments: {
+                'customerId': id,
+              });
+              break;
+            default:
+              Navigator.pushNamed(context, routeName);
+          }
+        }
+      },
+      child: Container(
+        width: SizeConfig.blockSizeHorizontal * 25,
+        height: SizeConfig.blockSizeVertical * 12.5,
+        decoration: const BoxDecoration(
           borderRadius: BorderRadius.all(Radius.circular(10)),
-          color: AppConfig.colorPrimary),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: AppConfig.backgroundColor,
-            size: 40,
-          ),
-          SizedBox(
-            width: SizeConfig.blockSizeHorizontal * 18,
-            child: Center(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
+          color: AppConfig.colorPrimary,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (icon != null)
+              Icon(
+                icon,
+                color: AppConfig.backgroundColor,
+                size: 40,
+              )
+            else if (image != null)
+              Image.asset(
+                image,
+                width: 50,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
+            SizedBox(
+              width: SizeConfig.blockSizeHorizontal * 18,
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
                     color: AppConfig.backgroundColor,
-                    fontSize: AppConfig.textCaption3Size),
+                    fontSize: AppConfig.textCaption3Size,
+                  ),
+                ),
               ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -497,6 +834,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
+        print(response.request);
         final data = json.decode(response.body);
         setState(() {
           _showButton = data['success'] ?? false;
@@ -521,8 +859,9 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   Future<void> fetchData() async {
     try {
       var response = await http.get(Uri.parse(
-          '${RestDatasource().BASE_URL}/api/get_sales_pending_outstanding?customer_id=$id'));
+          '${RestDatasource().BASE_URL}/api/get_sales_pending_outstanding?customer_id=$id&store_id=${AppState().storeId}'));
       if (response.statusCode == 200) {
+        print(response.request);
         Map<String, dynamic> jsonResponse = jsonDecode(response.body);
         setState(() {
           _data = jsonResponse['data'].toString();

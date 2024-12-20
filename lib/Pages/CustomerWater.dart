@@ -339,29 +339,31 @@ import 'package:mobile_scanner/mobile_scanner.dart'; // Import mobile_scanner pa
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/homepage.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
-import 'confg/appconfig.dart';
-import 'confg/sizeconfig.dart';
 
-class HomeWater extends StatefulWidget {
-  static const routeName = "/tststs";
-  const HomeWater({super.key});
+import '../confg/appconfig.dart';
+import '../confg/sizeconfig.dart';
+
+class CustomerWater extends StatefulWidget {
+  static const routeName = "/CustomerWater";
+  const CustomerWater({super.key});
 
   @override
-  State<HomeWater> createState() => _HomeWaterState();
+  State<CustomerWater> createState() => _CustomerWaterState();
 }
 
-class _HomeWaterState extends State<HomeWater> {
+class _CustomerWaterState extends State<CustomerWater> {
   List<String> scannedCoupons = [];
   TextEditingController couponController = TextEditingController();
   TextEditingController emptyController = TextEditingController();
   List<String> waterReasons = [];
+  int? id;
   bool isLoading = true;
   String couponName = '';
   String productImage = '';
   List<int> reasonIds = [];
   int selectedReasonId = 0;
   List<int> productIds = [];
-
+  // Open scanner when the camera icon is tapped
   void scanBarcode() async {
     final result = await Navigator.push(
       context,
@@ -374,7 +376,7 @@ class _HomeWaterState extends State<HomeWater> {
       final isValid = await validateCoupon(result);
       if (isValid) {
         setState(() {
-          scannedCoupons.add(result);
+          scannedCoupons.add(result); // Add scanned result to list
         });
       } else {
         showError('Invalid coupon. Please scan a valid coupon.');
@@ -386,16 +388,19 @@ class _HomeWaterState extends State<HomeWater> {
     final url = '${RestDatasource().BASE_URL}/api/water-coupon.check';
     final headers = {'Content-Type': 'application/json'};
     final body = json.encode({
+      'customer_id':id,
       'serial_no': serialNo,
       'store_id': AppState().storeId,
     });
 
     try {
       final response =
-          await http.post(Uri.parse(url), headers: headers, body: body);
+      await http.post(Uri.parse(url), headers: headers, body: body);
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
+
+        // Assuming the API returns a success flag indicating valid coupon
         if (responseData['success'] == true) {
           return true;
         }
@@ -404,16 +409,18 @@ class _HomeWaterState extends State<HomeWater> {
       print('Error: $e');
       showError('An error occurred while validating the coupon.');
     }
-    return false;
+
+    return false; // Return false if coupon is invalid or there's an error
   }
 
   int _count = 0;
 
   Future<void> fetchWaterReasons() async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get-water-reason?store_id=${AppState().storeId}'));
+        '${RestDatasource().BASE_URL}/api/get-water-reason?store_id=${AppState().storeId}&customer_id=$id'));
 
     if (response.statusCode == 200) {
+      // Parse the response body
       var data = json.decode(response.body);
       if (data['success'] == true) {
         print(response.body);
@@ -421,17 +428,17 @@ class _HomeWaterState extends State<HomeWater> {
           waterReasons = List<String>.from(
               data['data'].map((item) => item['reasone'] ?? ''));
           isLoading = false;
-          reasonIds =
-              List<int>.from(data['data'].map((item) => item['id'] ?? 0));
+          reasonIds = List<int>.from(data['data']
+              .map((item) => item['id'] ?? 0)); // Data fetched, stop loading
         });
       } else {
         setState(() {
-          isLoading = false;
+          isLoading = false; // If the success is false
         });
       }
     } else {
       setState(() {
-        isLoading = false;
+        isLoading = false; // If the request fails
       });
       throw Exception('Failed to load data');
     }
@@ -440,16 +447,20 @@ class _HomeWaterState extends State<HomeWater> {
   Future<void> postCoupon(String serialNo) async {
     if (scannedCoupons.contains(serialNo)) {
       showError('This coupon has already been scanned.');
-      return;
+      return; // Exit the function early to prevent duplicate entry
     }
     final url = '${RestDatasource().BASE_URL}/api/water-coupon.check';
     final headers = {'Content-Type': 'application/json'};
     final body =
-        json.encode({'serial_no': serialNo, 'store_id': AppState().storeId});
+    json.encode({
+      'customer_id': id,
+      'serial_no': serialNo,
+      'store_id': AppState().storeId}
+    );
 
     try {
       final response =
-          await http.post(Uri.parse(url), headers: headers, body: body);
+      await http.post(Uri.parse(url), headers: headers, body: body);
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -461,7 +472,7 @@ class _HomeWaterState extends State<HomeWater> {
 
           setState(() {
             productIds.add(id);
-            couponName = name;
+            couponName = name; // Update the couponName state variable
             productImage = proImage;
             scannedCoupons.add(serialNo);
             _count = scannedCoupons.length;
@@ -495,6 +506,7 @@ class _HomeWaterState extends State<HomeWater> {
     final url = Uri.parse("${RestDatasource().BASE_URL}/api/water-sale.store");
 
     Map<String, String> body = {
+      "customer_id":id.toString(),
       "store_id": AppState().storeId.toString(),
       "reason_id": selectedReasonId.toString(),
       "van_id": AppState().vanId.toString(),
@@ -502,14 +514,15 @@ class _HomeWaterState extends State<HomeWater> {
       "no_of_empty_bottile": _count.toString(),
     };
 
+    // Add item_id and product_id dynamically based on your lists
     for (int i = 0; i < scannedCoupons.length; i++) {
       body['item_id[$i]'] = scannedCoupons[i];
-      print(scannedCoupons[i]);
+      print(scannedCoupons[i]); // For item_id[0], item_id[1], etc.
     }
 
     for (int i = 0; i < productIds.length; i++) {
       body['product_id[$i]'] = productIds[i].toString();
-      print(productIds[i].toString());
+      print(productIds[i].toString()); // For product_id[0], product_id[1], etc.
     }
 
     // Sending the request
@@ -539,9 +552,9 @@ class _HomeWaterState extends State<HomeWater> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pop(context); // Close the dialog
                     Navigator.pushNamed(
-                        context, HomeScreen.routeName);
+                        context, HomeScreen.routeName); // Navigate to home
                   },
                   child: Text("OK"),
                 ),
@@ -551,14 +564,16 @@ class _HomeWaterState extends State<HomeWater> {
         );
         setState(() {
           scannedCoupons.clear();
-          _count = 0;
+          _count = 0; // Reset the counter
         });
       } else {
+        // Handle API error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(responseData['error'] ?? "Unknown error")),
         );
       }
     } else {
+      // Handle request failure
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
@@ -567,11 +582,12 @@ class _HomeWaterState extends State<HomeWater> {
     }
   }
 
+// Function to extract error message from the response body
   String _getErrorMessage(String responseBody) {
     try {
       final errorData = json.decode(responseBody);
       return errorData['error'] ??
-          'Failed to post coupon';
+          'Failed to post coupon'; // Adjust based on API response structure
     } catch (e) {
       return 'An unexpected error occurred';
     }
@@ -587,7 +603,7 @@ class _HomeWaterState extends State<HomeWater> {
     super.initState();
     fetchWaterReasons();
     _count = scannedCoupons.length;
-    // emptyController.text = _count.toString();
+    // emptyController.text = _count.toString(); // Initialize with count value
   }
 
   @override
@@ -599,6 +615,13 @@ class _HomeWaterState extends State<HomeWater> {
 
   @override
   Widget build(BuildContext context) {
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      final Map<String, dynamic>? params =
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      id = params!['customerId'];
+      // name = params['name'];
+      print(id);
+    }
     return Scaffold(
       appBar: AppBar(
         leading: GestureDetector(
@@ -692,7 +715,7 @@ class _HomeWaterState extends State<HomeWater> {
                           '${RestDatasource().Product_URL}/uploads/product/$productImage'), // Replace with the correct URL,
                       title: Row(
                         mainAxisAlignment:
-                            MainAxisAlignment.start, // Align to start
+                        MainAxisAlignment.start, // Align to start
                         crossAxisAlignment: CrossAxisAlignment
                             .center, // Align vertically if needed
                         children: [
@@ -752,16 +775,16 @@ class _HomeWaterState extends State<HomeWater> {
                     child: Container(
                       width: MediaQuery.of(context).size.width * .65,
                       constraints:
-                          const BoxConstraints(minHeight: 60, maxHeight: 200),
+                      const BoxConstraints(minHeight: 60, maxHeight: 200),
                       child: TextFormField(
                         controller:
-                            TextEditingController(text: scannedCoupons[index]),
+                        TextEditingController(text: scannedCoupons[index]),
                         maxLines: null,
                         decoration: InputDecoration(
                           helperText: '',
                           focusedBorder: OutlineInputBorder(
                             borderSide:
-                                BorderSide(color: AppConfig.colorPrimary),
+                            BorderSide(color: AppConfig.colorPrimary),
                           ),
                           labelText: '${index + 1}.',
                           border: const OutlineInputBorder(),
@@ -809,7 +832,7 @@ class _HomeWaterState extends State<HomeWater> {
                       shape: WidgetStateProperty.all(RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8))),
                       backgroundColor:
-                          WidgetStateProperty.all(AppConfig.colorPrimary),
+                      WidgetStateProperty.all(AppConfig.colorPrimary),
                     ),
                     onPressed: () {
                       setState(() {
@@ -853,7 +876,7 @@ class _HomeWaterState extends State<HomeWater> {
                       shape: WidgetStateProperty.all(RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8))),
                       backgroundColor:
-                          WidgetStateProperty.all(AppConfig.colorPrimary),
+                      WidgetStateProperty.all(AppConfig.colorPrimary),
                     ),
                     onPressed: () {
                       setState(() {
@@ -927,7 +950,6 @@ class _HomeWaterState extends State<HomeWater> {
       ),
     );
   }
-
   String? selectedReason;
   void onCountDecreased() {
     // Fetch water reasons when the count decreases
@@ -942,23 +964,22 @@ class _HomeWaterState extends State<HomeWater> {
           content: isLoading
               ? CircularProgressIndicator()
               : DropdownButton<String>(
-                  value: selectedReason,
-                  items: waterReasons.map((String reason) {
-                    return DropdownMenuItem<String>(
-                      value: reason,
-                      child: Text(reason),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedReason = newValue;
-                      selectedReasonId = reasonIds[waterReasons
-                          .indexOf(newValue!)]; // Update the selected reason ID
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  hint: Text('Select a reason'),
-                ),
+            value: selectedReason,
+            items: waterReasons.map((String reason) {
+              return DropdownMenuItem<String>(
+                value: reason,
+                child: Text(reason),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                selectedReason = newValue;
+                selectedReasonId = reasonIds[waterReasons.indexOf(newValue!)]; // Update the selected reason ID
+              });
+              Navigator.of(context).pop();
+            },
+            hint: Text('Select a reason'),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -1002,7 +1023,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               setState(() {
                 _scanned = true; // Prevent further pops
               });
-              Navigator.pop(context, code); // Return the scanned code
+              Navigator.pop(context, code,); // Return the scanned code
             }
           }
         },
