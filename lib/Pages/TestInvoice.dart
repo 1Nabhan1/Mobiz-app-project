@@ -803,7 +803,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
 
     final PdfFont headfont = PdfStandardFont(
       PdfFontFamily.helvetica,
-      25,
+      21,
     );
     final Size headtextSize = headfont.measureString(head);
 
@@ -928,13 +928,13 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     // Set column widths.
     grid.columns[0].width = 30; // Sl.No
     grid.columns[1].width = 180; // Product
-    grid.columns[2].width = 40; // Unit
-    grid.columns[3].width = 40; // Rate
+    grid.columns[2].width = 35; // Unit
+    grid.columns[3].width = 35; // Rate
     grid.columns[4].width = 50; // Qty
     grid.columns[5].width = 50;
     grid.columns[6].width = 40;
     grid.columns[7].width = 50; // Vat
-    grid.columns[8].width = 100;
+    grid.columns[8].width = 80;
 
     // Add headers.
     final PdfGridRow headerRow = grid.headers.add(1)[0];
@@ -946,7 +946,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     headerRow.cells[5].value = 'Rate';
     headerRow.cells[6].value = 'Total';
     headerRow.cells[7].value = 'Vat';
-    headerRow.cells[8].value = 'Amount';
+    headerRow.cells[8].value = 'Amount   ';
 
     for (int k = 0; k < invoice.data!.detail!.length; k++) {
       final PdfGridRow row = grid.rows.add();
@@ -967,7 +967,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       '${invoice.data!.detail![k].taxable?.toStringAsFixed(2)}';
       row.cells[7].value =
       '${invoice.data!.detail![k].taxAmt?.toStringAsFixed(2)}';
-      row.cells[8].value =
+      // row.cells[8].value ='302400.00';
       '${invoice.data!.detail![k].amount?.toStringAsFixed(2)}';
     }
 
@@ -1055,9 +1055,60 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
     );
 
 // in word
-    String textData =
-        'Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY';
+    String numberToWords(int number) {
+      if (number == 0) return "zero";
 
+      const List<String> belowTwenty = [
+        "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+        "seventeen", "eighteen", "nineteen"
+      ];
+
+      const List<String> tens = [
+        "", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"
+      ];
+
+      const List<String> thousands = [
+        "", "thousand", "million", "billion"
+      ];
+
+      String words = "";
+
+      int thousandCounter = 0;
+
+      while (number > 0) {
+        int currentPart = number % 1000;
+
+        if (currentPart > 0) {
+          String partWords = "";
+
+          if (currentPart >= 100) {
+            partWords += belowTwenty[currentPart ~/ 100] + " hundred ";
+            currentPart %= 100;
+          }
+
+          if (currentPart >= 20) {
+            partWords += tens[currentPart ~/ 10] + " ";
+            currentPart %= 10;
+          }
+
+          if (currentPart > 0) {
+            partWords += belowTwenty[currentPart] + " ";
+          }
+
+          words = partWords + thousands[thousandCounter] + " " + words;
+        }
+
+        number ~/= 1000;
+        thousandCounter++;
+      }
+
+      return words.trim();
+    }
+
+// Usage
+    String textData =
+        'Amount in Words: AED ${numberToWords(invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY';
 // Adjust the vertical position for the van details
     double vanDetailsTop = tableBottom + 20 + 100 + 10;
 
@@ -1074,7 +1125,7 @@ Salesman: ${invoice.data!.user![0].name}
       bounds: Rect.fromLTWH(
         0,
         vanDetailsTop -
-            17, // Adjust vertical position to be above the van details
+            30, // Adjust vertical position to be above the van details
         pageSize.width,
         100,
       ),
