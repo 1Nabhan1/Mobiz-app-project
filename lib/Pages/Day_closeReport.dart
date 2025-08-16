@@ -170,8 +170,18 @@ class _DaycloseReportState extends State<DaycloseReport> {
                             padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               trailing: Text(
-                                  '${dayClose1.approval == 1 ? 'Approved' : dayClose1.approval == 0 ? 'Waiting for\nApproval' : ''}'),
-                              title: Text('Invoice ID: ${dayClose1.invoiceNo}'),
+                                '${dayClose1.approval == 1 ? 'Approved' : dayClose1.approval == 0 ? 'Waiting for\nApproval' : dayClose1.approval == 2 ? 'Cancelled' : ''}',
+                                style: TextStyle(
+                                  color: dayClose1.approval == 1
+                                      ? Colors.green     // Approved -> Green
+                                      : dayClose1.approval == 0
+                                      ? Colors.orange  // Waiting for Approval -> Orange
+                                      : dayClose1.approval == 2
+                                      ? Colors.red    // Cancelled -> Red
+                                      : Colors.black,  // Default color if no condition matches
+                                ),
+                              ),
+                                title: Text('Invoice ID: ${dayClose1.invoiceNo}'),
                               subtitle: Text('Date: ${dayClose1.inDate}'),
                               onTap: () {
                                 Navigator.push(

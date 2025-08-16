@@ -47,6 +47,7 @@ class _Stock_NameState extends State<Stock_Name> {
   int _ifVat = 1;
   String? name;
   bool returnDataIsNotEmpty = false;
+  bool _isSaving = false;
 
   String roundoff = '';
   @override
@@ -250,6 +251,12 @@ class _Stock_NameState extends State<Stock_Name> {
       print("Siuu${dataId}");
     }
     Future<void> saveData() async {
+      if (_isSaving) return; // Prevent multiple submissions
+
+      setState(() {
+        _isSaving = true; // Disable the button
+      });
+
       List<int> productIds = savedProducts.map<int>((product) {
         return product['id'];
       }).toList();
@@ -263,8 +270,8 @@ class _Stock_NameState extends State<Stock_Name> {
         // Assuming product['unit_id'] already contains the selected unit ID
         return int.parse(product['unit_id']);
       }).toList();
-      final url =
-      Uri.parse('${RestDatasource().BASE_URL}/api/stock-take.save');
+
+      final url = Uri.parse('${RestDatasource().BASE_URL}/api/stock-take.save');
       final headers = {"Content-Type": "application/json"};
 
       final body = jsonEncode({
@@ -280,101 +287,57 @@ class _Stock_NameState extends State<Stock_Name> {
         "return_type": productTypeId,
       });
 
-      final response = await http.post(url, headers: headers, body: body);
-      if (response.statusCode == 200) {
-        print("PostData${response.body}");
-        print(body);
+      try {
+        final response = await http.post(url, headers: headers, body: body);
+        if (response.statusCode == 200) {
+          print("PostData${response.body}");
+          print(body);
+          print(quantity);
 
-        if (mounted) {
-          // Show the dialog box
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Alert"),
-                content: Text("Added Successfully"),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      // Close the dialog
-                      Navigator.of(context).pop();
+          if (mounted) {
+            // Show the dialog box
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Alert"),
+                  content: Text("Added Successfully"),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        // Close the dialog
+                        Navigator.of(context).pop();
 
-                      // Navigate to StockName_RequestScreen
-                      Navigator.pushNamedAndRemoveUntil(context, '/StockRequest', (route) => false);
+                        // Navigate to StockName_RequestScreen
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/StockRequest', (route) => false);
 
-
-                      // Clear the cart
-                      clearCart();
-                    },
-                    child: Text("OK"),
-                  ),
-                ],
-              );
-            },
-          );
+                        // Clear the cart
+                        clearCart();
+                      },
+                      child: Text("OK"),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to save data')));
         }
-      }
-      else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save data')));
-      }
-    }
-
-    Future<void> saveCompleteData() async {
-      List<int> productIds = savedProducts.map<int>((product) {
-        return product['id'];
-      }).toList();
-      List<double> productTypeId = savedProducts.map<double>((product) {
-        return double.parse(product['type_id'].toString());
-      }).toList();
-      List<double> quantity = savedProducts.map<double>((product) {
-        return double.parse(product['quantity'].toString());
-      }).toList();
-      List<int> unitIds = savedProducts.map<int>((product) {
-        // Assuming product['unit_id'] already contains the selected unit ID
-        return int.parse(product['unit_id']);
-      }).toList();
-      final url =
-      Uri.parse('${RestDatasource().BASE_URL}/api/stock-take.complete');
-      final headers = {"Content-Type": "application/json"};
-
-      final body = jsonEncode({
-        'id': dataId,
-        "van_id": AppState().vanId,
-        "store_id": AppState().storeId,
-        "user_id": AppState().userId,
-        "item_id": productIds,
-        "quantity": quantity,
-        "unit": unitIds,
-        "goods_return_id": savedProducts.map((item) => 1).toList(),
-        // "return_type": savedProducts.map((item) => 1).toList(),
-        "return_type": productTypeId,
-      });
-
-      final response = await http.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        print(response.body);
-        print(body);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('An error occurred: $e')));
+      } finally {
         if (mounted) {
-          CommonWidgets.showDialogueBox(
-            context: context,
-            title: "Alert",
-            msg: "Added Successfully",
-          );
-
-          // Delay navigation to allow the dialog to be displayed
-          Future.delayed(const Duration(seconds: 2), () {
-            Navigator.of(context).pushNamed(HomeScreen.routeName);
-            clearCart();
+          setState(() {
+            _isSaving = false; // Re-enable the button
           });
         }
       }
-      else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save data')));
-      }
     }
+
 
     return WillPopScope(
       onWillPop: () async {
@@ -525,16 +488,13 @@ class _Stock_NameState extends State<Stock_Name> {
                         borderRadius: BorderRadius.circular(7.0),
                       ),
                     ),
-                    backgroundColor: (savedProducts.isNotEmpty || returnDataIsNotEmpty)
+                    backgroundColor: (savedProducts.isNotEmpty || returnDataIsNotEmpty) && !_isSaving
                         ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
                         : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
                   ),
-                  onPressed: (savedProducts.isNotEmpty || returnDataIsNotEmpty)
+                  onPressed: (savedProducts.isNotEmpty || returnDataIsNotEmpty) && !_isSaving
                       ? () async {
-                    setState(() {
-                      _loaded == false ? null : saveData();
-                    });
-                    // print(roundOffValue);
+                    await saveData(); // Call saveData
                   }
                       : null,
                   child: Text(
@@ -953,17 +913,21 @@ class _Stock_NameState extends State<Stock_Name> {
                   if (units != null && units.any((unit) => unit != null)) ...[
                     TextButton(
                       style: TextButton.styleFrom(
-                          backgroundColor: isQuantityValid(quantity)
-                              ? AppConfig.colorPrimary
-                              : Colors.grey,
+                          backgroundColor:
+                          // isQuantityValid(quantity)
+                          //     ?
+                          AppConfig.colorPrimary,
+                              // : Colors.grey,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5.r))),
                       child: Text(
                         'Save',
                         style: TextStyle(color: Colors.white),
                       ),
-                      onPressed: isQuantityValid(quantity)
-                          ? () async {
+                      onPressed:
+                      // isQuantityValid(quantity)
+                      //     ?
+                          () async {
                         if (selectedUnitId != null &&
                             selectedProductTypeId != null &&
                             quantity != null &&
@@ -1003,7 +967,7 @@ class _Stock_NameState extends State<Stock_Name> {
                           }
                         }
                       }
-                          : null,
+                          // : null,
                     ),
                   ],
                 ],

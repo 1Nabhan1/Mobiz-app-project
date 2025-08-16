@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/customerorderdetail.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
@@ -32,23 +33,40 @@ class _SalesSelectProductsorderScreenState
   bool _isDialogOpen = false;
   bool _search = true;
   List<Products> filteredProducts = [];
+  bool _isSearching = false;
+  Timer? _debounce;
 
   final TextEditingController _searchData = TextEditingController();
   @override
   @override
   void initState() {
     super.initState();
-    _searchData.addListener(() {
-      if (_searchData.text.isEmpty) {
-        products.clear();
-        currentPage = 1;
-        hasMoreProducts = true;
-        fetchProducts(currentPage);
-      } else {
-        _filterProducts(_searchData.text);
-      }
-    });
+    // _searchData.addListener(() {
+    //   if (_searchData.text.isEmpty) {
+    //     products.clear();
+    //     currentPage = 1;
+    //     hasMoreProducts = true;
+    //     fetchProducts(currentPage);
+    //   } else {
+    //     _filterProducts(_searchData.text);
+    //   }
+    // });
     fetchProducts(currentPage);
+  }
+
+  @override
+  void dispose() {
+    _searchData.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _filterProducts(query);
+    });
   }
 
   Future<void> fetchProducts(int page) async {
@@ -57,11 +75,13 @@ class _SalesSelectProductsorderScreenState
     setState(() {
       isLoading = true;
     });
+    // get_product_with_warehouse_stock_for_order
     final String url =
-        '${RestDatasource().BASE_URL}/api/get_product_with_warehouse_stock_for_order?store_id=${AppState().storeId}&customer_id=$id&page=$page';
+        '${RestDatasource().BASE_URL}/api/get_product_for_order?store_id=${AppState().storeId}&customer_id=$id&page=$page';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
+      print(response.request);
       final data = jsonDecode(response.body);
       final List<Products> fetchedProducts = (data['data']['data'] as List)
           .map((json) => Products.fromJson(json))
@@ -85,31 +105,45 @@ class _SalesSelectProductsorderScreenState
   }
 
   void _filterProducts(String query) async {
+    if (query != _searchData.text) return;
+
     if (query.isEmpty) {
       setState(() {
+        _isSearching = false;
         filteredProducts = List.from(products);
       });
-    } else {
-      final String searchUrl =
-          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query';
+      return;
+    }
 
-      try {
-        final response = await http.get(Uri.parse(searchUrl));
+    setState(() {
+      _isSearching = true;
+      isLoading = true;
+    });
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final List<Products> searchedProducts = (data['data'] as List)
-              .map((json) => Products.fromJson(json))
-              .toList();
+    try {
+      final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
 
+      if (_isSearching && response.statusCode == 200) {
+        print(query);
+        final data = jsonDecode(response.body);
+        final List<Products> fetchedProducts = (data['data'] as List)
+            .map((json) => Products.fromJson(json))
+            .toList();
+
+        if (mounted && query == _searchData.text) {
           setState(() {
-            filteredProducts = searchedProducts;
+            filteredProducts = fetchedProducts;
           });
-        } else {
-          throw Exception('Failed to fetch searched products');
         }
-      } catch (e) {
-        print('Error fetching search results: $e');
+      }
+    } catch (e) {
+      print('Error fetching search results: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }
@@ -136,10 +170,7 @@ class _SalesSelectProductsorderScreenState
     }
     return WillPopScope(
       onWillPop: () async {
-        // Call your custom function here
         await _onBackPressed();
-        // Return true to allow the page to be popped
-        // Return false to prevent the page from being popped
         return true;
       },
       child: Scaffold(
@@ -173,6 +204,7 @@ class _SalesSelectProductsorderScreenState
                       autofocus: true,
                       style: TextStyle(color: Colors.white),
                       controller: _searchData,
+                      onChanged:_onSearchChanged,
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.all(5),
                           hintText: "Search...",
@@ -327,52 +359,52 @@ class _SalesSelectProductsorderScreenState
                                                   fontSize: AppConfig
                                                       .textCaption2Size),
                                             ),
-                                            Row(
-                                              children: [
-                                                // for (int i = data.productDetail!.length - 1;
-                                                //     i >= 0;
-                                                //     i--)
-                                                Text(
-                                                  product.units != null &&
-                                                          product.units.length >
-                                                              0
-                                                      ? '${product.units[0].name}:${product.units[0].stock}'
-                                                      : '',
-                                                  style: TextStyle(
-                                                    fontSize: AppConfig
-                                                        .textCaption3Size,
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: 10,
-                                                ),
-                                                Text(
-                                                  product.units != null &&
-                                                          product.units.length >
-                                                              1
-                                                      ? '${product.units[1].name}:${product.units[1].stock}'
-                                                      : '',
-                                                  style: TextStyle(
-                                                    fontSize: AppConfig
-                                                        .textCaption3Size,
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: 10,
-                                                ),
-                                                Text(
-                                                  product.units != null &&
-                                                          product.units.length >
-                                                              2
-                                                      ? '${product.units[2].name}:${product.units[2].stock}'
-                                                      : '',
-                                                  style: TextStyle(
-                                                    fontSize: AppConfig
-                                                        .textCaption3Size,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            // Row(
+                                            //   children: [
+                                            //     // for (int i = data.productDetail!.length - 1;
+                                            //     //     i >= 0;
+                                            //     //     i--)
+                                            //     Text(
+                                            //       product.units != null &&
+                                            //               product.units.length >
+                                            //                   0
+                                            //           ? '${product.units[0].name}:${product.units[0].stock}'
+                                            //           : '',
+                                            //       style: TextStyle(
+                                            //         fontSize: AppConfig
+                                            //             .textCaption3Size,
+                                            //       ),
+                                            //     ),
+                                            //     SizedBox(
+                                            //       width: 10,
+                                            //     ),
+                                            //     Text(
+                                            //       product.units != null &&
+                                            //               product.units.length >
+                                            //                   1
+                                            //           ? '${product.units[1].name}:${product.units[1].stock}'
+                                            //           : '',
+                                            //       style: TextStyle(
+                                            //         fontSize: AppConfig
+                                            //             .textCaption3Size,
+                                            //       ),
+                                            //     ),
+                                            //     SizedBox(
+                                            //       width: 10,
+                                            //     ),
+                                            //     Text(
+                                            //       product.units != null &&
+                                            //               product.units.length >
+                                            //                   2
+                                            //           ? '${product.units[2].name}:${product.units[2].stock}'
+                                            //           : '',
+                                            //       style: TextStyle(
+                                            //         fontSize: AppConfig
+                                            //             .textCaption3Size,
+                                            //       ),
+                                            //     ),
+                                            //   ],
+                                            // ),
                                             // if (product.lastdate != '' &&
                                             //     product.lastUnit != '' &&
                                             //     product.lastPrice != '')
@@ -416,7 +448,7 @@ class _SalesSelectProductsorderScreenState
         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
-      print(url);
+      print(response.request);
       final data = jsonDecode(response.body);
       final units = data['data'] as List?;
       final lastsale = data['lastsale'];
@@ -435,6 +467,7 @@ class _SalesSelectProductsorderScreenState
       }
 
       final amountController = TextEditingController();
+      final descriptionController = TextEditingController();
       if (units != null && units.any((unit) => unit != null)) {
         selectedUnitId = units[0]['id'].toString();
         selectedUnit = units[0];
@@ -462,6 +495,7 @@ class _SalesSelectProductsorderScreenState
       showDialog(
         context: context,
         builder: (BuildContext context) {
+          bool showDescriptionField = false;
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
@@ -632,12 +666,45 @@ class _SalesSelectProductsorderScreenState
                         ] else ...[
                           Text('No units available for this product.'),
                         ],
+                        // SizedBox(height: 10.h),
+                        if (showDescriptionField)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10.h),
+                            child: TextFormField(
+                              controller: descriptionController,
+                              decoration: InputDecoration(
+                                labelText: 'Description',
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 2.h, horizontal: 10.w),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none),
+                                filled: true,
+                                fillColor: Colors.grey.shade300,
+                              ),
+                            ),
+                          ),
                         SizedBox(height: 10.h),
                       ],
                     ),
                   ),
                 ),
                 actions: <Widget>[
+                  TextButton(
+                    style: TextButton.styleFrom(
+                        backgroundColor: AppConfig.colorPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Description',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      setDialogState(() {
+                        showDescriptionField = true; // Show text field when tapped
+                      });
+                    },
+                  ),
                   TextButton(
                     style: TextButton.styleFrom(
                         backgroundColor: AppConfig.colorPrimary,
@@ -690,6 +757,7 @@ class _SalesSelectProductsorderScreenState
                                 'unit_name': selectedUnit?['name'],
                                 'quantity': quantity ?? '',
                                 'amount': amountController.text ?? '',
+                                'description':descriptionController.text??'',
                               };
                               selectedProducts.add(jsonEncode(selectedProduct));
                               await prefs.setStringList(

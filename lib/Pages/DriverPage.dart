@@ -15,7 +15,7 @@ import 'package:mobizapp/confg/sizeconfig.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
 
 import '../Utilities/rest_ds.dart';
-import '../sales_screen.dart';
+import '../DashBoardScreen.dart';
 import 'DriverDetailsPage.dart';
 import 'Driver_paymentCollection.dart';
 import 'Total_sales.dart';

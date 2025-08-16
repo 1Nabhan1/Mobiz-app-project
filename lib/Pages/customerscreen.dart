@@ -265,6 +265,7 @@ class _CustomersDataScreenState extends State<CustomersDataScreen> {
           'total': '',
           'id': data.id,
         });
+        print("sssdds${data.img}");
       },
       child: Card(
         elevation: 3,

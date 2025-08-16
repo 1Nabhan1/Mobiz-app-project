@@ -635,7 +635,7 @@ class _VanStocksoffState extends State<VanStocksoff> {
                                             children: [
                                               Text(product['type_name']),
                                               Text(' | '),
-                                              Text(product['unit_name']),
+                                              Text(product['unit_name']??'N/A'),
                                               Text(' | '),
                                               Text(
                                                   'Qty: ${product['quantity']}'),
@@ -957,54 +957,43 @@ class _VanStocksoffState extends State<VanStocksoff> {
     );
   }
 
-  void showProductDetailsDialog(
-      BuildContext context, Map<String, dynamic> product) async {
+  void showProductDetailsDialog(BuildContext context, Map<String, dynamic> product) async {
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_units_by_products?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product['id']}'));
-    final typeResponse = await http.get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}e'));
-
+        '${RestDatasource().BASE_URL}/api/get_product_with_units_by_product_without_unit_price?store_id=${AppState().storeId}&id=${product['id']}&user_id=${AppState().userId}&van_id=${AppState().vanId}'));
+    final typeResponse = await http.get(Uri.parse(
+        '${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}'));
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final units = data['data'] as List?;
-      final lastsale = data['lastsale'];
+      print(response.request);
+      final productData = jsonDecode(response.body)['data'];
       final typeData = jsonDecode(typeResponse.body);
       final productTypes = typeData['data'] as List;
       final amountController = TextEditingController();
-      final existingProduct = savedProducts
-          .firstWhere((p) => p['serial_number'] == product['serial_number']);
+      final existingProduct = savedProducts.firstWhere((p) => p['serial_number'] == product['serial_number']);
       String? amount = existingProduct['amount'];
       if (amount != null && amount.isNotEmpty) {
         amountController.text = amount;
       }
-      double? availableStock;
-      String? selectedUnitId = existingProduct['unit_id'];
       String? selectedProductTypeId = existingProduct['type_id'];
       String? quantity = existingProduct['quantity'];
+      final units = productData['product_detail'] as List;
+      Map<String, dynamic>? selectedUnit;
+      if (existingProduct['unit_id'] != null) {
+        selectedUnit = units.firstWhere(
+              (unit) => unit['id'].toString() == existingProduct['unit_id'].toString(),
+          orElse: () => null,
+        );
+      }
       bool isQuantityValid(String? value) {
         final quantityValue = double.tryParse(value ?? '') ?? 0;
-        return value != null &&
-            value.isNotEmpty &&
-            quantityValue > 0 &&
-            quantityValue <= (availableStock ?? 0);
+        return value != null && value.isNotEmpty && quantityValue > 0;
       }
-
-      Map<String, dynamic>? selectedUnit;
-
-      if (selectedUnitId != null && units != null) {
-        selectedUnit = units.firstWhere(
-            (unit) => unit['id'].toString() == selectedUnitId,
-            orElse: () => null);
-        availableStock =
-            double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
-      }
-
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
-                title: Text('${product['code']} | ${product['name']}'),
+                title: Text('${productData['code']} | ${productData['name']}'),
                 content: SingleChildScrollView(
                   child: Form(
                     child: Column(
@@ -1015,162 +1004,97 @@ class _VanStocksoffState extends State<VanStocksoff> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Image.network(
-                              '${RestDatasource().Product_URL}/uploads/product/${product['proImage']}',
+                              '${RestDatasource().Product_URL}/uploads/product/${productData['pro_image']}',
                               height: 100,
                               errorBuilder: (context, error, stackTrace) {
                                 return Image.asset('Assets/Images/no_image.jpg',
                                     height: 100);
                               },
                             ),
-                            // lastsale == null || lastsale.isEmpty
-                            //     ? Text('No last records found')
-                            //     : Column(
-                            //         crossAxisAlignment:
-                            //             CrossAxisAlignment.start,
-                            //         children: [
-                            //           Text(
-                            //             'Last Sale:',
-                            //             style: TextStyle(
-                            //                 fontWeight: FontWeight.bold),
-                            //           ),
-                            //           Text('Date: ${lastsale['date']}'),
-                            //           Text('Unit: ${lastsale['unit']}'),
-                            //           Text('Price: ${lastsale['price']}'),
-                            //         ],
-                            //       ),
                           ],
                         ),
-                        SizedBox(height: 5.h),
-                        if (selectedUnit != null) ...[
-                          Text(
-                            'Available Qty: ${selectedUnit!['stock']}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                        SizedBox(height: 10.h),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Product Type',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
                           ),
-                        ],
-                        if (units != null &&
-                            units.any((unit) => unit != null)) ...[
-                          SizedBox(height: 10.h),
-                          DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: 'Product Type',
-                              labelStyle:
-                                  TextStyle(fontWeight: FontWeight.bold),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 2.h, horizontal: 10.w),
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none),
-                              filled: true,
-                              fillColor: Colors.grey.shade300,
-                            ),
-                            items: productTypes.map((type) {
-                              return DropdownMenuItem<String>(
-                                value: type['id'].toString(),
-                                child: Text(type['name']),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedProductTypeId = value;
+                          items: productTypes.map((type) {
+                            return DropdownMenuItem<String>(
+                              value: type['id'].toString(),
+                              child: Text(type['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedProductTypeId = value;
+                              final selectedType = productTypes.firstWhere(
+                                      (type) => type['id'].toString() == value,
+                                  orElse: () => null);
 
-                                // Check if the selected product type is not "Normal"
-                                final selectedType = productTypes.firstWhere(
-                                  (type) => type['id'].toString() == value,
-                                  orElse: () => null,
-                                );
-
-                                if (selectedType != null &&
-                                    selectedType['name'] != 'Normal') {
-                                  // Set amount to 0 if type is not "Normal"
-                                  amountController.text = '0';
-                                } else if (selectedUnit != null) {
-                                  // Set amount to the selected unit's price if type is "Normal"
-                                  amountController.text =
-                                      selectedUnit?['price']?.toString() ?? '';
-                                }
-                              });
-                            },
-                            value: selectedProductTypeId,
-                            hint: Text('Select Product Type'),
-                          ),
-                          SizedBox(height: 10.h),
-                          DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: 'Unit',
-                              labelStyle:
-                                  TextStyle(fontWeight: FontWeight.bold),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 2.h, horizontal: 10.w),
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none),
-                              filled: true,
-                              fillColor: Colors.grey.shade300,
-                            ),
-                            items:
-                                units.where((unit) => unit != null).map((unit) {
-                              return DropdownMenuItem<String>(
-                                value: unit['id'].toString(),
-                                child: Text(unit['name']),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedUnitId = value;
-                                selectedUnit = units.firstWhere(
-                                    (unit) => unit['id'].toString() == value,
-                                    orElse: () => null);
+                              if (selectedType != null &&
+                                  selectedType['name'] != 'Normal') {
+                                amountController.text = '0';
+                              } else {
                                 amountController.text =
-                                    selectedUnit?['price']?.toString() ?? '';
-                                availableStock = double.tryParse(
-                                    selectedUnit?['stock']?.toString() ?? '0');
-                              });
-                            },
-                            value: selectedUnitId,
-                            hint: Text('Select Unit'),
+                                    productData['price'].toString();
+                              }
+                            });
+                          },
+                          value: selectedProductTypeId,
+                          hint: Text('Select Product Type'),
+                        ),
+                        SizedBox(height: 10.h),
+                        DropdownButtonFormField<Map<String, dynamic>>(
+                          decoration: InputDecoration(
+                            labelText: 'Unit',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
                           ),
-                          // SizedBox(height: 10.h),
-                          // TextFormField(
-                          //   keyboardType: TextInputType.number,
-                          //   // initialValue: amount,
-                          //   controller: amountController,
-                          //   // onChanged: (value) {
-                          //   //   amount = amount;
-                          //   // },
-                          //   decoration: InputDecoration(
-                          //       labelText: 'Amount',
-                          //       labelStyle:
-                          //           TextStyle(fontWeight: FontWeight.bold),
-                          //       contentPadding: EdgeInsets.symmetric(
-                          //           vertical: 2.h, horizontal: 10.w),
-                          //       hintText: 'Amt',
-                          //       border: OutlineInputBorder(
-                          //           borderSide: BorderSide.none),
-                          //       filled: true,
-                          //       fillColor: Colors.grey.shade300),
-                          // ),
-                          SizedBox(height: 10.h),
-                          TextFormField(
-                            keyboardType: TextInputType.number,
-                            initialValue: quantity,
-                            onChanged: (value) {
-                              quantity = value;
-                              setDialogState(() {});
-                            },
-                            decoration: InputDecoration(
-                                labelText: 'Quantity',
-                                labelStyle:
-                                    TextStyle(fontWeight: FontWeight.bold),
-                                contentPadding: EdgeInsets.symmetric(
-                                    vertical: 2.h, horizontal: 10.w),
-                                hintText: 'Qty',
-                                border: OutlineInputBorder(
-                                    borderSide: BorderSide.none),
-                                filled: true,
-                                fillColor: Colors.grey.shade300),
-                          ),
-                          SizedBox(height: 10),
-                        ] else ...[
-                          Text('No units available for this product.'),
-                        ],
+                          items: units.map((unit) {
+                            return DropdownMenuItem<Map<String, dynamic>>(
+                              value: unit,
+                              child: Text(unit['unit_name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedUnit = value;
+                              amountController.text = selectedUnit != null
+                                  ? selectedUnit!['price'].toString()
+                                  : '';
+                            });
+                          },
+                          value: selectedUnit, // This shows the currently selected unit
+                          hint: Text('Select Unit'),
+                        ),
+                        SizedBox(height: 10.h),
+                        TextFormField(
+                          keyboardType: TextInputType.number,
+                          initialValue: quantity,
+                          onChanged: (value) {
+                            quantity = value;
+                            setDialogState(() {});
+                          },
+                          decoration: InputDecoration(
+                              labelText: 'Quantity',
+                              labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.h, horizontal: 10.w),
+                              hintText: 'Qty',
+                              border: OutlineInputBorder(borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.grey.shade300),
+                        ),
                         SizedBox(height: 10),
                       ],
                     ),
@@ -1190,62 +1114,55 @@ class _VanStocksoffState extends State<VanStocksoff> {
                       Navigator.of(context).pop();
                     },
                   ),
-                  if (units != null && units.any((unit) => unit != null)) ...[
-                    TextButton(
-                      style: TextButton.styleFrom(
-                          backgroundColor: isQuantityValid(quantity)
-                              ? AppConfig.colorPrimary
-                              : Colors.grey,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5.r))),
-                      child: Text(
-                        'Save',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onPressed: isQuantityValid(quantity)
-                          ? () async {
-                              if (selectedUnitId != null &&
-                                  selectedProductTypeId != null &&
-                                  quantity != null &&
-                                  amountController.text != null) {
-                                final productIndex = savedProducts.indexWhere(
-                                    (p) =>
-                                        p['serial_number'] ==
-                                        product['serial_number']);
-                                if (productIndex != -1) {
-                                  setState(() {
-                                    savedProducts[productIndex]['unit_id'] =
-                                        selectedUnitId;
-                                    savedProducts[productIndex]['type_id'] =
-                                        selectedProductTypeId;
-                                    savedProducts[productIndex]['quantity'] =
-                                        quantity;
-                                    savedProducts[productIndex]['amount'] =
-                                        amountController.text;
-                                    savedProducts[productIndex]['type_name'] =
-                                        productTypes.firstWhere((type) =>
-                                            type['id'].toString() ==
-                                            selectedProductTypeId)['name'];
-                                    savedProducts[productIndex]['unit_name'] =
-                                        selectedUnit?['name'];
-                                    _updateCalculations();
-                                  });
-
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
-                                  final savedProductsStringList = savedProducts
-                                      .map((product) => jsonEncode(product))
-                                      .toList();
-                                  await prefs.setStringList('selected_products',
-                                      savedProductsStringList);
-
-                                  Navigator.of(context).pop();
-                                }
-                              }
-                            }
-                          : null,
+                  TextButton(
+                    style: TextButton.styleFrom(
+                        backgroundColor: isQuantityValid(quantity)
+                            ? AppConfig.colorPrimary
+                            : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Save',
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ],
+                    onPressed: isQuantityValid(quantity)
+                        ? () async {
+                      if (selectedProductTypeId != null &&
+                          quantity != null &&
+                          amountController.text.isNotEmpty) {
+                        final productIndex = savedProducts.indexWhere(
+                                (p) => p['serial_number'] == product['serial_number']);
+
+                        if (productIndex != -1) {
+                          setState(() {
+                            savedProducts[productIndex]['type_id'] = selectedProductTypeId;
+                            savedProducts[productIndex]['quantity'] = quantity;
+                            savedProducts[productIndex]['amount'] = amountController.text;
+                            savedProducts[productIndex]['type_name'] = productTypes.firstWhere(
+                                    (type) => type['id'].toString() == selectedProductTypeId)['name'];
+
+                            // Update the unit information
+                            if (selectedUnit != null) {
+                              savedProducts[productIndex]['unit_id'] = selectedUnit!['id'].toString();
+                              savedProducts[productIndex]['unit_name'] = selectedUnit!['unit_name'];
+                            }
+                          });
+
+                          final prefs = await SharedPreferences.getInstance();
+                          final savedProductsStringList = savedProducts
+                              .map((product) => jsonEncode(product))
+                              .toList();
+                          await prefs.setStringList(
+                              'selected_productss',
+                              savedProductsStringList);
+
+                          Navigator.of(context).pop();
+                          _updateCalculations(); // Refresh the UI
+                        }
+                      }
+                    }
+                        : null,
+                  ),
                 ],
               );
             },

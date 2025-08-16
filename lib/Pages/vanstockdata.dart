@@ -510,6 +510,22 @@ class _VanStockScreenState extends State<VanStockScreen>
                                                                         AppConfig
                                                                             .textCaption3Size,
                                                                   ),
+                                                                ),
+                                                                SizedBox(
+                                                                    width: 10),
+                                                                Text(
+                                                                  product.units !=
+                                                                      null &&
+                                                                      product.units.length >
+                                                                          2
+                                                                      ? '${product.units[2].name}:${product.units[2].stock}'
+                                                                      : '',
+                                                                  style:
+                                                                  TextStyle(
+                                                                    fontSize:
+                                                                    AppConfig
+                                                                        .textCaption3Size,
+                                                                  ),
                                                                 )
                                                               ],
                                                             )
@@ -890,93 +906,79 @@ class _VanStockScreenState extends State<VanStockScreen>
     if (_connected) {
       final response = await http.get(Uri.parse(
           '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
+
       if (response.statusCode == 200) {
-        // Parse JSON response into StoreDetail object
         StoreDetail storeDetail =
-            StoreDetail.fromJson(json.decode(response.body));
+        StoreDetail.fromJson(json.decode(response.body));
         final String api =
             '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
         final logoResponse = await http.get(Uri.parse(api));
         if (logoResponse.statusCode != 200) {
           throw Exception('Failed to load logo image');
         }
-        String logoUrl =
-            'http://68.183.92.8:3697/uploads/store/${storeDetail.logos}';
-        if (logoUrl.isNotEmpty) {
-          final response = await http.get(Uri.parse(logoUrl));
-          if (response.statusCode == 200) {
-            Uint8List imageBytes = response.bodyBytes;
+        Uint8List imageBytes = logoResponse.bodyBytes;
+        img.Image originalImage = img.decodeImage(imageBytes)!;
+        img.Image monoLogo = img.grayscale(originalImage);
+        Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
+        printer.printImageBytes(logoBytes);
 
-            // Decode image and convert to monochrome bitmap if needed
-            img.Image originalImage = img.decodeImage(imageBytes)!;
-            img.Image monoLogo = img.grayscale(originalImage);
-
-            // Encode the image to the required format (e.g., PNG)
-            Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
-
-            // Print the logo image
-            printer.printImageBytes(logoBytes);
-          } else {
-            print('Failed to load image: ${response.statusCode}');
-          }
-        }
         printer.printNewLine();
-        String companyName = '${storeDetail.name}';
-        printer.printCustom(companyName, 3, 1);
+        printer.printCustom(storeDetail.name, 3, 1);
         printer.printNewLine();
         printer.printCustom("Van Stock", 3, 1);
         printer.printNewLine();
-        // Print the top separator line
-        printer.printCustom("-" * 70, 1, 1); // Centered
+        printer.printCustom("-" * 70, 1, 1);
 
-        // Define column widths for table
-        const int columnWidth1 = 5; // S.No
-        const int columnWidth2 = 30; // Product Description
-        const int columnWidth3 = 13; // Code
-        const int columnWidth4 = 10; // Unit
-        const int columnWidth5 = 10; // Qty
-
-        // Print table headers
+        const int columnWidth1 = 5;
+        const int columnWidth2 = 30;
+        const int columnWidth3 = 13;
+        const int columnWidth4 = 10;
+        const int columnWidth5 = 10;
         String headers = "${'S.No'.padRight(columnWidth1)}"
             " ${'Product'.padRight(columnWidth2)}"
             " ${'Code'.padRight(columnWidth3)}"
             " ${'Unit'.padRight(columnWidth4)}"
             "${'Qty'.padRight(columnWidth5)}";
-        printer.printCustom(headers, 1, 0); // Left aligned
+        printer.printCustom(headers, 1, 0);
 
-        // Function to split text into lines of a given width
         List<String> splitText(String text, int width) {
           List<String> lines = [];
           while (text.length > width) {
             lines.add(text.substring(0, width));
             text = text.substring(width);
           }
-          lines.add(text); // Add remaining part
+          lines.add(text);
           return lines;
         }
 
         printer.printNewLine();
+        int serialNumber = 1;
 
-        int serialNumber = 1; // Initialize serial number counter
+        final uniqueProducts = <String, dynamic>{};
+        for (var product in _filteredProducts) {
+          uniqueProducts[product.code!] = product;
+        }
 
-        for (int i = 0; i < _filteredProducts.length; i++) {
-          var product = _filteredProducts[i];
-          String productName = "${product.name!.toUpperCase()}";
-          String productCode = "${product.code}";
+        for (var product in uniqueProducts.values) {
+          final uniqueUnits = <String, dynamic>{};
+          for (var unit in product.units) {
+            final key = '${unit.name}-${unit.stock}';
+            uniqueUnits[key] = unit;
+          }
 
-          // Check if there are units available
-          if (product.units.isNotEmpty) {
-            for (var unit in product.units) {
-              String productUnit = "${unit.name}"; // Access the unit name
-              String productQty = "${unit.stock}"; // Access the unit stock
+          if (uniqueUnits.isNotEmpty) {
+            for (var unit in uniqueUnits.values) {
+              String productName = "${product.name!.toUpperCase()}";
+              String productCode = "${product.code}";
+              String productUnit = "${unit.name}";
+              String productQty = "${unit.stock}";
 
               List<String> descriptionLines =
-                  splitText(productName, columnWidth2);
+              splitText(productName, columnWidth2);
 
               for (int j = 0; j < descriptionLines.length; j++) {
                 String line;
                 if (j == 0) {
-                  // For the first line, include all columns
                   line = "${serialNumber.toString().padRight(columnWidth1)}"
                       "${descriptionLines[j].padRight(columnWidth2)}"
                       "  ${productCode.padRight(columnWidth3)}"
@@ -989,17 +991,19 @@ class _VanStockScreenState extends State<VanStockScreen>
                       "${''.padRight(columnWidth4)}"
                       "${''.padRight(columnWidth5)}";
                 }
-                printer.printCustom(line, 1, 0); // Left aligned
+                printer.printCustom(line, 1, 0);
               }
-              serialNumber++; // Increment the serial number for each unit printed
+              serialNumber++;
             }
           } else {
-            // Handle case where no units are available
+            // No units available
+            String productName = "${product.name!.toUpperCase()}";
+            String productCode = "${product.code}";
             String productUnit = "No units available";
-            String productQty = "N/A"; // Or any default value
+            String productQty = "N/A";
 
             List<String> descriptionLines =
-                splitText(productName, columnWidth2);
+            splitText(productName, columnWidth2);
             for (int j = 0; j < descriptionLines.length; j++) {
               String line;
               if (j == 0) {
@@ -1015,13 +1019,13 @@ class _VanStockScreenState extends State<VanStockScreen>
                     "${''.padRight(columnWidth4)}"
                     "${''.padRight(columnWidth5)}";
               }
-              printer.printCustom(line, 1, 0); // Left aligned
+              printer.printCustom(line, 1, 0);
             }
+            serialNumber++;
           }
         }
 
-        // Print the bottom separator line
-        printer.printCustom("-" * 70, 1, 1); // Centered
+        printer.printCustom("-" * 70, 1, 1);
         printer.printNewLine();
         printer.paperCut();
       } else {
@@ -1029,6 +1033,12 @@ class _VanStockScreenState extends State<VanStockScreen>
           SnackBar(content: Text('Printer not connected')),
         );
       }
+    }
+    if (_selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default device not found')),
+      );
+      return;
     }
     if (!_connected) {
       await _connect();
@@ -1048,7 +1058,7 @@ class _VanStockScreenState extends State<VanStockScreen>
   Future<ApiResponse> _getProducts() async {
     final response = await http.get(Uri.parse(
         '${RestDatasource().BASE_URL}/api/get_van_stock?store_id=${AppState().storeId}&van_id=${AppState().vanId}'));
-
+print(response.request);
     if (response.statusCode == 200) {
       print(response.request);
       final data = json.decode(response.body);

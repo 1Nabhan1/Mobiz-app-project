@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'package:intl/intl.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Pages/Cheque/Cheque_Colection.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
@@ -38,39 +39,58 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
   }
 
   void _initPrinter() async {
-    bool? isConnected = await printer.isConnected;
-    if (isConnected!) {
-      setState(() {
-        _connected = true;
-      });
-    }
-    _getBluetoothDevices();
-  }
-
-  Future<void> _connect() async {
-    if (_selectedDevice != null) {
-      await printer.connect(_selectedDevice!);
-      setState(() {
-        _connected = true;
-      });
-    }
-  }
-
-  void _getBluetoothDevices() async {
-    List<BluetoothDevice> devices = await printer.getBondedDevices();
-    BluetoothDevice? defaultDevice;
-    final prefs = await SharedPreferences.getInstance();
-    final savedDeviceAddress = prefs.getString('selected_device_address');
-    for (BluetoothDevice device in devices) {
-      if (device.address == savedDeviceAddress) {
-        defaultDevice = device;
-        break;
+    try {
+      bool? isConnected = await printer.isConnected;
+      if (isConnected ?? false) {
+        setState(() => _connected = true);
       }
+      await _getBluetoothDevices();
+    } catch (e) {
+      print('Printer init error: $e');
     }
-    setState(() {
-      _devices = devices;
-      _selectedDevice = defaultDevice;
-    });
+  }
+
+  Future<void> _getBluetoothDevices() async {
+    try {
+      List<BluetoothDevice> devices = await printer.getBondedDevices();
+      final prefs = await SharedPreferences.getInstance();
+      final savedDeviceAddress = prefs.getString('selected_device_address');
+
+      setState(() {
+        _devices = devices;
+        _selectedDevice = devices.firstWhere(
+              (device) => device.address == savedDeviceAddress,
+          orElse: () => devices.first,
+        );
+      });
+    } catch (e) {
+      print('Error getting devices: $e');
+    }
+  }
+
+  Future<bool> _connect() async {
+    try {
+      if (_selectedDevice == null) {
+        if (_devices.isNotEmpty) {
+          setState(() => _selectedDevice = _devices.first);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No printer devices available')),
+          );
+          return false;
+        }
+      }
+
+      await printer.connect(_selectedDevice!);
+      setState(() => _connected = true);
+      return true;
+    } catch (e) {
+      print('Connection error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to connect to printer: $e')),
+      );
+      return false;
+    }
   }
 
   Future<void> fetchChequeCollection() async {
@@ -79,20 +99,29 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        print(response.request);
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        setState(() {
-          chequeList = (jsonData['data'] as List)
-              .map((item) => Data.fromJson(item))
-              .toList();
-          isLoading = false;
-        });
+
+        // Check if data exists and is a list
+        if (jsonData['data'] != null && jsonData['data'] is List) {
+          setState(() {
+            chequeList = (jsonData['data'] as List)
+                .map((item) => Data.fromJson(item))
+                .toList();
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            chequeList = [];
+            isLoading = false;
+          });
+        }
       } else {
-        throw Exception('Failed to load data');
+        throw Exception('Failed to load data: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching data: $e');
       setState(() {
+        chequeList = [];
         isLoading = false;
       });
     }
@@ -154,11 +183,11 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
                       onTap: () => _print(data),
                         child: const Icon(Icons.print, color: Colors.blueAccent),
                       ),
-                      const SizedBox(width: 10),
-                      GestureDetector(
+                      // const SizedBox(width: 10),
+                      // GestureDetector(
                         // onTap: () => generatePdf(data),
-                        child: const Icon(Icons.document_scanner, color: Colors.red),
-                      ),
+                        // child: const Icon(Icons.document_scanner, color: Colors.red),
+                      // ),
                     ],
                   ),
                 ),
@@ -169,7 +198,7 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          data.chequeDate,
+                          data.chequeDate??'',
                           style: TextStyle(
                             fontSize: AppConfig.textCaption3Size,
                           ),
@@ -183,7 +212,7 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
                         Row(
                           children: [
                             Text(
-                              data.bank,
+                              data.bank??'',
                               style: TextStyle(
                                 fontSize: AppConfig.textCaption3Size,
                                 fontWeight: AppConfig.headLineWeight,
@@ -241,211 +270,120 @@ class _ChequeReceiptState extends State<ChequeReceipt> {
       ),
     );
   }
-  void _print(Data data) async {
-    if (_connected) {
-      // Print Store Details Header
-      // String logoUrl =`
-      //     '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
-      // if (logoUrl.isNotEmpty) {
-      //   final response = await http.get(Uri.parse(logoUrl));
-      //   if (response.statusCode == 200) {
-      //     Uint8List imageBytes = response.bodyBytes;
-      //
-      //     // Decode image and convert to monochrome bitmap if needed
-      //     img.Image originalImage = img.decodeImage(imageBytes)!;
-      //     img.Image monoLogo = img.grayscale(originalImage);
-      //
-      //     // Encode the image to the required format (e.g., PNG)
-      //     Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
-      //
-      //     // Print the logo image
-      //     printer.printImageBytes(logoBytes);
-      //   } else {
-      //     print('Failed to load image: ${response.statusCode}');
-      //   }
-      // }
+
+  Future<void> _print(Data data) async {
+    try {
+      if (!_connected) {
+        bool connected = await _connect();
+        if (!connected) return;
+      }
       final response = await http.get(Uri.parse(
           '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
-      if (response.statusCode == 200) {
-        // Parse JSON response into StoreDetail object
-        StoreDetail storeDetail =
-        StoreDetail.fromJson(json.decode(response.body));
-        final String api =
-            '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
-        final logoResponse = await http.get(Uri.parse(api));
-        if (logoResponse.statusCode != 200) {
-          throw Exception('Failed to load logo image');
-        }
-
-        void printAlignedText(String leftText, String rightText) {
-          const int maxLineLength = 68;
-          int leftTextLength = leftText.length;
-          int rightTextLength = rightText.length;
-
-          // Calculate padding to ensure rightText is right-aligned
-          int spaceLength = maxLineLength - (leftTextLength + rightTextLength);
-          String spaces = ' ' * spaceLength;
-
-          printer.printCustom('$leftText$spaces$rightText', 1,
-              0); // Print with left-aligned text
-        }
-
-        String logoUrl =
-            'http://68.183.92.8:3697/uploads/store/${storeDetail.logos}';
+      if (response.statusCode != 200) {
+        print(response.body);
+        throw Exception('Failed to load store details');
+      }
+      StoreDetail storeDetail = StoreDetail.fromJson(json.decode(response.body));
+      try {
+        final String logoUrl = '${RestDatasource().Image_URL}/uploads/store/${storeDetail.logos}';
         if (logoUrl.isNotEmpty) {
-          final response = await http.get(Uri.parse(logoUrl));
-          if (response.statusCode == 200) {
-            Uint8List imageBytes = response.bodyBytes;
-
-            // Decode image and convert to monochrome bitmap if needed
+          final logoResponse = await http.get(Uri.parse(logoUrl));
+          if (logoResponse.statusCode == 200) {
+            Uint8List imageBytes = logoResponse.bodyBytes;
             img.Image originalImage = img.decodeImage(imageBytes)!;
             img.Image monoLogo = img.grayscale(originalImage);
-
-            // Encode the image to the required format (e.g., PNG)
             Uint8List logoBytes = Uint8List.fromList(img.encodePng(monoLogo));
-
-            // Print the logo image
-            printer.printImageBytes(logoBytes);
-          } else {
-            print('Failed to load image: ${response.statusCode}');
+            await printer.printImageBytes(logoBytes);
           }
         }
+      } catch (e) {
+        print('Error printing logo: $e');
+      }
+      void printAlignedText(String leftText, String rightText) {
+        const int maxLineLength = 68;
+        int leftTextLength = leftText.length;
+        int rightTextLength = rightText.length;
 
-        printer.printNewLine();
-        String companyName =
-            '${storeDetail.name}';
-        printer.printCustom(companyName, 3, 1);
-        printer.printNewLine();
+        int spaceLength = maxLineLength - (leftTextLength + rightTextLength);
+        String spaces = ' ' * spaceLength;
+        printer.printCustom('$leftText$spaces$rightText', 1,
+            0); // Print with left-aligned text
+      }
+      String formatDate(String date) {
+        DateTime parsedDate = DateTime.parse(date);
+        return DateFormat('dd-MM-yyyy').format(parsedDate);
+      }
+      printer.printNewLine();
+      String companyName =
+          '${storeDetail.name}';
+      printer.printCustom(companyName, 3, 1);
+      printer.printCustom("Address: ${data.store!.address}", 1, 1);
+      printer.printCustom("TRN: ${data.store!.trn}", 1, 1);
+      printer.printCustom("CHEQUE RECEIPT", 1, 1);
+      printer.printNewLine();
+      printer.printCustom("-" * 72, 1, 1);
+      printAlignedText('Customer: ${data.paymentType == "Individual" ? data.customer[0].name  : data.customerGroup[0].name}', '',);
+      printAlignedText('', 'Date: ${formatDate(data.inDate)}');
+      printer.printNewLine();
+      printer.printCustom("-" * 72, 1, 1); // Centered
+      if (data.collectionType == 'Cheque') {
+        printAlignedText('Collection Type: Cheque', 'Cheque No: ${data.chequeNo}');
+        printAlignedText('Bank Name: ${data.bank}', 'Cheque Date: ${data.chequeDate}');
+      } else if (data.collectionType == 'Cash') {
+        printAlignedText('Collection Type: Cash', ' '); // Uncomment if needed
+      }
+      printAlignedText('Amount: ${data.amount}', ' ');
+      printer.printNewLine();
+      printer.printCustom("-" * 72, 1, 1);
+      printAlignedText("Van: ${data.vanId}", "");
+      printAlignedText("Salesman: ${data.user!.name}", "");
+      printer.printNewLine();
 
-        // printer.printCustom("TRN: ${storeDetail.trn ?? "N/A"}", 1, 1);
-        printer.printCustom("CHEQUE RECEIPT", 3, 1);
-        printer.printNewLine();
-        printer.printCustom("-" * 72, 1, 1);
+      printer.paperCut();
 
-        // Print Customer Details
-        // if (data != null && data.customer!.isNotEmpty) {
-          printAlignedText('Customer: ${storeDetail.name}','');
-          // printer.printLeftRight('Customer: ${data.customer![0].name}', '', 1);
-          printAlignedText(
-            // 'Market:  ${data.customer![0].address}',
-              '',
-              'Date: ${data.chequeDate}');
-          // printer.printLeftRight('Market: ${data.customer![0].address}', '', 1);
-          // printAlignedText('TRN: ${data.customer![0].trn}',
-          //     'Due Date: ${data.sales![0].inDate}');
-          // printer.printLeftRight('TRN: ${data.customer![0].trn}', '', 1);
-        // }
-        printer.printNewLine();
-        printer.printCustom("-" * 72, 1, 1); // Centered
-
-        // Print Sales Details
-        // printer.printLeftRight(
-        //     'Reference:', '${data.sales![0].voucherNo ?? 'N/A'}', 1);
-        // printer.printLeftRight('Date:', '${data.sales![0].inDate}', 1);
-        // printer.printLeftRight('Due Date:', '${data.sales![0].inDate}', 1);
-        // printer.printNewLine();
-
-        // Collection Information
-        if (data.collectionType == 'Cheque') {
-          printAlignedText('Collection Type: Cheque', 'Cheque No: ${data.chequeNo}');
-          printAlignedText('Bank Name: ${data.bank}', 'Cheque Date: ${data.chequeDate}');
-          // printAlignedText('Cheque No: ${data.chequeNo}', ' ');
-          // printAlignedText('Cheque Date: ${data.chequeDate}', ' ');
-        } else if (data.collectionType == 'Cash') {
-          // Optional: Print something specific for cash or leave it out
-          printAlignedText('Collection Type: Cash', ' '); // Uncomment if needed
-        }
-        printAlignedText('Amount: ${data.amount}', ' ');
-        // printer.printLeftRight('Collection Type:', '${data.collectionType}', 1);
-        // printer.printLeftRight('Bank Name:', '${data.bank}', 1);
-        // printer.printLeftRight('Cheque No:', '${data.chequeNo}', 1);
-        // printer.printLeftRight('Cheque Date:', '${data.chequeDate}', 1);
-        // printer.printLeftRight('Amount:', '${data.totalAmount}', 1);
-        printer.printNewLine();
-        // printer.printCustom("-" * 72, 1, 1);
-        // const int columnWidth0 = 4;
-        // const int columnWidth1 = 14; // S.No
-        // const int columnWidth2 = 20; // Product Description
-        // const int columnWidth3 = 14; // Unit
-        // const int columnWidth4 = 5;
-        // String line;
-        // String headers = "${''.padRight(columnWidth0)}"
-        //     "${'SI.NO'.padRight(columnWidth1)}"
-        //     " ${'Reference NO'.padRight(columnWidth2)}"
-        //     " ${'Type'.padRight(columnWidth3)}"
-        //     "${'Amount'.padRight(columnWidth4)}";
-        // printer.printCustom(headers, 1, 0);
-        // printer.printCustom("-" * 72, 1, 1);
-        // Sales List Header
-        // printer.printCustom('SI NO   Reference No   Type   Amount', 1, 0);
-        // printer.printCustom('---------------------------', 1, 0);
-
-        // Iterate and print each sales item
-
-        // String formatInvoiceType(String? invoiceType) {
-        //   if (invoiceType == null)
-        //     return 'N/A'; // Return N/A if invoiceType is null
-        //
-        //   // Capitalize the first letter and check for specific cases
-        //   switch (invoiceType.toLowerCase()) {
-        //     case 'salesreturn':
-        //       return 'Sales Return';
-        //     case 'payment_voucher':
-        //       return 'Payment';
-        //     default:
-        //       return invoiceType[0].toUpperCase() +
-        //           invoiceType.substring(1).toLowerCase();
-        //   }
-        // }
-
-        // for (var i = 0; i < data.sales!.length; i++) {
-        //   var sale = data.sales![i];
-        //   line = "${('').padRight(columnWidth0)}"
-        //       "${(i + 1).toString().padRight(columnWidth1)}"
-        //       " ${sale.invoiceNo?.padRight(columnWidth2) ?? 'N/A'.padRight(columnWidth2)}"
-        //       "${formatInvoiceType(sale.invoiceType)?.padRight(columnWidth3) ?? 'N/A'.padRight(columnWidth3)}"
-        //       "${sale.amount?.padRight(columnWidth4) ?? 'N/A'.padRight(columnWidth4)}";
-        //   printer.printCustom(line, 1, 0);
-        // }
-        // printer.printNewLine();
-        printer.printCustom("-" * 72, 1, 1);
-        // if (data.roundoff != null && double.parse(data.roundoff!) != 0) {
-        //   printAlignedText('',
-        //       'Round Off: ${double.parse(data.roundoff!).toStringAsFixed(2)}');
-        // }
-        // printAlignedText('', 'Total: ${data.totalAmount}');
-        printAlignedText("Van: ${data.vanId}", "");
-        printAlignedText("Salesman: ${data.user.name}", "");
-        // printer.printLeftRight('Van:', '${data.vanId}', 1);
-        // printer.printLeftRight('Salesman:', 'N/A', 1);
-        printer.printNewLine();
-
-        printer.paperCut();
-      } // Cut paper after printing
-    } else {
+    } catch (e) {
+      print('Printing error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Printer not connected')),
+        SnackBar(content: Text('Printing failed: $e')),
       );
-    }
-    if (!_connected) {
-      await _connect();
     }
   }
 }
 
 
+class CollectionResponse {
+  final List<Data> data;
+  final bool success;
+  final List<dynamic> messages;
+
+  CollectionResponse({
+    required this.data,
+    required this.success,
+    required this.messages,
+  });
+
+  factory CollectionResponse.fromJson(Map<String, dynamic> json) {
+    return CollectionResponse(
+      data: (json['data'] as List?)?.map((e) => Data.fromJson(e)).toList() ?? [],
+      success: json['success'] ?? false,
+      messages: json['messages'] ?? [],
+    );
+  }
+}
+
 class Data {
   final int id;
-  final String? invoiceNo; // Nullable
+  final String? invoiceNo;
   final String inDate;
   final String inTime;
   final int customerGroupId;
   final String collectionType;
-  final double amount; // Updated to double
-  final String chequeDate;
-  final String bank;
-  final String? chequeNo; // Nullable
-  final String? description; // Nullable
+  final String? paymentType;
+  final double amount;
+  final String? chequeDate;
+  final String? bank;
+  final String? chequeNo;
+  final String? description;
   final int vanId;
   final int userId;
   final int storeId;
@@ -453,21 +391,26 @@ class Data {
   final int status;
   final String createdAt;
   final String updatedAt;
-  final Store store; // Assuming only one store is present
-  final User user; // Assuming only one user is present
+  final String? deletedAt;
+  final Store? store;
+  final User? user;
+  final List<CustomerGroup> customerGroup;
+  final List<Customer> customer;
+  final Van? van;
 
   Data({
     required this.id,
-    this.invoiceNo, // Nullable
+    this.invoiceNo,
     required this.inDate,
     required this.inTime,
     required this.customerGroupId,
     required this.collectionType,
+    this.paymentType,
     required this.amount,
-    required this.chequeDate,
-    required this.bank,
-    this.chequeNo, // Nullable
-    this.description, // Nullable
+    this.chequeDate,
+    this.bank,
+    this.chequeNo,
+    this.description,
     required this.vanId,
     required this.userId,
     required this.storeId,
@@ -475,32 +418,47 @@ class Data {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
-    required this.store,
-    required this.user,
+    this.deletedAt,
+    this.store,
+    this.user,
+    required this.customerGroup,
+    required this.customer,
+    this.van,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
-      id: json['id'],
-      invoiceNo: json['invoice_no'], // Nullable
-      inDate: json['in_date'],
-      inTime: json['in_time'],
-      customerGroupId: json['customer_group_id'],
-      collectionType: json['collection_type'],
-      amount: double.tryParse(json['amount'].toString()) ?? 0.0, // Parsing to double
+      id: json['id'] ?? 0,
+      invoiceNo: json['invoice_no'],
+      inDate: json['in_date'] ?? '',
+      inTime: json['in_time'] ?? '',
+      customerGroupId: json['customer_group_id'] ?? 0,
+      collectionType: json['collection_type'] ?? '',
+      paymentType: json['payment_type'],
+      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
       chequeDate: json['cheque_date'],
       bank: json['bank'],
-      chequeNo: json['cheque_no'], // Nullable
-      description: json['description'], // Nullable
-      vanId: json['van_id'],
-      userId: json['user_id'],
-      storeId: json['store_id'],
-      dayClose: json['day_close'],
-      status: json['status'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      store: Store.fromJson(json['store'][0]), // Assuming only one store is present
-      user: User.fromJson(json['user'][0]), // Assuming only one user is present
+      chequeNo: json['cheque_no'],
+      description: json['description'],
+      vanId: json['van_id'] ?? 0,
+      userId: json['user_id'] ?? 0,
+      storeId: json['store_id'] ?? 0,
+      dayClose: json['day_close'] ?? 0,
+      status: json['status'] ?? 0,
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
+      deletedAt: json['deleted_at'],
+      store: json['store'] != null && (json['store'] as List).isNotEmpty
+          ? Store.fromJson(json['store'][0])
+          : null,
+      user: json['user'] != null && (json['user'] as List).isNotEmpty
+          ? User.fromJson(json['user'][0])
+          : null,
+      customerGroup: (json['customergroup'] as List?)?.map((e) => CustomerGroup.fromJson(e)).toList() ?? [],
+      customer: (json['customer'] as List?)?.map((e) => Customer.fromJson(e)).toList() ?? [],
+      van: json['van'] != null && (json['van'] as List).isNotEmpty
+          ? Van.fromJson(json['van'][0])
+          : null,
     );
   }
 }
@@ -512,21 +470,29 @@ class Store {
   final int companyId;
   final String logo;
   final String emirate;
+  final String address;
   final String country;
   final String contactNumber;
-  final String? whatsappNumber; // Nullable
+  final String? whatsappNumber;
   final String email;
   final String username;
   final String password;
   final int noOfUsers;
   final String subscriptionEndDate;
-  final String? description; // Nullable
-  final String? currency; // Nullable
-  final String? vatPercentage; // Nullable
+  final String bufferDays;
+  final String allowAccess;
+  final String? description;
+  final String? currency;
+  final String? vatPercentage;
   final String? trn;
+  final String? invoiceHeading;
+  final String? invoiceCompanyName;
+  final String? invoiceFooter;
+  final String displayStoreName;
   final int status;
   final String createdAt;
   final String updatedAt;
+  final String? deletedAt;
 
   Store({
     required this.id,
@@ -535,46 +501,62 @@ class Store {
     required this.companyId,
     required this.logo,
     required this.emirate,
+    required this.address,
     required this.country,
     required this.contactNumber,
-    this.whatsappNumber, // Nullable
+    this.whatsappNumber,
     required this.email,
     required this.username,
     required this.password,
     required this.noOfUsers,
     required this.subscriptionEndDate,
-    this.description, // Nullable
-    this.currency, // Nullable
-    this.vatPercentage, // Nullable
-    this.trn, // Nullable
+    required this.bufferDays,
+    required this.allowAccess,
+    this.description,
+    this.currency,
+    this.vatPercentage,
+    this.trn,
+    this.invoiceHeading,
+    this.invoiceCompanyName,
+    this.invoiceFooter,
+    required this.displayStoreName,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.deletedAt,
   });
 
   factory Store.fromJson(Map<String, dynamic> json) {
     return Store(
-      id: json['id'],
-      code: json['code'],
-      name: json['name'],
-      companyId: json['comapny_id'],
-      logo: json['logo'],
-      emirate: json['emirate'],
-      country: json['country'],
-      contactNumber: json['contact_number'],
-      whatsappNumber: json['whatsapp_number'], // Nullable
-      email: json['email'],
-      username: json['username'],
-      password: json['password'],
-      noOfUsers: json['no_of_users'],
-      subscriptionEndDate: json['suscription_end_date'],
-      description: json['description'], // Nullable
-      currency: json['currency'], // Nullable
-      vatPercentage: json['vat_percentage'], // Nullable
-      trn: json['trn'], // Nullable
-      status: json['status'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      id: json['id'] ?? 0,
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      companyId: json['comapny_id'] ?? 0,
+      logo: json['logo'] ?? '',
+      emirate: json['emirate'] ?? '',
+      address: json['address'] ?? '',
+      country: json['country'] ?? '',
+      contactNumber: json['contact_number'] ?? '',
+      whatsappNumber: json['whatsapp_number'],
+      email: json['email'] ?? '',
+      username: json['username'] ?? '',
+      password: json['password'] ?? '',
+      noOfUsers: json['no_of_users'] ?? 0,
+      subscriptionEndDate: json['suscription_end_date'] ?? '',
+      bufferDays: json['buffer_days'] ?? '',
+      allowAccess: json['allow_access'] ?? '',
+      description: json['description'],
+      currency: json['currency'],
+      vatPercentage: json['vat_percentage'],
+      trn: json['trn'],
+      invoiceHeading: json['invoice_heading'],
+      invoiceCompanyName: json['invoice_company_name'],
+      invoiceFooter: json['invoice_footer'],
+      displayStoreName: json['display_store_name'] ?? '',
+      status: json['status'] ?? 0,
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
+      deletedAt: json['deleted_at'],
     );
   }
 }
@@ -584,13 +566,15 @@ class User {
   final String name;
   final String email;
   final String? emailVerifiedAt;
-  final bool isSuperAdmin;
+  final bool? isSuperAdmin;
   final bool isShopAdmin;
   final bool isStaff;
   final int departmentId;
   final int designationId;
   final int storeId;
   final int rolId;
+  final dynamic productionStore;
+  final dynamic glId;
   final String createdAt;
   final String updatedAt;
 
@@ -599,13 +583,15 @@ class User {
     required this.name,
     required this.email,
     this.emailVerifiedAt,
-    required this.isSuperAdmin,
+    this.isSuperAdmin,
     required this.isShopAdmin,
     required this.isStaff,
     required this.departmentId,
     required this.designationId,
     required this.storeId,
     required this.rolId,
+    this.productionStore,
+    this.glId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -615,26 +601,176 @@ class User {
       if (value == null) return false;
       if (value is bool) return value;
       if (value is String) return value == '1' || value.toLowerCase() == 'true';
+      if (value is int) return value == 1;
       return false;
     }
 
     return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
       emailVerifiedAt: json['email_verified_at'],
-      isSuperAdmin: parseBool(json['is_super_admin']),
+      isSuperAdmin: json['is_super_admin'] == null ? null : parseBool(json['is_super_admin']),
       isShopAdmin: parseBool(json['is_shop_admin']),
       isStaff: parseBool(json['is_staff']),
-      departmentId: json['department_id'],
-      designationId: json['designation_id'],
-      storeId: json['store_id'],
-      rolId: json['rol_id'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      departmentId: json['department_id'] ?? 0,
+      designationId: json['designation_id'] ?? 0,
+      storeId: json['store_id'] ?? 0,
+      rolId: json['rol_id'] ?? 0,
+      productionStore: json['production_store'],
+      glId: json['gl_id'],
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
     );
   }
 }
 
+class CustomerGroup {
+  final int id;
+  final String name;
+  final String? description;
+  final int storeId;
+  final String createdAt;
+  final String updatedAt;
+  final String? deletedAt;
 
+  CustomerGroup({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.storeId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
 
+  factory CustomerGroup.fromJson(Map<String, dynamic> json) {
+    return CustomerGroup(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'],
+      storeId: json['store_id'] ?? 0,
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
+      deletedAt: json['deleted_at'],
+    );
+  }
+}
+
+class Customer {
+  final int id;
+  final String name;
+  final String? code;
+  final String address;
+  final String building;
+  final String flatNo;
+  final String contactNumber;
+  final String? whatsappNumber;
+  final String email;
+  final String trn;
+  final String? custImage;
+  final String paymentTerms;
+  final int creditLimit;
+  final int creditDays;
+  final String location;
+  final int routeId;
+  final int provinceId;
+  final int storeId;
+  final int status;
+  final String createdAt;
+  final String updatedAt;
+  final String? deletedAt;
+  final String? erpCustomerCode;
+  final int priceGroupId;
+  final int? accountId;
+  final String isCustomer;
+  final String isSupplier;
+  final dynamic receivableGlId;
+  final dynamic payableGlId;
+
+  Customer({
+    required this.id,
+    required this.name,
+    this.code,
+    required this.address,
+    required this.building,
+    required this.flatNo,
+    required this.contactNumber,
+    this.whatsappNumber,
+    required this.email,
+    required this.trn,
+    this.custImage,
+    required this.paymentTerms,
+    required this.creditLimit,
+    required this.creditDays,
+    required this.location,
+    required this.routeId,
+    required this.provinceId,
+    required this.storeId,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.erpCustomerCode,
+    required this.priceGroupId,
+    this.accountId,
+    required this.isCustomer,
+    required this.isSupplier,
+    this.receivableGlId,
+    this.payableGlId,
+  });
+
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    return Customer(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      code: json['code'],
+      address: json['address'] ?? '',
+      building: json['building'] ?? '',
+      flatNo: json['flat_no'] ?? '',
+      contactNumber: json['contact_number'] ?? '',
+      whatsappNumber: json['whatsapp_number'],
+      email: json['email'] ?? '',
+      trn: json['trn'] ?? '',
+      custImage: json['cust_image'],
+      paymentTerms: json['payment_terms'] ?? '',
+      creditLimit: json['credit_limit'] ?? 0,
+      creditDays: json['credit_days'] ?? 0,
+      location: json['location'] ?? '',
+      routeId: json['route_id'] ?? 0,
+      provinceId: json['province_id'] ?? 0,
+      storeId: json['store_id'] ?? 0,
+      status: json['status'] ?? 0,
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
+      deletedAt: json['deleted_at'],
+      erpCustomerCode: json['erp_customer_code'],
+      priceGroupId: json['price_group_id'] ?? 0,
+      accountId: json['account_id'],
+      isCustomer: json['is_customer'] ?? '',
+      isSupplier: json['is_supplier'] ?? '',
+      receivableGlId: json['receivable_gl_id'],
+      payableGlId: json['payable_gl_id'],
+    );
+  }
+}
+
+class Van {
+  final int id;
+  final String name;
+  final String? description;
+
+  Van({
+    required this.id,
+    required this.name,
+    this.description,
+  });
+
+  factory Van.fromJson(Map<String, dynamic> json) {
+    return Van(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'],
+    );
+  }
+}

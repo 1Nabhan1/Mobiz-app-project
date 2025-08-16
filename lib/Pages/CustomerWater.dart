@@ -363,6 +363,7 @@ class _CustomerWaterState extends State<CustomerWater> {
   List<int> reasonIds = [];
   int selectedReasonId = 0;
   List<int> productIds = [];
+  bool _isPosting = false;
   // Open scanner when the camera icon is tapped
   void scanBarcode() async {
     final result = await Navigator.push(
@@ -493,6 +494,12 @@ class _CustomerWaterState extends State<CustomerWater> {
   }
 
   Future<void> postWaterSale() async {
+    if (_isPosting) return; // Prevent multiple submissions
+
+    setState(() {
+      _isPosting = true; // Disable the button
+    });
+
     if (scannedCoupons.isEmpty || _count.toString().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -500,13 +507,16 @@ class _CustomerWaterState extends State<CustomerWater> {
               "Please add scanned coupons and specify the number of empty bottles."),
         ),
       );
+      setState(() {
+        _isPosting = false; // Re-enable the button
+      });
       return;
     }
 
     final url = Uri.parse("${RestDatasource().BASE_URL}/api/water-sale.store");
 
     Map<String, String> body = {
-      "customer_id":id.toString(),
+      "customer_id": id.toString(),
       "store_id": AppState().storeId.toString(),
       "reason_id": selectedReasonId.toString(),
       "van_id": AppState().vanId.toString(),
@@ -525,60 +535,71 @@ class _CustomerWaterState extends State<CustomerWater> {
       print(productIds[i].toString()); // For product_id[0], product_id[1], etc.
     }
 
-    // Sending the request
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: body,
-    );
-    print(body);
-    print(response.body);
-    if (response.statusCode == 200) {
-      print("Body: $body");
-      print(
-        _count.toString(),
+    try {
+      // Sending the request
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body,
       );
-      print(
-        selectedReasonId.toString(),
-      );
-      final responseData = jsonDecode(response.body);
-      if (responseData['success'] == true) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Success"),
-              content: const Text("Data Inserted Successfully!"),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close the dialog
-                    Navigator.pushNamed(
-                        context, HomeScreen.routeName); // Navigate to home
-                  },
-                  child: Text("OK"),
-                ),
-              ],
-            );
-          },
-        );
-        setState(() {
-          scannedCoupons.clear();
-          _count = 0; // Reset the counter
-        });
+      print(body);
+      print(response.body);
+
+      if (response.statusCode == 200) {
+        print("Body: $body");
+        print(_count.toString());
+        print(selectedReasonId.toString());
+
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Success"),
+                content: const Text("Data Inserted Successfully!"),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the dialog
+                      Navigator.pushNamed(
+                          context, HomeScreen.routeName); // Navigate to home
+                    },
+                    child: Text("OK"),
+                  ),
+                ],
+              );
+            },
+          );
+          setState(() {
+            scannedCoupons.clear();
+            _count = 0; // Reset the counter
+          });
+        } else {
+          // Handle API error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['error'] ?? "Unknown error")),
+          );
+        }
       } else {
-        // Handle API error
+        // Handle request failure
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseData['error'] ?? "Unknown error")),
+          SnackBar(
+              content: Text(
+                  "Failed to post data. Status code: ${response.statusCode}")),
         );
       }
-    } else {
-      // Handle request failure
+    } catch (e) {
+      // Handle any unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                "Failed to post data. Status code: ${response.statusCode}")),
+        SnackBar(content: Text("An error occurred: $e")),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPosting = false; // Re-enable the button
+        });
+      }
     }
   }
 
@@ -931,15 +952,15 @@ class _CustomerWaterState extends State<CustomerWater> {
             SizedBox(height: 10),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppConfig.colorPrimary,
+                backgroundColor: _isPosting ? Colors.grey : AppConfig.colorPrimary, // Disable color when posting
                 fixedSize: const Size(190, 30),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero,
                 ),
               ),
-              onPressed: () {
-                postWaterSale();
-              },
+              onPressed: _isPosting
+                  ? null // Disable button when posting
+                  : postWaterSale, // Enable button and call postWaterSale
               child: Text(
                 'Save',
                 style: TextStyle(color: Colors.white),

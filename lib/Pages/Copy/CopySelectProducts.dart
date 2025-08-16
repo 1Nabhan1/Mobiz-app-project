@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 // import 'package:mobizapp/Pages/salesscreen.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -40,13 +41,15 @@ class _CopySelectProductState extends State<CopySelectProduct> {
   bool _isDialogOpen = false;
   bool isAvailable = true;
   final TextEditingController _searchData = TextEditingController();
+  bool _isSearching = false;
+  Timer? _debounce;
   @override
   void initState() {
     super.initState();
     // fetchProducts(currentPage); // Initial fetch
-    _searchData.addListener(() {
-      _filterProducts(_searchData.text);
-    });
+    // _searchData.addListener(() {
+    //   _filterProducts(_searchData.text);
+    // });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Check if arguments are passed via the ModalRoute and extract them
       if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -70,6 +73,21 @@ class _CopySelectProductState extends State<CopySelectProduct> {
     });
   }
 
+  @override
+  void dispose() {
+    _searchData.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _filterProducts(query);
+    });
+  }
+
   Future<void> fetchProducts(int page) async {
     if (isLoading) return;
 
@@ -86,6 +104,7 @@ class _CopySelectProductState extends State<CopySelectProduct> {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode != 200) {
+        print(response.request);
         throw Exception(
             'Failed to load products. Status code: ${response.statusCode}');
       }
@@ -118,14 +137,18 @@ class _CopySelectProductState extends State<CopySelectProduct> {
   }
 
   void _filterProducts(String query) async {
+    if (query != _searchData.text) return;
+
     if (query.isEmpty) {
       setState(() {
+        _isSearching = false;
         filteredProducts = List.from(products);
       });
       return;
     }
 
     setState(() {
+      _isSearching = true;
       isLoading = true;
     });
 
@@ -133,27 +156,30 @@ class _CopySelectProductState extends State<CopySelectProduct> {
       final response = await http.get(Uri.parse(
           '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
 
-      if (response.statusCode == 200) {
+      if (_isSearching && response.statusCode == 200) {
+        print(query);
         final data = jsonDecode(response.body);
         final List<Products> fetchedProducts = (data['data'] as List)
             .map((json) => Products.fromJson(json))
             .toList();
 
-        setState(() {
-          isLoading = false;
-          filteredProducts =
-              fetchedProducts; // Update the filtered products with the search results
-        });
-      } else {
-        throw Exception('Failed to load search results');
+        if (mounted && query == _searchData.text) {
+          setState(() {
+            filteredProducts = fetchedProducts;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       print('Error fetching search results: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
+
 
   Future<void> clearCart() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -221,6 +247,7 @@ class _CopySelectProductState extends State<CopySelectProduct> {
                       autofocus: true,
                       style: TextStyle(color: Colors.white),
                       controller: _searchData,
+                      onChanged: _onSearchChanged,
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.all(5),
                           hintText: "Search...",
@@ -428,7 +455,9 @@ class _CopySelectProductState extends State<CopySelectProduct> {
         return value != null &&
             value.isNotEmpty &&
             quantityValue > 0 &&
-            quantityValue <= (availableStock ?? 0);
+            AppState().validate_qtySales == 'Yes'
+            ? quantityValue <= (availableStock ?? 0)
+            : quantityValue > 0;
       }
 
       if (ModalRoute.of(context)!.settings.arguments != null) {

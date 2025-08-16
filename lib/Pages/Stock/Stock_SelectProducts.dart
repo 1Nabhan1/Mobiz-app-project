@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/Stock/Stock_Name.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
@@ -294,11 +294,12 @@ class _Stock_SelectProductsState extends State<Stock_SelectProducts> {
   void showProductDetailsDialog(BuildContext context, Products product) async {
     int? id;
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_units_by_products?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product.id}&customer_id=$id'));
+        '${RestDatasource().BASE_URL}/api/get_product_stock_take?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product.id}'));
     final typeResponse = await http
         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      print(response.request);
       final data = jsonDecode(response.body);
       final units = data['data'] as List?;
       final lastsale = data['lastsale'];
@@ -540,17 +541,21 @@ class _Stock_SelectProductsState extends State<Stock_SelectProducts> {
                   if (units != null && units.any((unit) => unit != null)) ...[
                     TextButton(
                       style: TextButton.styleFrom(
-                          backgroundColor: isQuantityValid(quantity)
-                              ? AppConfig.colorPrimary
-                              : Colors.grey,
+                          backgroundColor:
+                          // isQuantityValid(quantity)
+                          //     ?
+                          AppConfig.colorPrimary,
+                              // : Colors.grey,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5.r))),
                       child: Text(
                         'Save',
                         style: TextStyle(color: Colors.white),
                       ),
-                      onPressed: isQuantityValid(quantity)
-                          ? () async {
+                      onPressed:
+                      // isQuantityValid(quantity)
+                      //     ?
+                          () async {
                         final prefs =
                         await SharedPreferences.getInstance();
                         List<String>? selectedProducts =
@@ -591,7 +596,7 @@ class _Stock_SelectProductsState extends State<Stock_SelectProducts> {
                         });
                         print(dataId);
                       }
-                          : null,
+                          // : null,
                     ),
                   ] else ...[
                     SizedBox.shrink(),

@@ -34,7 +34,7 @@ class _CopyScreenState extends State<CopyScreen> {
   double totalAmount = 0.0;
   double roundOffValue = 0.0;
   bool _isDialogOpen = false;
-  bool _isButtonDisabled = true;
+  bool _isButtonDisabled = false;
   String _remarksText = "";
   List<ProductType> productTypes = [];
   List<ProductType?> selectedProductTypes = [];
@@ -279,7 +279,7 @@ class _CopyScreenState extends State<CopyScreen> {
     Map<String, dynamic> grandTotalMap = CalculatedValue();
 
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    var roundedGrandTotal = grandTotalMap['rounded'];
+    double roundedGrandTotal = double.parse(double.parse(grandTotalMap['rounded'].toString()).toStringAsFixed(2));
     double roundOffValue = double.parse(double.parse(grandTotalMap['roundOffValue'].toString()).toStringAsFixed(2));
     double total;
     if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -294,101 +294,117 @@ class _CopyScreenState extends State<CopyScreen> {
       print("Siuu: $pricegroupId");
     }
     void postDataToApi() async {
-      var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
-      List<int> productIds = savedProducts.map<int>((product) {
-        return product['id'];
-      }).toList();
-      List<int> unitIds = savedProducts.map<int>((product) {
-        // Assuming product['unit_id'] already contains the selected unit ID
-        return int.parse(product['unit_id']);
-      }).toList();
-      List<double> amounts = savedProducts.map<double>((product) {
-        return double.parse(double.parse(product['amount'].toString()).toStringAsFixed(2));
-      }).toList();
+      setState(() {
+        _isButtonDisabled = true; // Disable the button when the request starts
+      });
 
-      List<double> quantity = savedProducts.map<double>((product) {
-        return double.parse(product['quantity'].toString());
-      }).toList();
+      try {
+        var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
+        List<int> productIds = savedProducts.map<int>((product) {
+          return product['id'];
+        }).toList();
+        List<int> unitIds = savedProducts.map<int>((product) {
+          // Assuming product['unit_id'] already contains the selected unit ID
+          return int.parse(product['unit_id']);
+        }).toList();
+        List<double> amounts = savedProducts.map<double>((product) {
+          return double.parse(
+              double.parse(product['amount'].toString()).toStringAsFixed(2));
+        }).toList();
 
-      List<int> productTypes = savedProducts.map<int>((product) {
-        return int.parse(product['type_id']);
-      }).toList();
+        List<double> quantity = savedProducts.map<double>((product) {
+          return double.parse(product['quantity'].toString());
+        }).toList();
 
-      List<List<String>> serialNumbers =
-          savedProducts.map<List<String>>((product) {
-        return product['serial_numbers'] != null &&
-                product['serial_numbers'] is List
-            ? List<String>.from(product['serial_numbers'])
-            : [];
-      }).toList();
-      var data = {
-        'van_id': AppState().vanId,
-        'store_id': AppState().storeId,
-        'user_id': AppState().userId,
-        'item_id': productIds,
-        'quantity': quantity,
-        'unit': unitIds,
-        'mrp': amounts,
-        'discount_type': _isPercentage ? 'percentage' : 'amount',
-        'customer_id': id,
-        'if_vat': _ifVat == 1 ? 1 : 0,
-        'product_type': productTypes,
-        'total_tax': tax,
-        "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
-        "total": totalAmount,
-        "round_off": roundOffValue,
-        "grand_total": roundedGrandTotal,
-        'remarks': _remarksText,
-        'serial_numbers': serialNumbers
-      };
-      var body = json.encode(data);
+        List<int> productTypes = savedProducts.map<int>((product) {
+          return int.parse(product['type_id']);
+        }).toList();
 
-      var response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: body,
-      );
+        List<List<String>> serialNumbers =
+        savedProducts.map<List<String>>((product) {
+          return product['serial_numbers'] != null &&
+              product['serial_numbers'] is List
+              ? List<String>.from(product['serial_numbers'])
+              : [];
+        }).toList();
+        var data = {
+          'van_id': AppState().vanId,
+          'store_id': AppState().storeId,
+          'user_id': AppState().userId,
+          'item_id': productIds,
+          'quantity': quantity,
+          'unit': unitIds,
+          'mrp': amounts,
+          'discount_type': _isPercentage ? 'percentage' : 'amount',
+          'customer_id': id,
+          'if_vat': _ifVat == 1 ? 1 : 0,
+          'product_type': productTypes,
+          'total_tax': tax,
+          "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
+          "total": totalAmount,
+          "round_off": roundOffValue,
+          "grand_total": roundedGrandTotal,
+          'remarks': _remarksText,
+          'serial_numbers': serialNumbers
+        };
+        var body = json.encode(data);
 
-      if (response.statusCode == 200) {
-        print("AMT$amounts");
-        var responseBody = json.decode(response.body);
-        int dataId = responseBody['data']['id'];
-        int saleId =  responseBody['data']['id'];
-        print('Post successful');
-        print('$data');
-        print(serialNumbers);
-        print("Body: ${response.body}");
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-                  context: context, title: "Alert", msg: "Created Successfully")
-              .then(
-            (value) {
-              clearCart();
-              Navigator.pushReplacementNamed(
-                  context, Customerreturndetail.routeName,
-                  arguments: {
-                    'name': name,
-                    'dataId': dataId,
-                    'saleId':saleId,
-                    'customerId': id,
-                    'code': code,
-                    'paymentTerms': paymentTerms,
-                    'outstandamt': paydata,
-                    'price_group_id':pricegroupId
-                  });
-              print("Copyyyyyyyyyy");
-              print(dataId);
-            },
-          );
+        var response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: body,
+        );
+
+        if (response.statusCode == 200) {
+          print("Data$data");
+          print("Rnd${roundedGrandTotal}");
+          print("AMT$amounts");
+          var responseBody = json.decode(response.body);
+          int dataId = responseBody['data']['id'];
+          int saleId = responseBody['data']['id'];
+          print('Post successful');
+          print('$data');
+          print(serialNumbers);
+          print("Body: ${response.body}");
+          if (mounted) {
+            CommonWidgets.showDialogueBox(
+                context: context, title: "Alert", msg: "Created Successfully")
+                .then(
+                  (value) {
+                clearCart();
+                Navigator.pushReplacementNamed(
+                    context, Customerreturndetail.routeName,
+                    arguments: {
+                      'name': name,
+                      'dataId': dataId,
+                      'saleId': saleId,
+                      'customerId': id,
+                      'code': code,
+                      'paymentTerms': paymentTerms,
+                      'outstandamt': paydata,
+                      'price_group_id': pricegroupId
+                    });
+                print("Copyyyyyyyyyy");
+                print(dataId);
+              },
+            );
+          }
+          print(response.body);
+        } else {
+          print('Post failed with status: ${response.statusCode}');
+          print(response.body);
         }
-        print(response.body);
-      } else {
-        print('Post failed with status: ${response.statusCode}');
-        print(response.body);
+      } catch (e) {
+        print('An error occurred: $e');
+      } finally {
+        setState(() {
+          _isButtonDisabled = false;  // Re-enable the button after the request completes (whether it succeeds or fails)
+        });
       }
     }
+
 
     return WillPopScope(
       onWillPop: () async {
@@ -511,20 +527,17 @@ class _CopyScreenState extends State<CopyScreen> {
                   borderRadius: BorderRadius.circular(7.0),
                 ),
               ),
-              backgroundColor: (savedProducts.isNotEmpty)
-                  ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                  : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+              backgroundColor: WidgetStateProperty.all(
+                savedProducts.isNotEmpty && !_isButtonDisabled
+                    ? AppConfig.colorPrimary
+                    : AppConfig.buttonDeactiveColor,
+              ),
             ),
-            onPressed: (savedProducts.isNotEmpty && _isButtonDisabled)
-                ? () async {
-                    setState(() {
-                      _isButtonDisabled =
-                          true; // Disable the button after it's pressed
-                    });
-                    postDataToApi();
-                    // print(roundOffValue);
-                  }
-                : null,
+            onPressed: _isButtonDisabled || savedProducts.isEmpty
+                ? null
+                : () async {
+              postDataToApi();
+            },
             child: Text(
               'SAVE',
               style: TextStyle(

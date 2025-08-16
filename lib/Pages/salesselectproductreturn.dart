@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobizapp/Models/appstate.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 

@@ -6,7 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:mobizapp/Components/commonwidgets.dart';
+import 'package:mobizapp/Pages/AgeingSummary/AgeingSummaryScreen.dart';
 import 'package:mobizapp/Pages/Attendance.dart';
+import 'package:mobizapp/Pages/BankReconciliation/BankReconciliationScreen.dart';
 import 'package:mobizapp/Pages/DayClose.dart';
 import 'package:mobizapp/Pages/ExpensesPage.dart';
 import 'package:mobizapp/Pages/Group_Print.dart';
@@ -35,9 +37,12 @@ import 'package:pie_chart/pie_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import '../Models/Store_model.dart';
 import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
+import 'Customer Dues/Customer Dues.dart';
 import 'TestExpensePage.dart';
 import 'Cheque/Cheque_Colection.dart';
 import 'Cheque_Receipt.dart';
@@ -62,6 +67,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> savedCartItems = [];
   bool _restrict = false;
+  bool isLoading = true;
   String _appVersion = 'Loading...';
   var selectedDate = DateTime.now();
   List<dynamic> appIcons = [];
@@ -82,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double amountPending = 0.0;
   double amountCollected = 0.0;
   double totalSale = 0.0;
+  StoreDetail? storeDetail;
 
   bool performLogout() {
     try {
@@ -101,11 +108,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    _getUserDetails();
     super.initState();
-    _fetchAppVersion();
-    fetchDashboardData();
-    fetchAppIcons();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getUserDetails();
+      fetchStoreDetail();
+      _fetchAppVersion();
+      fetchDashboardData();
+      fetchAppIcons();
+    });
+    print("Validate qty${AppState().validate_qtySales}");
+    print("Validate salesoo${AppState().validate_qtySO}");
   }
 
   Map<String, double> dataMap = {};
@@ -151,6 +163,34 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } else {
       throw Exception('Failed to load dashboard data');
+    }
+  }
+
+  Future<void> fetchStoreDetail() async {
+    final url = Uri.parse(
+        "${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}");
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['success'] == true) {
+          setState(() {
+            storeDetail = StoreDetail.fromJson(jsonData);
+            isLoading = false;
+          });
+        } else {
+          print("Error: ${jsonData['messages']}");
+          setState(() => isLoading = false);
+        }
+      } else {
+        print("Failed to load data: ${response.statusCode}");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("Exception: $e");
+      setState(() => isLoading = false);
     }
   }
 
@@ -236,22 +276,33 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.credit_card_sharp;
       case 'insert_drive_file_rounded':
         return Icons.insert_drive_file_rounded;
+      case 'real_estate_agent':
+        return Icons.real_estate_agent;
+      case 'wallet_travel_outlined':
+        return Icons.wallet_travel_outlined;
+      case 'money':
+        return Icons.money;
       default:
         return Icons.help;
     }
   }
-
-  // Map<String, double> dataMap = {
-  //   "60.0": 60,
-  //   "80.0": 80,
-  //   "20.0": 20, // Added the new value for white color
-  // };
 
   List<Color> colorList = [
     Colors.green.shade300,
     Colors.blue,
     Colors.white, // Added the new color
   ];
+
+  // List<_SalesData> data = [
+  //   _SalesData('Irfan', 20),
+  //   _SalesData('Ahmed', 28),
+  //   _SalesData('Yasir', 34),
+  //   _SalesData('Rouf', 48),
+  //   _SalesData('Imran', 40),
+  //   _SalesData('Prabhu', 30),
+  //   _SalesData('Sudeer', 20),
+  //   _SalesData('Mahesh', 15),
+  // ];
 
   @override
   Widget build(BuildContext context) {
@@ -296,13 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Lottie.asset(
                         'Assets/Images/Animation - 1722081243637.json',
                         fit: BoxFit.cover,
-                        width: 70)
-                    // Image.asset(
-                    //   'Assets/Images/profile.png',
-                    //   fit: BoxFit.contain,
-                    // ),
-                    ),
-                // CommonWidgets.verticalSpace(3),
+                        width: 70)),
                 ListTile(
                   leading: Icon(Icons.drive_file_rename_outline),
                   title: const Text('Edit Profile'),
@@ -327,19 +372,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ));
                   },
                 ),
-
-                // ListTile(
-                //   leading: Icon(Icons.print),
-                //   title: const Text('Cart'),
-                //   onTap: () {
-                //     Navigator.push(
-                //         context,
-                //         MaterialPageRoute(
-                //           builder: (context) => CartPage(savedCartItems: [],),
-                //         ));
-                //   },
-                // ),
-
                 ListTile(
                   leading: Icon(Icons.logout),
                   title: Text('Log Out'),
@@ -363,11 +395,50 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
+                    CommonWidgets.verticalSpace(2),
+                    isLoading
+                        ? Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: SizeConfig.blockSizeHorizontal * 3,
+                                vertical: SizeConfig.blockSizeVertical * 1),
+                            child: Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: SizeConfig.safeBlockHorizontal! * 30,
+                                    height: SizeConfig.safeBlockVertical! * 5,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : storeDetail == null
+                            ? const Center(child: Text("No data found"))
+                            : Center(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal:
+                                          SizeConfig.blockSizeHorizontal * 3,
+                                      vertical:
+                                          SizeConfig.blockSizeVertical * 1),
+                                  child: Text(
+                                    "${storeDetail!.name}",
+                                    style: TextStyle(
+                                        fontSize: AppConfig.textCaptionSize,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppConfig.colorPrimary),
+                                  ),
+                                ),
+                              ),
                     Padding(
                       padding: const EdgeInsets.all(18),
                       child: Column(
                         children: [
-                          CommonWidgets.verticalSpace(2),
+                          // CommonWidgets.verticalSpace(2),
                           Center(
                             child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -380,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ]),
                           ),
-                          CommonWidgets.verticalSpace(8),
+                          CommonWidgets.verticalSpace(3.8),
                           Container(
                             height: MediaQuery.of(context).size.height * 0.68,
                             child: paginatedIcons.isNotEmpty
@@ -486,60 +557,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    // Container(
-                    //   height: SizeConfig.blockSizeVertical * 32.5,
-                    //   width: SizeConfig.screenWidth,
-                    //   decoration: BoxDecoration(
-                    //     color: AppConfig.colorPrimary,
-                    //     borderRadius: BorderRadius.only(
-                    //       bottomLeft: const Radius.circular(0),
-                    //       bottomRight: const Radius.circular(0),
-                    //       topRight: Radius.elliptical(
-                    //         MediaQuery.of(context).size.width,
-                    //         60.0,
-                    //       ),
-                    //       topLeft: Radius.elliptical(
-                    //         MediaQuery.of(context).size.width,
-                    //         60.0,
-                    //       ),
-                    //     ),
-                    //   ),
-                    //   child: Column(
-                    //     children: [
-                    //       CommonWidgets.verticalSpace(3),
-                    //       Stack(
-                    //         clipBehavior: Clip.none,
-                    //         children: [
-                    //           Text(
-                    //             'Mobiz',
-                    //             style: TextStyle(
-                    //                 fontSize: AppConfig.headLineSize * 2,
-                    //                 color: AppConfig.backgroundColor,
-                    //                 fontWeight: AppConfig.headLineWeight),
-                    //           ),
-                    //           Positioned(
-                    //             top: SizeConfig.blockSizeVertical * 5,
-                    //             left: 18,
-                    //             child: Text(
-                    //               'Sales',
-                    //               style: TextStyle(
-                    //                 fontSize: AppConfig.headLineSize * 1.5,
-                    //                 color: AppConfig.backgroundColor,
-                    //               ),
-                    //             ),
-                    //           ),
-                    //         ],
-                    //       ),
-                    //       CommonWidgets.verticalSpace(3),
-                    //       Image.asset(
-                    //         'Assets/Images/logo.png',
-                    //         fit: BoxFit.contain,
-                    //         width: SizeConfig.blockSizeHorizontal * 30,
-                    //         height: SizeConfig.blockSizeVertical * 20,
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
                   ],
                 ),
               ),
@@ -549,31 +566,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: [
                     SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: AppConfig.textSubTitleSize,
-                          vertical: AppConfig.textCaption3Size),
-                      decoration: BoxDecoration(
-                        color: AppConfig.colorPrimary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        currentDate, // Show the current date
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: AppConfig.textCaption3Size,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: SizeConfig.safeBlockVertical! * 2,
+                      height: SizeConfig.safeBlockVertical! * 7,
                     ),
                     Container(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: SizeConfig.blockSizeHorizontal * 3),
                         child: Column(
                           children: [
                             Row(
@@ -583,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   height: SizeConfig.safeBlockVertical! * 22,
                                   width: SizeConfig.blockSizeHorizontal * 45,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(30),
+                                    borderRadius: BorderRadius.circular(5),
                                     color: AppConfig.colorPrimary,
                                   ),
                                   child: Column(
@@ -595,19 +593,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text(
                                         'TODAY\'S SCHEDULE',
                                         style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700),
+                                          color: Colors.white,
+                                          // fontWeight: FontWeight.w700
+                                        ),
                                       ),
                                       SizedBox(
                                         height:
                                             SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       CircularPercentIndicator(
-                                        radius: 50.0, // Size of the circle
-                                        lineWidth:
-                                            10.0, // Width of the circle's stroke
+                                        radius: 50.0,
+                                        lineWidth: 10.0,
                                         percent: completedTodaySchedule /
-                                            totalTodaySchedule, // Progress percentage (2 out of 70)
+                                            totalTodaySchedule,
                                         center: Text(
                                           "$completedTodaySchedule/$totalTodaySchedule", // Text inside the circle
                                           style: TextStyle(
@@ -629,7 +627,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   height: SizeConfig.safeBlockVertical! * 22,
                                   width: SizeConfig.blockSizeHorizontal * 45,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(30),
+                                    borderRadius: BorderRadius.circular(5),
                                     color: AppConfig.colorPrimary,
                                   ),
                                   child: Column(
@@ -639,10 +637,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             SizeConfig.safeBlockVertical! * 2.5,
                                       ),
                                       Text(
-                                        'EMERGENCY\'S SCHEDULE',
+                                        'EMERGENCY SCHEDULE',
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontWeight: FontWeight.w700,
+                                          // fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                       SizedBox(
@@ -675,16 +673,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             SizedBox(
-                              height: SizeConfig.safeBlockVertical! * 1.5,
+                              height: SizeConfig.safeBlockVertical! * 3,
                             ),
                             Row(
                               children: [
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -692,7 +691,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'COUPON SALE',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
                                       Text(
                                         couponSale.toStringAsFixed(
@@ -700,8 +702,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w700,
-                                          fontSize:
-                                              AppConfig.textParagraph2Size,
+                                          fontSize: AppConfig.textCaption2Size,
                                         ),
                                       )
                                     ],
@@ -711,11 +712,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -723,16 +725,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'USED COUPONS',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
                                       Text(
-                                        usedCoupons.toStringAsFixed(
-                                            2), // Converts double to a string with 2 decimal places
+                                        usedCoupons
+                                            .toString(), // Converts double to a string with 2 decimal places
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w700,
-                                          fontSize:
-                                              AppConfig.textParagraph2Size,
+                                          fontSize: AppConfig.textCaption2Size,
                                         ),
                                       )
                                     ],
@@ -742,11 +746,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -754,14 +759,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'EXPENSES',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
                                       Text(expenses.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
                                               fontSize:
-                                                  AppConfig.textParagraph2Size))
+                                                  AppConfig.textCaption2Size))
                                     ],
                                   ),
                                 ),
@@ -772,11 +780,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             Row(
                               children: [
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -784,14 +793,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'FILLED BOTTLE',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
-                                      Text(filledBottle.toStringAsFixed(2),
+                                      Text(filledBottle.toString(),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
                                               fontSize:
-                                                  AppConfig.textParagraph2Size))
+                                                  AppConfig.textCaption2Size))
                                     ],
                                   ),
                                 ),
@@ -799,11 +811,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -811,14 +824,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'EMPTY BOTTLE',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
-                                      Text(emptyBottle.toStringAsFixed(2),
+                                      Text(emptyBottle.toString(),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
                                               fontSize:
-                                                  AppConfig.textParagraph2Size))
+                                                  AppConfig.textCaption2Size))
                                     ],
                                   ),
                                 ),
@@ -826,11 +842,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 5,
                                 ),
                                 Container(
-                                  height: SizeConfig.safeBlockVertical! * 8,
-                                  width: SizeConfig.safeBlockHorizontal! * 30,
+                                  height: SizeConfig.safeBlockVertical! * 7,
+                                  width:
+                                      SizeConfig.safeBlockHorizontal! * 30.52,
                                   decoration: BoxDecoration(
                                       color: AppConfig.colorPrimary,
-                                      borderRadius: BorderRadius.circular(20)),
+                                      borderRadius: BorderRadius.circular(5)),
                                   child: Column(
                                     children: [
                                       SizedBox(
@@ -838,28 +855,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       Text(
                                         'CASH IN HAND',
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize:
+                                                AppConfig.textCaption3Size),
                                       ),
                                       Text(cashInHand.toStringAsFixed(2),
                                           style: TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.w700,
                                               fontSize:
-                                                  AppConfig.textParagraph2Size))
+                                                  AppConfig.textCaption2Size))
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                             SizedBox(
-                              height: SizeConfig.safeBlockVertical! * 1.5,
+                              height: SizeConfig.safeBlockVertical! * 3,
                             ),
                             Container(
                               height: SizeConfig.safeBlockVertical! * 37,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                   color: AppConfig.colorPrimary,
-                                  borderRadius: BorderRadius.circular(25)),
+                                  borderRadius: BorderRadius.circular(8)),
                               child: Column(
                                 children: [
                                   Row(
@@ -947,7 +967,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 fontWeight: FontWeight.w900),
                                           ),
                                           SizedBox(
-                                            height: 50,
+                                            height: 110,
                                           ),
                                           Row(
                                             children: [
@@ -1022,10 +1042,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ],
                                   ),
-                                  Text(
-                                    'Total sales amount: $totalSale',
-                                    style: TextStyle(color: Colors.white),
-                                  )
                                 ],
                               ),
                             )
@@ -1133,6 +1149,15 @@ class _HomeScreenState extends State<HomeScreen> {
               break;
             case 'DeliveryDetailsDriver':
               Navigator.pushNamed(context, DeliveryDetailsDriver.routeName);
+              break;
+            case 'Aging':
+              Navigator.pushNamed(context, AgeingSummaryScreen.routeName);
+              break;
+            case 'PDC':
+              Navigator.pushNamed(context, BankReconciliationScreen.routeName);
+              break;
+              case 'DUE':
+              Navigator.pushNamed(context, CustomerDues.routeName);
               break;
             default:
               Navigator.pushNamed(context, routeName);
@@ -1291,4 +1316,11 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
+}
+
+class _SalesData {
+  _SalesData(this.year, this.sales);
+
+  final String year;
+  final double sales;
 }

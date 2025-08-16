@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -31,13 +32,14 @@ class HomeorderScreen extends StatefulWidget {
 }
 
 class _HomeorderScreenState extends State<HomeorderScreen> {
-  final TextEditingController _searchData = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   VanSaleProducts products = VanSaleProducts();
+  List<Data> filteredProducts = [];
   bool _initDone = false;
   bool _noData = false;
   List<int> selectedItems = [];
   List<Map<String, dynamic>> items = [];
-  bool _search = false;
+  bool _isSearching = false;
   int? customerId;
 
   int? id;
@@ -45,6 +47,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
 
   Qty.ProductQuantityDetails qunatityData = Qty.ProductQuantityDetails();
   List<Qty.ProductQuantityDetails> quantity = [];
+
   @override
   void initState() {
     super.initState();
@@ -52,90 +55,137 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<String?> fetchUpdatedStatus(int id) async {
+    final url = Uri.parse('http://68.183.92.8:3699/api/vansales_order.status?id=$id');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final data = VanSalesOrderStatusResponse.fromJson(jsonResponse);
+        if (data.data.isNotEmpty) {
+          return data.data.first.status; // e.g., "Pending"
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching status: $e");
+    }
+    return null;
+  }
+
+  void _filterProducts(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredProducts = products.data ?? [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      filteredProducts = (products.data ?? []).where((product) {
+        final invoiceNo = product.invoiceNo?.toLowerCase() ?? '';
+        final customerName = product.customer?.isNotEmpty == true
+            ? product.customer![0].name?.toLowerCase() ?? ''
+            : '';
+        final customerCode = product.customer?.isNotEmpty == true
+            ? product.customer![0].code?.toLowerCase() ?? ''
+            : '';
+        final date = product.inDate?.toLowerCase() ?? '';
+        final total = product.total?.toString().toLowerCase() ?? '';
+
+        return invoiceNo.contains(query.toLowerCase()) ||
+            customerName.contains(query.toLowerCase()) ||
+            customerCode.contains(query.toLowerCase()) ||
+            date.contains(query.toLowerCase()) ||
+            total.contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchController,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: 'Search by invoice, customer, date...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: AppConfig.backgroundColor.withOpacity(0.7)),
+      ),
+      style: TextStyle(color: AppConfig.backgroundColor, fontSize: 16),
+      onChanged: _filterProducts,
+    );
+  }
+
+  List<Widget> _buildActions() {
+    if (_isSearching) {
+      return [
+        IconButton(
+          icon: Icon(Icons.clear, color: AppConfig.backgroundColor),
+          onPressed: () {
+            setState(() {
+              _searchController.clear();
+              _isSearching = false;
+              filteredProducts = products.data ?? [];
+            });
+          },
+        ),
+      ];
+    } else {
+      return [
+        IconButton(
+          icon: Icon(Icons.search, color: AppConfig.backgroundColor),
+          onPressed: () {
+            setState(() {
+              _isSearching = true;
+            });
+          },
+        ),
+      ];
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       id = params!['customerId'];
       name = params!['name'];
     }
+
+    String getStatusText(int status, int convertToSales) {
+      if (convertToSales == 1) {
+        return "Invoiced";
+      } else {
+        switch (status) {
+          case 0:
+            return "Cancelled";
+          case 1:
+            return "Pending";
+          default:
+            return "Confirmed";
+        }
+      }
+    }
+
+    final displayProducts = _isSearching ? filteredProducts : products.data;
+
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
-        title: const Text(
+        title: _isSearching ? _buildSearchField() : const Text(
           'Sales Order',
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         backgroundColor: AppConfig.colorPrimary,
-        actions: [
-          // (_search)
-          //     ? Container(
-          //         height: SizeConfig.blockSizeVertical * 5,
-          //         width: SizeConfig.blockSizeHorizontal * 76,
-          //         decoration: BoxDecoration(
-          //           color: AppConfig.colorPrimary,
-          //           borderRadius: const BorderRadius.all(
-          //             Radius.circular(10),
-          //           ),
-          //           border: Border.all(color: AppConfig.colorPrimary),
-          //         ),
-          //         child: TextField(
-          //           controller: _searchData,
-          //           decoration: const InputDecoration(
-          //               contentPadding: EdgeInsets.all(5),
-          //               hintText: "Search...",
-          //               hintStyle: TextStyle(color: AppConfig.backgroundColor),
-          //               border: InputBorder.none),
-          //         ),
-          //       )
-          //     : Container(),
-          // CommonWidgets.horizontalSpace(1),
-          // GestureDetector(
-          //   onTap: () {
-          //     setState(() {
-          //       _search = !_search;
-          //     });
-          //   },
-          //   child: Icon(
-          //     (!_search) ? Icons.search : Icons.close,
-          //     size: 30,
-          //     color: AppConfig.backgroundColor,
-          //   ),
-          // ),
-          // CommonWidgets.horizontalSpace(3),
-        ],
+        actions: _buildActions(),
       ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      // floatingActionButton: SizedBox(
-      //   width: SizeConfig.blockSizeHorizontal * 25,
-      //   height: SizeConfig.blockSizeVertical * 5,
-      //   child: ElevatedButton(
-      //     style: ButtonStyle(
-      //       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-      //         RoundedRectangleBorder(
-      //           borderRadius: BorderRadius.circular(20.0),
-      //         ),
-      //       ),
-      //       backgroundColor:
-      //           const MaterialStatePropertyAll(AppConfig.colorPrimary),
-      //     ),
-      //     onPressed: () async {
-      //       for (var item in items) {
-      //         await StockHistory.addToStockHistory(item);
-      //       }
-      //       if (mounted) {
-      //         Navigator.of(context).pop();
-      //       }
-      //     },
-      //     child: Text(
-      //       'ADD',
-      //       style: TextStyle(
-      //           fontSize: AppConfig.textCaption3Size,
-      //           color: AppConfig.backgroundColor,
-      //           fontWeight: AppConfig.headLineWeight),
-      //     ),
-      //   ),
-      // ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0),
         child: SingleChildScrollView(
@@ -144,54 +194,57 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
               CommonWidgets.verticalSpace(1),
               (_initDone && !_noData)
                   ? SizedBox(
-                      height: SizeConfig.blockSizeVertical * 85,
-                      child: ListView.separated(
-                        separatorBuilder: (BuildContext context, int index) =>
-                            CommonWidgets.verticalSpace(1),
-                        itemCount: products.data!.length,
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) =>
-                            _productsCard(products.data![index], index),
-                      ),
-                    )
+                  height: SizeConfig.blockSizeVertical * 85,
+                  child: displayProducts != null && displayProducts.isNotEmpty
+                      ? ListView.separated(
+                    separatorBuilder: (BuildContext context, int index) =>
+                        CommonWidgets.verticalSpace(1),
+                    itemCount: displayProducts.length,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) =>
+                        _productsCard(displayProducts[index], index),
+                  )
+                      : _isSearching
+                      ? Center(child: Text('No results found'))
+                      : Center(child: Text('No data available')))
                   : (_noData && _initDone)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                              CommonWidgets.verticalSpace(3),
-                              const Center(
-                                child: Text('No Data'),
-                              ),
-                            ])
-                      : Shimmer.fromColors(
-                          baseColor:
-                              AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                          highlightColor: AppConfig.backButtonColor,
-                          child: Center(
-                            child: Column(
-                              children: [
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                              ],
-                            ),
-                          ),
-                        ),
+                  ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CommonWidgets.verticalSpace(3),
+                    const Center(
+                      child: Text('No Data'),
+                    ),
+                  ])
+                  : Shimmer.fromColors(
+                baseColor:
+                AppConfig.buttonDeactiveColor.withOpacity(0.1),
+                highlightColor: AppConfig.backButtonColor,
+                child: Center(
+                  child: Column(
+                    children: [
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                      CommonWidgets.loadingContainers(
+                          height: SizeConfig.blockSizeVertical * 10,
+                          width: SizeConfig.blockSizeHorizontal * 90),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -200,234 +253,259 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
   }
 
   Widget _productsCard(Data data, int index) {
-    return Card(
-      elevation: 1,
-      child: Container(
-        width: SizeConfig.blockSizeHorizontal * 90,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-          color: AppConfig.backgroundColor,
-          borderRadius: const BorderRadius.all(
-            Radius.circular(10),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: ExpansionTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            trailing: Transform.rotate(
-              angle: 100,
-              child: const Icon(Icons.touch_app, color: Colors.transparent),
-            ),
-            backgroundColor: AppConfig.backgroundColor,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Tooltip(
-                  message: data.invoiceNo!,
-                  child: SizedBox(
-                    width: SizeConfig.blockSizeHorizontal * 70,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
-                          style: TextStyle(
-                            fontSize: AppConfig.textCaption3Size,
-                          ),
-                        ),
-                        SizedBox(width:40),
-                        Text(
-                          data.status == 0 ? "Cancelled"
-                              : data.status == 1 ? "Pending"
-                              : "Confirmed",
-                          style: TextStyle(
-                            fontSize: AppConfig.textCaption3Size,
-                            fontWeight: AppConfig.headLineWeight,
-                            color: data.status == 0 ? Colors.red
-                                : data.status == 1 ? Colors.orange
-                                : Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      (data.customer!.isNotEmpty)
-                          ? data.customer![0].code ?? ''
-                          : '',
-                      style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                          fontWeight: AppConfig.headLineWeight),
-                    ),Text(' | '), Text(
-                      (data.customer!.isNotEmpty)
-                          ? data.customer![0].name ?? ''
-                          : '',
-                      style: TextStyle(
-                          fontSize: AppConfig.textCaption3Size,
-                          fontWeight: AppConfig.headLineWeight),
-                    ),
-                  ],
-                ),
-                // (data.detail!.isNotEmpty)
-                    // ? Text(
-                    //     'Type: ${data.detail![0].productType}',
-                    //     style: TextStyle(
-                    //       fontSize: AppConfig.textCaption3Size,
-                    //     ),
-                    //   )
+    return FutureBuilder<String?>(
+        future: fetchUpdatedStatus(data.id!),
+        builder: (context, snapshot) {
+          String status = "Loading...";
+          Color statusColor = Colors.grey;
 
-                    // ?
-                Text(
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasData) {
+              status = snapshot.data!;
+              switch (status) {
+                case "Pending":
+                  statusColor = Colors.orange;
+                  break;
+                case "Cancelled":
+                  statusColor = Colors.red;
+                  break;
+                case "Confirmed":
+                  statusColor = Colors.green;
+                  break;
+                case "Invoiced":
+                  statusColor = Colors.blue;
+                  break;
+                default:
+                  statusColor = Colors.grey;
+              }
+            } else {
+              status = "Unavailable";
+              statusColor = Colors.black;
+            }
+          }
+          return Card(
+            elevation: 1,
+            child: Container(
+              width: SizeConfig.blockSizeHorizontal * 90,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                color: AppConfig.backgroundColor,
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(10),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: ExpansionTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  trailing: Transform.rotate(
+                    angle: 100,
+                    child: const Icon(Icons.touch_app, color: Colors.transparent),
+                  ),
+                  backgroundColor: AppConfig.backgroundColor,
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Tooltip(
+                        message: data.invoiceNo!,
+                        child: SizedBox(
+                          width: SizeConfig.blockSizeHorizontal * 70,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${data.invoiceNo!} | ${DateFormat('dd MMMM yyyy').format(DateTime.parse(data.inDate!))} ${data.inTime}',
+                                style: TextStyle(
+                                  fontSize: AppConfig.textCaption3Size,
+                                ),
+                              ),
+                              SizedBox(width: 40),
+                              Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: AppConfig.textCaption3Size,
+                                  fontWeight: AppConfig.headLineWeight,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            (data.customer!.isNotEmpty)
+                                ? data.customer![0].code ?? ''
+                                : '',
+                            style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                                fontWeight: AppConfig.headLineWeight),
+                          ),Text(' | '), Text(
+                            (data.customer!.isNotEmpty)
+                                ? data.customer![0].name ?? ''
+                                : '',
+                            style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                                fontWeight: AppConfig.headLineWeight),
+                          ),
+                        ],
+                      ),
+                      Text(
                         'Total: ${data.total}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
                       ),
-                    // :
-                // Text(
-                //         'Type:  ',
-                //         style: TextStyle(
-                //           fontSize: AppConfig.textCaption3Size,
-                //         ),
-                //       ),
-                Text(
-                  'Discount(%): ${data.discount}',
-                  style: TextStyle(
-                    fontSize: AppConfig.textCaption3Size,
-                  ),
-                ),
-                SizedBox(
-                  width: SizeConfig.blockSizeHorizontal * 90,
-                  child: Row(
-                    children: [
                       Text(
-                        'Round Off: ${data.roundOff ?? ''}',
+                        'Discount(%): ${data.discount}',
                         style: TextStyle(
                           fontSize: AppConfig.textCaption3Size,
                         ),
                       ),
-                      const Spacer(),
-                      InkWell(
-                        onTap: () => _getInvoiceData(data.id!, false),
-                        child: const Icon(
-                          Icons.print,
-                          color: Colors.blue,
-                          size: 30,
+                      SizedBox(
+                        width: SizeConfig.blockSizeHorizontal * 90,
+                        child: Row(
+                          children: [
+                            Text(
+                              'Round Off: ${(double.tryParse(data.roundOff ?? '0')?.toStringAsFixed(2)) ?? ''}',
+                              style: TextStyle(
+                                fontSize: AppConfig.textCaption3Size,
+                              ),
+                            ),
+                            const Spacer(),
+                            InkWell(
+                              onTap: () {
+                                print(data.id);
+                                print("Convert${data.convert_to_sale}");
+                                print("status${data.status}");
+                              },
+                              child: const Icon(
+                                Icons.print,
+                                color: Colors.blue,
+                                size: 30,
+                              ),
+                            ),
+                            CommonWidgets.horizontalSpace(2),
+                            InkWell(
+                              onTap: () => _getInvoiceData(data.id!, false),
+                              child: const Icon(
+                                Icons.document_scanner,
+                                color: Colors.red,
+                                size: 30,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      CommonWidgets.horizontalSpace(2),
-                      InkWell(
-                        onTap: () => _getInvoiceData(data.id!, false),
-                        child: const Icon(
-                          Icons.document_scanner,
-                          color: Colors.red,
-                          size: 30,
+                      Text(
+                        'Total Vat: ${data.totalTax?.toStringAsFixed(2) ?? ''}',
+                        style: TextStyle(
+                          fontSize: AppConfig.textCaption3Size,
                         ),
                       ),
+                      Text(
+                        'Grand Total: ${data.grandTotal}',
+                        style: TextStyle(
+                          fontSize: AppConfig.textCaption3Size,
+                        ),
+                      ),
+                      data.deliverlocation != null && data.deliverlocation!.isNotEmpty
+                          ? Text(
+                        'Delivery Location: ${data.deliverlocation}',
+                        style: TextStyle(
+                          fontSize: AppConfig.textCaption3Size,
+                        ),
+                      )
+                          : SizedBox.shrink(),
+
                     ],
                   ),
-                ),
-                Text(
-                  'Total Vat: ${data.totalTax ?? ''}',
-                  style: TextStyle(
-                    fontSize: AppConfig.textCaption3Size,
-                  ),
-                ),
-                Text(
-                  'Grand Total: ${data.grandTotal}',
-                  style: TextStyle(
-                    fontSize: AppConfig.textCaption3Size,
-                  ),
-                ),
-              ],
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CommonWidgets.verticalSpace(1),
-                    Divider(
-                        color: AppConfig.buttonDeactiveColor.withOpacity(0.4)),
-                    for (int i = 0; i < data.detail!.length; i++)
-                      Column(
+                    Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: SizeConfig.blockSizeHorizontal * 85,
-                            child: Text(
-                              ('${data.detail![i].code ?? ''} | ${data.detail![i].name ?? ''}')
-                                  .toUpperCase(),
-                              style: TextStyle(
-                                  fontSize: AppConfig.textCaption3Size,
-                                  fontWeight: AppConfig.headLineWeight),
-                            ),
-                          ),
-                          SizedBox(
-                            width: SizeConfig.blockSizeHorizontal * 85,
-                            child: Row(
+                          CommonWidgets.verticalSpace(1),
+                          Divider(
+                              color: AppConfig.buttonDeactiveColor.withOpacity(0.4)),
+                          for (int i = 0; i < data.detail!.length; i++)
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  data.detail![i].productType ?? '',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
+                                SizedBox(
+                                  width: SizeConfig.blockSizeHorizontal * 85,
+                                  child: Text(
+                                    ('${data.detail![i].code ?? ''} | ${data.detail![i].name ?? ''}')
+                                        .toUpperCase(),
+                                    style: TextStyle(
+                                        fontSize: AppConfig.textCaption3Size,
+                                        fontWeight: AppConfig.headLineWeight),
                                   ),
                                 ),
-                                const Text(' | '),
-                                Text(
-                                  data.detail![i].unit ?? '',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
+                                SizedBox(
+                                  width: SizeConfig.blockSizeHorizontal * 85,
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        data.detail![i].productType ?? '',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                        ),
+                                      ),
+                                      const Text(' | '),
+                                      Text(
+                                        data.detail![i].unit ?? '',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                        ),
+                                      ),
+                                      const Text(' | '),
+                                      Text(
+                                        'Qty: ${data.detail![i].quantity}',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                        ),
+                                      ),
+                                      const Text(' | '),
+                                      Text(
+                                        'Rate: ${data.detail![i].mrp}',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                        ),
+                                      ),
+                                      const Text(' | '),
+                                      Text(
+                                        'Amount: ${data.detail![i].amount?.toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          fontSize: AppConfig.textCaption3Size,
+                                        ),
+                                      )
+                                    ],
                                   ),
                                 ),
-                                const Text(' | '),
-                                Text(
-                                  'Qty: ${data.detail![i].quantity}',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                  ),
-                                ),
-                                const Text(' | '),
-                                Text(
-                                  'Rate: ${data.detail![i].mrp}',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                  ),
-                                ),
-                                const Text(' | '),
-                                Text(
-                                  'Amount: ${data.detail![i].amount}',
-                                  style: TextStyle(
-                                    fontSize: AppConfig.textCaption3Size,
-                                  ),
-                                )
+                                CommonWidgets.verticalSpace(1),
+                                (i == data.detail!.length - 1)
+                                    ? Container()
+                                    : Divider(
+                                    color: AppConfig.buttonDeactiveColor
+                                        .withOpacity(0.4)),
                               ],
                             ),
-                          ),
-                          CommonWidgets.verticalSpace(1),
-                          (i == data.detail!.length - 1)
-                              ? Container()
-                              : Divider(
-                                  color: AppConfig.buttonDeactiveColor
-                                      .withOpacity(0.4)),
                         ],
                       ),
+                    )
                   ],
                 ),
-              )
-            ],
-          ),
-        ),
-      ),
+              ),
+            ),
+          );
+        }
     );
   }
 
@@ -438,6 +516,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
         AppState().token); //
     if (resJson['data'] != null) {
       products = VanSaleProducts.fromJson(resJson);
+      filteredProducts = products.data ?? [];
       setState(() {
         _initDone = true;
       });
@@ -447,86 +526,59 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
         _initDone = true;
       });
     }
-    // print(AppState().storeId);
-    // print(AppState().vanId);
-    // print('ggggggggggggggggggggggggggggggggggggggggggggg');
   }
 
   Future<void> _createPdf(Invoice.InvoiceData invoice, bool isPrint) async {
+
     PdfDocument document = PdfDocument();
     final page = document.pages.add();
     final Size pageSize = page.getClientSize();
 
-    // Load the image.
-
-    final Uint8List imageData = await _readImageData(
-        invoice.data!.store![0].logo); //invoice.data!.store![0].logo
-    print(invoice.data!.store![0].logo);
-    if (imageData.isNotEmpty) {
+    final double pageWidth = pageSize.width;
+    final Uint8List? imageData = await _readImageData(invoice.data!.store![0].logo);
+    if (imageData != null && imageData.isNotEmpty) {
       final PdfBitmap image = PdfBitmap(imageData);
-
-      // Draw the image.
-      final Rect imageRect = Rect.fromCenter(
-        center: Offset(pageSize.width / 2, 50),
-        width: pageSize.width * 0.2, // Adjust width as per your requirement
-        height: pageSize.height * 0.1, // Adjust height as per your requirement
+      // Position logo at top-right (adjust width/height as needed)
+      page.graphics.drawImage(
+        image,
+        Rect.fromLTWH(
+          pageWidth - 100, // Right-aligned with 100px width
+          30,             // Top margin
+          80,             // Logo width
+          80,             // Logo height
+        ),
       );
-      page.graphics.drawImage(image, imageRect);
     }
 
-    //content
-    // page.graphics.drawString(
-    //     'TAX INVOICE', PdfStandardFont(PdfFontFamily.helvetica, 30));
+    // Left-aligned company info
+    final String companyName = '${invoice.data!.store![0].name}';
+    final String rawAddress = invoice.data!.store![0].address ?? 'N/A';
 
-    //heading
-    final String head = '${invoice.data!.store![0].name}';
-    // Define the text and font
-    final double pageWidth = page.getClientSize().width;
-
-    final PdfFont headfont = PdfStandardFont(
-      PdfFontFamily.helvetica,
-      25,
-    );
-    final Size headtextSize = headfont.measureString(head);
-
-    final double headxPosition = (pageWidth - headtextSize.width) / 2.0;
-    final double headyPosition = 90;
+// Draw company name (bold, left-aligned)
     page.graphics.drawString(
-      head,
-      headfont,
-      bounds: Rect.fromLTWH(headxPosition, headyPosition, headtextSize.width,
-          headtextSize.height),
+      companyName,
+      PdfStandardFont(PdfFontFamily.helvetica, 18, style: PdfFontStyle.bold),
+      bounds: Rect.fromLTWH(30, 30, pageWidth - 150, 30),
     );
 
-    final String addresss = '${invoice.data!.store![0].address ?? 'null'}';
-    final PdfFont addressfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
+// Draw each line of the address separately
+    double currentY = 60; // Start below company name
+    final PdfFont detailsFont = PdfStandardFont(PdfFontFamily.helvetica, 10);
 
-    final Size addresstextSize = addressfont.measureString(addresss);
-    final double addressxPosition = (pageWidth - addresstextSize.width) / 2.0;
-    final double addressyPosition = 120;
+// Split the address by newlines and draw each line
+    for (final line in rawAddress.split('\n')) {
+      if (line.trim().isNotEmpty) { // Skip empty lines
+        page.graphics.drawString(
+          line.trim(),
+          detailsFont,
+          bounds: Rect.fromLTWH(30, currentY, pageWidth - 150, 15),
+        );
+        currentY += 15; // Move down for next line
+      }
+    }
 
-    page.graphics.drawString(
-      addresss,
-      addressfont,
-      bounds: Rect.fromLTWH(addressxPosition, addressyPosition,
-          addresstextSize.width, addresstextSize.height),
-    );
-
-    final String trn = 'TRN:${invoice.data!.store![0].trn ?? '  null'}';
-    final PdfFont trnfont = PdfStandardFont(PdfFontFamily.helvetica, 12);
-
-    final Size trntextSize = trnfont.measureString(trn);
-    final double trnxPosition = (pageWidth - trntextSize.width) / 2.1;
-    final double trnyPosition = 135;
-
-    page.graphics.drawString(
-      trn,
-      trnfont,
-      bounds: Rect.fromLTWH(
-          trnxPosition, trnyPosition, trntextSize.width, trntextSize.height),
-    );
-
-    final String text = 'TAX INVOICE';
+    final String? name = "SALES ORDER";
+    final String text = '$name';
 
     final PdfFont font = PdfStandardFont(PdfFontFamily.helvetica, 15);
 
@@ -536,14 +588,14 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
     // Calculate the center position for the text
     final double xPosition = (pageWidth - textSize.width) / 2;
     final double yPosition =
-        150; // Adjust this as needed for vertical positioning
+    165; // Adjust this as needed for vertical positioning
 
     // Draw the centered text
     page.graphics.drawString(
       text,
       font,
       bounds:
-          Rect.fromLTWH(xPosition, yPosition, textSize.width, textSize.height),
+      Rect.fromLTWH(xPosition, yPosition, textSize.width, textSize.height),
     );
 
     // Draw a line below the text
@@ -563,9 +615,8 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
   ''';
 
     String invoiceDetails = '''
-  Invoice No: ${invoice.data!.invoiceNo!}
+  Order No: ${invoice.data!.invoiceNo!}
   Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
-  Due Date: ${DateFormat('dd MMMM yyyy').format(DateTime.parse(invoice.data!.inDate!))}
   ''';
 
     page.graphics.drawString(
@@ -622,11 +673,11 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
       row.cells[3].value = '${invoice.data!.detail![k].mrp}';
       row.cells[4].value = '${invoice.data!.detail![k].quantity}';
       row.cells[5].value =
-          (invoice.data!.detail![k].productType!.toLowerCase() == "foc")
-              ? '1'
-              : '0';
-      row.cells[6].value = '${invoice.data!.detail![k].taxAmt}';
-      row.cells[7].value = '${invoice.data!.detail![k].amount}';
+      (invoice.data!.detail![k].productType!.toLowerCase() == "foc")
+          ? '1'
+          : '0';
+      row.cells[6].value = '${invoice.data!.detail![k].taxAmt!.toStringAsFixed(2)}';
+      row.cells[7].value = '${invoice.data!.detail![k].amount!.toStringAsFixed(2)}';
     }
 
     // Define no border style
@@ -687,8 +738,10 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
     String bottomInvoiceDetails = '''
   ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Discount: ${invoice.data!.discount}' : '\t'}
   Total: ${invoice.data!.total}
-  Vat: ${invoice.data!.totalTax}
-  ${num.parse(invoice.data!.roundOff.toString()) != 0 ? 'Round off: ${invoice.data!.roundOff}\nGrand Total: ${invoice.data!.grandTotal}' : 'Grand Total: ${invoice.data!.grandTotal}'} 
+  Vat: ${invoice.data!.totalTax!.toStringAsFixed(2)}
+${invoice.data?.roundOff != null && double.tryParse(invoice.data!.roundOff.toString()) != 0
+        ? 'Round off: ${double.tryParse(invoice.data!.roundOff.toString())?.toStringAsFixed(2) ?? '0.00'}\nGrand Total: ${invoice.data!.grandTotal!.toStringAsFixed(2)}'
+        : 'Grand Total: ${invoice.data!.grandTotal!.toStringAsFixed(2)}'}
 
 
   ''';
@@ -709,7 +762,7 @@ class _HomeorderScreenState extends State<HomeorderScreen> {
 
 // in word
     String textData =
-        'Amount in Words: ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()}';
+        'Amount in Words: AED ${NumberToWord().convert('en-in', invoice.data!.grandTotal!.toInt()).toUpperCase()} ONLY';
 
 // Adjust the vertical position for the van details
     double vanDetailsTop = tableBottom + 20 + 100 + 10;
@@ -759,7 +812,7 @@ Salesman: ${invoice.data!.user![0].name}
   Future<Uint8List> _readImageData(String? image) async {
     try {
       final response = await http
-          .get(Uri.parse('https://mobiz.yes45.in/uploads/store/$image'));
+          .get(Uri.parse('${RestDatasource().Image_URL}/uploads/store/$image'));
 
       print('Response Data $response');
 
@@ -780,10 +833,51 @@ Salesman: ${invoice.data!.user![0].name}
     RestDatasource api = RestDatasource();
     dynamic response = await api.getDetails(
         '/api/get_sales_order_invoice?id=$id', AppState().token);
-
+    print("ssdsdsdssds${id}");
     if (response['data'] != null) {
       invoice = Invoice.InvoiceData.fromJson(response);
       _createPdf(invoice, isPrint);
     }
+  }
+}
+
+class VanSalesOrderStatusResponse {
+  final List<VanSalesOrderStatusData> data;
+  final bool success;
+  final List<String> messages;
+
+  VanSalesOrderStatusResponse({
+    required this.data,
+    required this.success,
+    required this.messages,
+  });
+
+  factory VanSalesOrderStatusResponse.fromJson(Map<String, dynamic> json) {
+    return VanSalesOrderStatusResponse(
+      data: List<VanSalesOrderStatusData>.from(
+          json['data'].map((x) => VanSalesOrderStatusData.fromJson(x))),
+      success: json['success'],
+      messages: List<String>.from(json['messages']),
+    );
+  }
+}
+
+class VanSalesOrderStatusData {
+  final String invoiceNo;
+  final int id;
+  final String status;
+
+  VanSalesOrderStatusData({
+    required this.invoiceNo,
+    required this.id,
+    required this.status,
+  });
+
+  factory VanSalesOrderStatusData.fromJson(Map<String, dynamic> json) {
+    return VanSalesOrderStatusData(
+      invoiceNo: json['invoice_no'],
+      id: json['id'],
+      status: json['status'],
+    );
   }
 }

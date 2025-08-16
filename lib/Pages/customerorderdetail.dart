@@ -41,11 +41,10 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
   int _ifVat = 1;
   bool Status = false;
   String? name;
-
+  bool _isButtonDisabled = false;
+  bool _isDialogOpen = false;
   String roundoff = '';
   @override
-  bool _isButtonDisabled = true;
-  bool _isDialogOpen = false;
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
@@ -143,8 +142,10 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
           : (amt * taxPercentage) / 100;
       tax = Tax;
     }
-    return tax;
+    return double.parse(tax.toStringAsFixed(2));
   }
+
+
 
   Map<String, dynamic> CalculatedValue() {
     double taxamt = calculateTax();
@@ -294,8 +295,9 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
     Map<String, dynamic> grandTotalMap = CalculatedValue();
 
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    var roundedGrandTotal = grandTotalMap['rounded'];
-    double roundOffValue = grandTotalMap['roundOffValue'];
+    String taxpost = tax.toStringAsFixed(2);
+    double roundedGrandTotal = double.parse(double.parse(grandTotalMap['rounded'].toString()).toStringAsFixed(2));
+    double roundOffValue = double.parse(double.parse(grandTotalMap['roundOffValue'].toString()).toStringAsFixed(2));
     double total;
     if (ModalRoute.of(context)!.settings.arguments != null) {
       final Map<String, dynamic>? params =
@@ -304,85 +306,106 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       name = params['name'];
     }
     void postDataToApi() async {
-      var url =
-          Uri.parse('${RestDatasource().BASE_URL}/api/vansales_order.store');
+      setState(() {
+        _isButtonDisabled = true;
+      });
 
-      List<int> productIds = savedProducts.map<int>((product) {
-        return product['id'];
-      }).toList();
-      List<int> unitIds = savedProducts.map<int>((product) {
-        // Assuming product['unit_id'] already contains the selected unit ID
-        return int.parse(product['unit_id']);
-      }).toList();
-      List<double> amounts = savedProducts.map<double>((product) {
-        return double.parse(product['amount'].toString());
-      }).toList();
-      List<double> quantity = savedProducts.map<double>((product) {
-        return double.parse(product['quantity'].toString());
-      }).toList();
+      try {
+        var url =
+        Uri.parse('${RestDatasource().BASE_URL}/api/vansales_order.store');
 
-      List<int> productTypes = savedProducts.map<int>((product) {
-        return int.parse(product['type_id']);
-      }).toList();
-      // print(productIds);
-      var data = {
-        'van_id': AppState().vanId,
-        'store_id': AppState().storeId,
-        'user_id': AppState().userId,
-        'item_id': productIds,
-        'quantity': quantity,
-        'unit': unitIds,
-        'mrp': amounts,
-        'discount_type': _isPercentage ? 'percentage' : 'amount',
-        'customer_id': id,
-        'if_vat': _ifVat == 1 ? 1 : 0,
-        'product_type': productTypes,
-        'total_tax': tax,
-        "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
-        "total": totalAmount,
-        "round_off": roundOffValue,
-        "grand_total": roundedGrandTotal,
-        'remarks': _remarksText,
-        'scheduled_date': _selectedDate.toString()
-      };
-      var body = json.encode(data);
+        List<int> productIds = savedProducts.map<int>((product) {
+          return product['id'];
+        }).toList();
+        List<int> unitIds = savedProducts.map<int>((product) {
+          // Assuming product['unit_id'] already contains the selected unit ID
+          return int.parse(product['unit_id']);
+        }).toList();
+        List<double> amounts = savedProducts.map<double>((product) {
+          return double.parse(
+              double.parse(product['amount'].toString()).toStringAsFixed(2));
+        }).toList();
+        List<double> quantity = savedProducts.map<double>((product) {
+          return double.parse(product['quantity'].toString());
+        }).toList();
+        List<String> description = savedProducts.map<String>((product) {
+          return product['description'].toString();
+        }).toList();
+        List<int> productTypes = savedProducts.map<int>((product) {
+          return int.parse(product['type_id']);
+        }).toList();
+        var data = {
+          'van_id': AppState().vanId,
+          'store_id': AppState().storeId,
+          'user_id': AppState().userId,
+          'item_id': productIds,
+          'quantity': quantity,
+          'unit': unitIds,
+          'mrp': amounts,
+          'discount_type': _isPercentage ? 'percentage' : 'amount',
+          'customer_id': id,
+          'if_vat': _ifVat == 1 ? 1 : 0,
+          'product_type': productTypes,
+          'total_tax': taxpost,
+          "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
+          "total": totalAmount,
+          "round_off": roundOffValue,
+          "grand_total": roundedGrandTotal,
+          'remarks': _remarksText,
+          'scheduled_date': _selectedDate.toString(),
+          'description':description,
+          'delivery_location':_remarksController.text.isEmpty?'':_remarksController.text
+        };
+        var body = json.encode(data);
 
-      var response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: body,
-      );
+        var response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: body,
+        );
 
-      if (response.statusCode == 200) {
-        print("Details: ${data}");
-        print("Details: $_ifVat");
-        // print(_isPercentage ? '1' : '0');
-        // print('fjnvjksdnvsbjvnsjkvhSDhv');
-        // print(cartItems.map((item) => item.price).toList());
-        // print(AppState().storeId);
-        print('Post successful');
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-                  context: context, title: "Alert", msg: "Created Successfully")
-              .then(
-            (value) {
-              clearCart();
-              Navigator.pushReplacementNamed(
-                context,
-                HomeorderScreen.routeName,
-              );
-            },
-          );
+        if (response.statusCode == 200) {
+          print("Description $description");
+          print("Details: $data");
+          print("amountsToPost: $amounts");
+          print("roundedGrandTotal: $roundedGrandTotal");
+          print("roundOffValueToPost: $roundOffValue");
+          print("taxpost: $taxpost");
+          print("Details: $_ifVat");
+          print("_remarksText: $_remarksText");
+          // print(_isPercentage ? '1' : '0');
+          // print('fjnvjksdnvsbjvnsjkvhSDhv');
+          // print(cartItems.map((item) => item.price).toList());
+          // print(AppState().storeId);
+          print('Post successful');
+          if (mounted) {
+            CommonWidgets.showDialogueBox(
+                context: context, title: "Alert", msg: "Created Successfully")
+                .then(
+                  (value) {
+                clearCart();
+                Navigator.pushReplacementNamed(
+                  context,
+                  HomeorderScreen.routeName,
+                );
+              },
+            );
+          }
+          print(response.body);
+        } else {
+          print('Post failed with status: ${response.statusCode}');
+          print(response.body);
         }
-        print(response.body);
-      } else {
-        print('Post failed with status: ${response.statusCode}');
-        print(response.body);
+      }catch (e) {
+        print('An error occurred: $e');
+      } finally {
+        setState(() {
+          _isButtonDisabled = false;  // Re-enable the button after the request completes (whether it succeeds or fails)
+        });
       }
     }
-
     return WillPopScope(
       onWillPop: () async {
         // Call your custom function here
@@ -511,20 +534,17 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                   borderRadius: BorderRadius.circular(7.0),
                 ),
               ),
-              backgroundColor: (savedProducts.isNotEmpty)
-                  ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                  : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+              backgroundColor: WidgetStateProperty.all(
+                savedProducts.isNotEmpty && !_isButtonDisabled
+                    ? AppConfig.colorPrimary
+                    : AppConfig.buttonDeactiveColor,
+              ),
             ),
-            onPressed: (savedProducts.isNotEmpty && _isButtonDisabled)
-                ? () async {
-                    setState(() {
-                      _isButtonDisabled =
-                          false; // Disable the button after it's pressed
-                    });
-                    postDataToApi();
-                    // print(roundOffValue);
-                  }
-                : null,
+            onPressed: _isButtonDisabled || savedProducts.isEmpty
+                ? null
+                : () async {
+              postDataToApi();
+            },
             child: Text(
               'SAVE',
               style: TextStyle(
@@ -796,7 +816,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              "Remarks",
+                              "Delivery Location",
                               style: TextStyle(
                                 fontSize: AppConfig.textCaption3Size,
                               ),
@@ -810,7 +830,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      title: const Text('Remarks'),
+                                      title: const Text('Delivery Location'),
                                       content: TextField(
                                         controller: _remarksController,
                                         onChanged: (value) {
@@ -820,7 +840,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                         },
                                         keyboardType: TextInputType.text,
                                         decoration: const InputDecoration(
-                                          hintText: "Enter your remarks",
+                                          hintText: "Enter your location",
                                         ),
                                       ),
                                       actions: <Widget>[
@@ -1061,12 +1081,17 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       final typeData = jsonDecode(typeResponse.body);
       final productTypes = typeData['data'] as List;
       final amountController = TextEditingController();
+      final descriptionController = TextEditingController();
       final existingProduct = savedProducts
           .firstWhere((p) => p['serial_number'] == product['serial_number']);
       String? amount = existingProduct['amount'];
+      String? description = existingProduct['description'];
       double? availableStock;
       if (amount != null && amount.isNotEmpty) {
         amountController.text = amount;
+      }
+      if (description != null && description.isNotEmpty) {
+        descriptionController.text = description;
       }
       String? selectedUnitId = existingProduct['unit_id'];
       String? selectedProductTypeId = existingProduct['type_id'];
@@ -1094,6 +1119,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
       showDialog(
         context: context,
         builder: (BuildContext context) {
+          bool showDescriptionField = false;
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
@@ -1215,6 +1241,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                     selectedUnit?['price']?.toString() ?? '';
                                 availableStock = double.tryParse(
                                     selectedUnit?['stock']?.toString() ?? '0');
+                                print("Des$description");
                               });
                             },
                             value: selectedUnitId,
@@ -1261,6 +1288,22 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                 fillColor: Colors.grey.shade300),
                           ),
                           SizedBox(height: 10),
+                          // if (showDescriptionField && description == '')
+                          TextFormField(
+                            controller: descriptionController,
+                            decoration: InputDecoration(
+                                labelText: 'Description',
+                                labelStyle:
+                                TextStyle(fontWeight: FontWeight.bold),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 2.h, horizontal: 10.w),
+                                hintText: 'desc',
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none),
+                                filled: true,
+                                fillColor: Colors.grey.shade300),
+                          ),
+                          SizedBox(height: 10),
                         ] else ...[
                           Text('No units available for this product.'),
                         ],
@@ -1270,6 +1313,22 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                   ),
                 ),
                 actions: <Widget>[
+                  if(description == '')
+                  TextButton(
+                  style: TextButton.styleFrom(
+                      backgroundColor: AppConfig.colorPrimary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5.r))),
+                  child: Text(
+                    'Description',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () {
+                    setDialogState(() {
+                      showDescriptionField = true; // Show text field when tapped
+                    });
+                  },
+                ),
                   TextButton(
                     style: TextButton.styleFrom(
                         backgroundColor: AppConfig.colorPrimary,
@@ -1321,6 +1380,7 @@ class _CustomerorderdetailState extends State<Customerorderdetail> {
                                             selectedProductTypeId)['name'];
                                     savedProducts[productIndex]['unit_name'] =
                                         selectedUnit?['name'];
+                                    savedProducts[productIndex]['description'] = descriptionController.text;
                                     _updateCalculations();
                                   });
 

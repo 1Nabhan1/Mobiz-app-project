@@ -32,6 +32,7 @@ class Data {
   String? inTime;
   String? invoiceNo;
   String? deliveryNo;
+  String? deliverlocation;
   num? otherCharge;
   num? discount;
   String? roundOff;
@@ -47,6 +48,7 @@ class Data {
   num? userId;
   num? storeId;
   int? status;
+  int? convert_to_sale;
   String? createdAt;
   String? updatedAt;
   String? deletedAt;
@@ -62,6 +64,7 @@ class Data {
       this.invoiceNo,
       this.discount_type,
       this.deliveryNo,
+      this.deliverlocation,
       this.otherCharge,
       this.discount,
       this.roundOff,
@@ -76,6 +79,7 @@ class Data {
       this.userId,
       this.storeId,
       this.status,
+      this.convert_to_sale,
       this.createdAt,
       this.updatedAt,
       this.deletedAt,
@@ -91,6 +95,7 @@ class Data {
     inTime = json['in_time'] ?? '';
     invoiceNo = json['invoice_no'] ?? '';
     deliveryNo = json['delivery_no'] ?? '';
+    deliverlocation = json['delivery_location'];
     otherCharge = json['other_charge'] ?? 0;
     discount = json['discount'] ?? 0;
     discount_type = json['discount_type'] ?? '';
@@ -106,6 +111,7 @@ class Data {
     userId = json['user_id'] ?? 0;
     storeId = json['store_id'] ?? 0;
     status = json['status'] ?? 0;
+    convert_to_sale = json['convert_to_sale'] ?? 0;
     createdAt = json['created_at'] ?? '';
     updatedAt = json['updated_at'] ?? '';
     deletedAt = json['deleted_at'] ?? '';
@@ -134,6 +140,7 @@ class Data {
     data['in_time'] = this.inTime;
     data['invoice_no'] = this.invoiceNo;
     data['delivery_no'] = this.deliveryNo;
+    data['delivery_location'] = this.deliverlocation;
     data['other_charge'] = this.otherCharge;
     data['discount'] = this.discount;
     data['round_off'] = this.roundOff;
@@ -148,6 +155,7 @@ class Data {
     data['user_id'] = this.userId;
     data['store_id'] = this.storeId;
     data['status'] = this.status;
+    data['convert_to_sale'] = this.convert_to_sale;
     data['created_at'] = this.createdAt;
     data['updated_at'] = this.updatedAt;
     data['deleted_at'] = this.deletedAt;

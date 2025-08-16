@@ -23,13 +23,18 @@ import 'package:mobizapp/Pages/vanstockdata.dart';
 import 'package:mobizapp/Pages/vanstockrequest.dart';
 import 'package:mobizapp/Water.dart';
 import 'package:mobizapp/Pages/TestExpensePage.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
+import 'package:mobizapp/tsts.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:mobizapp/vanstockselactpro_tst.dart';
+import 'Pages/AgeingSummary/AgeingSummaryScreen.dart';
+import 'Pages/BankReconciliation/BankReconciliationScreen.dart';
 import 'Pages/Cheque/Cheque_Colection.dart';
 import 'Pages/Cheque_Receipt.dart';
 import 'Pages/Copy/Copy.dart';
 import 'Pages/Copy/CopySelectProducts.dart';
 import 'Pages/CustomeSOA.dart';
+import 'Pages/Customer Dues/Customer Dues.dart';
 import 'Pages/CustomerWater.dart';
 import 'Pages/DayReport.dart';
 import 'Pages/Day_closeReport.dart';
@@ -40,6 +45,8 @@ import 'Pages/Driver_paymentCollection.dart';
 import 'Pages/Expense_add.dart';
 import 'Pages/Delivery_details_driver.dart';
 import 'Pages/Group_Print.dart';
+import 'Pages/All Due/OverdueCustomerPage.dart';
+import 'Pages/SaleInvoiceSearchPage.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Stock/StockName_RequestScreen.dart';
 import 'Pages/Stock/Stock_Name.dart';
@@ -82,7 +89,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
           ),
-          // home: VanRequestPage(),
+          // home: DashboardScreen(),
           initialRoute: SplashScreen.routeName,
           routes: {
             // '/': (context) => Home(),
@@ -162,6 +169,12 @@ class MyApp extends StatelessWidget {
             GroupPrint.routeName: (context) => GroupPrint(),
             ChequeReceipt.routeName: (context) => ChequeReceipt(),
             CustomerWater.routeName: (context) => CustomerWater(),
+            DashboardScreen.routeName: (context) => DashboardScreen(),
+            AgeingSummaryScreen.routeName: (context) => AgeingSummaryScreen(),
+            BankReconciliationScreen .routeName: (context) => BankReconciliationScreen (),
+            OverdueCustomerPage .routeName: (context) => OverdueCustomerPage (),
+            CustomerDues .routeName: (context) => CustomerDues (),
+            // SaleInvoiceSearchPage.routeName: (context) => SaleInvoiceSearchPage(),
           }),
     );
   }

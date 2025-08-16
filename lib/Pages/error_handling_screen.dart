@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Models/appstate.dart';
@@ -43,6 +44,10 @@ class _ErrorHandlingScreenState extends State<ErrorHandlingScreen> {
       } else if (AppState().rolId == 4) {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(HomepageDriver.routeName);
+        }
+      }else if(AppState().rolId == 7){
+        if(mounted){
+          Navigator.of(context).pushReplacementNamed(DashboardScreen.routeName);
         }
       }
     });

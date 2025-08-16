@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -28,7 +29,9 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
   // RequestModel request = RequestModel();
   List <VanRequest> request= [];
   List<Map<String, dynamic>> stocks = [];
-  final TextEditingController _searchData = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  Timer? _searchDebounce;
   bool _search = false;
   bool _isButtonDisabled = false;
   bool _isLoading = false;
@@ -58,146 +61,198 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
     super.dispose();
   }
 
+  void _onSearchChanged() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _page = 1;
+        _hasMore = true;
+        request.clear();
+      });
+      _getRequests();
+    } else {
+      setState(() {
+        _isSearching = true;
+        _page = 1;
+        _hasMore = true;
+        request.clear();
+      });
+      _searchRequests(_searchController.text);
+    }
+  }
+
+  Future<void> _searchRequests(String searchValue) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String apiUrl =
+          "${RestDatasource().BASE_URL}/api/vanrequest.index.search?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}&page=$_page&value=$searchValue";
+
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final newRequests = VanRequestModel.fromJson(jsonData).data.vanRequests;
+
+        setState(() {
+          if (newRequests.isNotEmpty) {
+            request.addAll(newRequests);
+            _initDone = true;
+            _nodata = false;
+            _page++;
+          } else {
+            _nodata = true;
+          }
+        });
+      } else {
+        print("Error: Failed to load data (${response.statusCode})");
+      }
+    } catch (e) {
+      print("Error: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppConfig.colorPrimary,
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
-        title: const Text(
+        title: _isSearching
+            ? TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Search requests...',
+            hintStyle: TextStyle(color: Colors.white70),
+            border: InputBorder.none,
+          ),
+          style: const TextStyle(color: Colors.white),
+          onChanged: (value) {
+            // Cancel previous debounce timer
+            _searchDebounce?.cancel();
+
+            // Start new debounce timer
+            _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+              _onSearchChanged();
+            });
+          },
+        )
+            : const Text(
           'Van Stock Requests',
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         actions: [
-          (_search)
-              ? Container(
-                  height: SizeConfig.blockSizeVertical * 5,
-                  width: SizeConfig.blockSizeHorizontal * 76,
-                  decoration: BoxDecoration(
-                    color: AppConfig.colorPrimary,
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                    border: Border.all(color: AppConfig.colorPrimary),
-                  ),
-                  child: TextField(
-                    controller: _searchData,
-                    decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.all(5),
-                        hintText: "Search...",
-                        hintStyle: TextStyle(color: AppConfig.backgroundColor),
-                        border: InputBorder.none),
-                  ),
-                )
-              : Container(),
-          CommonWidgets.horizontalSpace(1),
-          (!_search)
-              ? GestureDetector(
-                  onTap: () async {
-                    // if (stocks.isEmpty) {
-                    //   Navigator.pushReplacementNamed(
-                    //       context, SelectProductsScreen.routeName);
-                    // } else {
-                    Navigator.pushReplacementNamed(
-                        context, VanStocks.routeName);
-                    // }
-                  },
-                  child: const Icon(
-                    Icons.add,
-                    size: 30,
-                    color: AppConfig.backgroundColor,
-                  ),
-                )
-              : Container(),
-          CommonWidgets.horizontalSpace(1),
-          GestureDetector(
-            onTap: () {
+          if (!_isSearching)
+            GestureDetector(
+              onTap: () async {
+                Navigator.pushReplacementNamed(
+                    context, VanStocks.routeName);
+              },
+              child: const Icon(
+                Icons.add,
+                size: 30,
+                color: AppConfig.backgroundColor,
+              ),
+            ),
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
               setState(() {
-                _search = !_search;
+                if (_isSearching) {
+                  // Clear search
+                  _searchController.clear();
+                  _onSearchChanged();
+                } else {
+                  // Start searching
+                  _isSearching = true;
+                }
               });
             },
-            child: Icon(
-              (!_search) ? Icons.search : Icons.close,
-              size: 30,
-              color: AppConfig.backgroundColor,
-            ),
           ),
-          CommonWidgets.horizontalSpace(3),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 18.0, left: 18, right: 18),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              (_initDone && !_nodata)
-                  ? SizedBox(
-                      height: SizeConfig.blockSizeVertical * 85,
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        separatorBuilder: (BuildContext context, int index) =>
-                            CommonWidgets.verticalSpace(1),
-                        itemCount: request.length+1,
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          if (index < request.length) {
-                            return _requestsTab(index, request[index]);
-                          } else {
-                            if (_isLoading) {
-                              return Center(
-                                child: Text("Loading...",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic),),
-                              );
-                            } else if (!_hasMore) {
-                              return Center(
-                                child: Text("That's all",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic,fontWeight: FontWeight.w700),),
-                              );
-                            } else {
-                              return const SizedBox.shrink();
-                            }
-                          }
-                        },
-                      ),
-                    )
-                  : (_nodata && _initDone)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                              CommonWidgets.verticalSpace(3),
-                              const Center(
-                                child: Text('No Data'),
-                              ),
-                            ])
-                      : Shimmer.fromColors(
-                          baseColor:
-                              AppConfig.buttonDeactiveColor.withOpacity(0.1),
-                          highlightColor: AppConfig.backButtonColor,
-                          child: Center(
-                            child: Column(
-                              children: [
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                                CommonWidgets.loadingContainers(
-                                    height: SizeConfig.blockSizeVertical * 10,
-                                    width: SizeConfig.blockSizeHorizontal * 90),
-                              ],
-                            ),
-                          ),
-                        ),
-            ],
-          ),
+        child: Column(
+          children: [
+            if (_isSearching && request.isEmpty && _searchController.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('No results found'),
+              ),
+
+            (_initDone && !_nodata)
+                ? Expanded(
+              child: ListView.separated(
+                controller: _scrollController,
+                separatorBuilder: (BuildContext context, int index) =>
+                    CommonWidgets.verticalSpace(1),
+                itemCount: request.length + (_isLoading ? 1 : 0),
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  if (index < request.length) {
+                    return _requestsTab(index, request[index]);
+                  } else {
+                    if (_isLoading) {
+                      return Center(
+                        child: Text("Loading...",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic),),
+                      );
+                    } else if (!_hasMore) {
+                      return Center(
+                        child: Text("That's all",style: TextStyle(color: Colors.grey.shade400,fontStyle: FontStyle.italic,fontWeight: FontWeight.w700),),
+                      );
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  }
+                },
+              ),
+            )
+                : (_nodata && _initDone)
+                ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CommonWidgets.verticalSpace(3),
+                  const Center(
+                    child: Text('No Data'),
+                  ),
+                ])
+                : Shimmer.fromColors(
+              baseColor: AppConfig.buttonDeactiveColor.withOpacity(0.1),
+              highlightColor: AppConfig.backButtonColor,
+              child: Center(
+                child: Column(
+                  children: [
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                    CommonWidgets.loadingContainers(
+                        height: SizeConfig.blockSizeVertical * 10,
+                        width: SizeConfig.blockSizeHorizontal * 90),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -472,38 +527,24 @@ class _VanStockRequestsScreenState extends State<VanStockRequestsScreen> {
   }
 
   Future<void> _getRequests() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
     });
 
-    RestDatasource api = RestDatasource();
-    stocks = await StockHistory.getStockHistory();
-    final String apiUrl =
-        "${RestDatasource().BASE_URL}/api/vanrequest.index.api?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$_page";
-
-    // if (resJson['data'] != null) {
-    //   final newRequests = VanRequestModel.fromJson(resJson).data.vanRequests;
-    //   if (mounted && newRequests.isNotEmpty) {
-    //     setState(
-    //       () {
-    //         request.addAll(newRequests);
-    //         _initDone = true;
-    //         _page++;
-    //       },
-    //     );
-    //   }
-    // } else {
-    //   setState(() {
-    //     _initDone = true;
-    //     _nodata = true;
-    //     _hasMore = false;
-    //   });
-    // }
     try {
+      final String apiUrl;
+
+      if (_isSearching && _searchController.text.isNotEmpty) {
+        apiUrl = "${RestDatasource().BASE_URL}/api/vanrequest.index.search?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}&page=$_page&value=${_searchController.text}";
+      } else {
+        apiUrl = "${RestDatasource().BASE_URL}/api/vanrequest.index.api?store_id=${AppState().storeId}&van_id=${AppState().vanId}&page=$_page";
+      }
+
       final response = await http.get(Uri.parse(apiUrl));
 
       if (response.statusCode == 200) {
-        print(response.request);
         final jsonData = json.decode(response.body);
         final newRequests = VanRequestModel.fromJson(jsonData).data.vanRequests;
 

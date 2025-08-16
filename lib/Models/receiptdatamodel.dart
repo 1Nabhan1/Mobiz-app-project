@@ -519,6 +519,7 @@ class ReportData {
   String? deletedAt;
   List<Salesy>? sales;
   List<Customer>? customer;
+  List<Customer>? customerdata;
   List<Van>? van;
   List<User>? user;
 
@@ -543,6 +544,7 @@ class ReportData {
     this.deletedAt,
     this.sales,
     this.customer,
+    this.customerdata,
     this.van,
     this.user,
   });
@@ -577,6 +579,9 @@ class ReportData {
       json['customer'].forEach((v) {
         customer!.add(new Customer.fromJson(v));
       });
+    } else if (json['customerdata'] != null) {
+      customer = <Customer>[];
+      customer!.add(new Customer.fromJson(json['customerdata']));
     }
     if (json['van'] != null) {
       van = <Van>[];

@@ -24,6 +24,7 @@ class Customerreturndetail extends StatefulWidget {
 }
 
 int? id;
+
 // int?dataId;
 class _CustomerreturndetailState extends State<Customerreturndetail> {
   late String initialQty;
@@ -54,13 +55,13 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
   String roundoff = '';
   // num tax = 0;
   String? code;
-  int?dataId;
-  int?saleId;
+  int? dataId;
+  int? saleId;
   int? pricegroupId;
   String? payment;
   String amount = '';
   String quantity = '';
-  bool _isButtonDisabled = true;
+  bool _isButtonDisabled = false;
   bool _hasData = false;
   bool _fetchCartItemsComplete = false;
   bool _fetchSalesReturnDataComplete = false;
@@ -79,7 +80,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       // Check if arguments are passed via the ModalRoute and extract them
       if (ModalRoute.of(context)!.settings.arguments != null) {
         final Map<String, dynamic>? params =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+            ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
         id = params!['customerId'];
         name = params['name'];
         code = params!['code'];
@@ -238,7 +239,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
             }
             selectedProductTypes = List.generate(
               cartItems.length,
-                  (index) => null,
+              (index) => null,
             );
             setState(() {
               _fetchSalesReturnDataComplete = true;
@@ -254,10 +255,11 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
       _showButton = true; // Show button in case of error.
       print(e);
     } finally {
-      setState(() {}); // Update the UI.
+      if (mounted) {
+        setState(() {}); // Update the UI if the widget is still mounted.
+      }
     }
   }
-
 
   Future<void> fetchCartItems() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -509,7 +511,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
 
     double total = calculateTotalRate();
     double tax = _ifVat == 1 ? calculateTax() : 0;
-    var roundedGrandTotal = grandTotalMap['rounded']?.toStringAsFixed(2) ?? '0.00';
+    var roundedGrandTotal =
+        grandTotalMap['rounded']?.toStringAsFixed(2) ?? '0.00';
 
     double roundOffValue = grandTotalMap['roundOffValue'];
 
@@ -518,117 +521,132 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
         print("Data sources are not fully loaded yet.");
         return;
       }
+      setState(() {
+        _isButtonDisabled = true; // Disable the button when the request starts
+      });
 
-      var url =
-          Uri.parse('${RestDatasource().BASE_URL}/api/vansales_return.store');
-      List<double> quantities = [];
-      List<Object> productTypesList = [];
-      List<int> selectedUnitIds = [];
+      try {
+        var url =
+            Uri.parse('${RestDatasource().BASE_URL}/api/vansales_return.store');
+        List<double> quantities = [];
+        List<Object> productTypesList = [];
+        List<int> selectedUnitIds = [];
 
-      for (int index = 0; index < cartItems.length; index++) {
-        String? selectedUnitName = cartItems[index].selectedUnitName;
-        int selectedUnitId = selectedUnitName != null
-            ? cartItems[index]
-                .units
-                .firstWhere((unit) => unit.name == selectedUnitName)
-                .unit!
-            : cartItems[index].units.first.unit!;
+        for (int index = 0; index < cartItems.length; index++) {
+          String? selectedUnitName = cartItems[index].selectedUnitName;
+          int selectedUnitId = selectedUnitName != null
+              ? cartItems[index]
+                  .units
+                  .firstWhere((unit) => unit.name == selectedUnitName)
+                  .unit!
+              : cartItems[index].units.first.unit!;
 
-        selectedUnitIds.add(selectedUnitId);
-        String? qty = qtys[index];
-        double quantity =
-        qty != null ? double.parse(qty) : 1.0;
-        quantities.add(quantity);
+          selectedUnitIds.add(selectedUnitId);
+          String? qty = qtys[index];
+          double quantity = qty != null ? double.parse(qty) : 1.0;
+          quantities.add(quantity);
 
-        ProductType? selectedProductType = selectedProductTypes[index];
-        Object productType =
-            selectedProductType != null ? selectedProductType.id : 1;
-        productTypesList.add(productType);
-      }
-
-      var data = {
-        'van_id': AppState().vanId ?? 0,
-        'store_id': AppState().storeId ?? 0,
-        'user_id': AppState().userId ?? 0,
-        'item_id': cartItems.map((item) => item.id ?? 0).toList(),
-        'quantity': quantities,
-        'unit': selectedUnitIds,
-        'mrp': amounts.entries.map((entry) {
-          double value = double.tryParse(entry.value) ?? 0.0;
-          return double.parse(value.toStringAsFixed(2));
-        }).toList().isEmpty
-            ? [0.0]
-            : amounts.entries.map((entry) {
-          double value = double.tryParse(entry.value) ?? 0.0;
-          print("sdsds$value");
-          return double.parse(value.toStringAsFixed(2));
-        }).toList(),
-        // 'mrp': amounts.entries.map((entry) {
-        //   return double.tryParse(entry.value) ?? 0.0;
-        // }).toList().isEmpty ? [0.0] : amounts.entries.map((entry) {
-        //   return double.tryParse(entry.value) ?? 0.0;
-        // }).toList(),
-        'customer_id': id ?? 0,
-        'if_vat': _ifVat == 1 ? 1 : 0,
-        'product_type': productTypesList,
-        'total_tax': tax,
-        'discount_type': _isPercentage ? '1' : '0',
-        'discount': _discountData.text.isEmpty ? '0' : _discountData.text,
-        'total': total,
-        'round_off': roundOffValue,
-        'grand_total': roundedGrandTotal,
-        'reason_id': _selectedReason?.id ?? 0,
-        'remarks': _remarksText,
-        'payment_terms': payment ?? 'N/A',
-      };
-
-      var response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: json.encode(data),
-      );
-
-      if (response.statusCode == 200) {
-        print(data);
-        print('Post successful');
-        var responseBody = json.decode(response.body);
-        int returnId =  responseBody['data']['id'];
-        print(id.toString());
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
-            context: context,
-            title: "Alert",
-            msg: "Created Successfully",
-          ).then((value) {
-            clearCart();
-            if (pricegroupId != null) {
-              Navigator.pushReplacementNamed(
-                context,
-                PaymentCollectionScreen.routeName,
-                arguments: {
-                  'customerId': id,
-                  'name': name,
-                  'code': code,
-                  'saleId':saleId,
-                  'returnId':returnId,
-                  'paymentTerms': payment,
-                  'outstandamt': paydata,
-                  'price_group_id': pricegroupId
-                },
-              );
-            } else {
-              Navigator.pushReplacementNamed(
-                context,
-                HomereturnScreen.routeName, // Replace with the actual route name for HomeReturnPage
-              );
-            }
-          });
+          ProductType? selectedProductType = selectedProductTypes[index];
+          Object productType =
+              selectedProductType != null ? selectedProductType.id : 1;
+          productTypesList.add(productType);
         }
-      } else {
-        print('Post failed with status: ${response.statusCode}');
-        print(response.body);
+
+        var data = {
+          'van_id': AppState().vanId ?? 0,
+          'store_id': AppState().storeId ?? 0,
+          'user_id': AppState().userId ?? 0,
+          'item_id': cartItems.map((item) => item.id ?? 0).toList(),
+          'quantity': quantities,
+          'unit': selectedUnitIds,
+          'mrp': amounts.entries
+                  .map((entry) {
+                    double value = double.tryParse(entry.value) ?? 0.0;
+                    return double.parse(value.toStringAsFixed(2));
+                  })
+                  .toList()
+                  .isEmpty
+              ? [0.0]
+              : amounts.entries.map((entry) {
+                  double value = double.tryParse(entry.value) ?? 0.0;
+                  print("sdsds$value");
+                  return double.parse(value.toStringAsFixed(2));
+                }).toList(),
+          // 'mrp': amounts.entries.map((entry) {
+          //   return double.tryParse(entry.value) ?? 0.0;
+          // }).toList().isEmpty ? [0.0] : amounts.entries.map((entry) {
+          //   return double.tryParse(entry.value) ?? 0.0;
+          // }).toList(),
+          'customer_id': id ?? 0,
+          'if_vat': _ifVat == 1 ? 1 : 0,
+          'product_type': productTypesList,
+          'total_tax': tax,
+          'discount_type': _isPercentage ? '1' : '0',
+          'discount': _discountData.text.isEmpty ? '0' : _discountData.text,
+          'total': total,
+          'round_off': roundOffValue,
+          'grand_total': roundedGrandTotal,
+          'reason_id': _selectedReason?.id ?? 0,
+          'remarks': _remarksText,
+          'payment_terms': payment ?? 'N/A',
+        };
+
+        var response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: json.encode(data),
+        );
+
+        if (response.statusCode == 200) {
+          print(data);
+          print('Post successful');
+          var responseBody = json.decode(response.body);
+          int returnId = responseBody['data']['id'];
+          print(id.toString());
+          if (mounted) {
+            CommonWidgets.showDialogueBox(
+              context: context,
+              title: "Alert",
+              msg: "Created Successfully",
+            ).then((value) {
+              clearCart();
+              if (pricegroupId != null) {
+                Navigator.pushReplacementNamed(
+                  context,
+                  PaymentCollectionScreen.routeName,
+                  arguments: {
+                    'customerId': id,
+                    'name': name,
+                    'code': code,
+                    'saleId': saleId,
+                    'returnId': returnId,
+                    'paymentTerms': payment,
+                    'outstandamt': paydata,
+                    'price_group_id': pricegroupId
+                  },
+                );
+              } else {
+                Navigator.pushReplacementNamed(
+                  context,
+                  HomereturnScreen
+                      .routeName, // Replace with the actual route name for HomeReturnPage
+                );
+              }
+            });
+          }
+        } else {
+          print('Post failed with status: ${response.statusCode}');
+          print(response.body);
+        }
+      } catch (e) {
+        print('An error occurred: $e');
+      } finally {
+        setState(() {
+          _isButtonDisabled =
+              false; // Re-enable the button after the request completes (whether it succeeds or fails)
+        });
       }
     }
 
@@ -659,29 +677,26 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
           height: 30.h,
           child: _hasData
               ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
                       style: ButtonStyle(
                         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(7.0),
                           ),
                         ),
-                        backgroundColor: (cartItems.isNotEmpty)
-                            ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                            : const WidgetStatePropertyAll(
-                                AppConfig.buttonDeactiveColor),
+                        backgroundColor: WidgetStateProperty.all(
+                          cartItems.isNotEmpty && !_isButtonDisabled
+                              ? AppConfig.colorPrimary
+                              : AppConfig.buttonDeactiveColor,
+                        ),
                       ),
-                      onPressed: (cartItems.isNotEmpty && _isButtonDisabled)
-                          ? () async {
-                              setState(() {
-                                _isButtonDisabled =
-                                    true; // Disable the button after it's pressed
-                              });
-                              postDataToApi();
-                            }
-                          : null,
+                      onPressed: _isButtonDisabled || cartItems.isEmpty
+                          ? null
+                          : () async {
+                        postDataToApi();
+                      },
                       child: Text(
                         'SAVE',
                         style: TextStyle(
@@ -690,33 +705,42 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                             fontWeight: AppConfig.headLineWeight),
                       ),
                     ),
-                  SizedBox(width: 10,),
-                  _showButton
-                      ? ElevatedButton(
-                    style: ButtonStyle(shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                    backgroundColor: WidgetStatePropertyAll(AppConfig.colorPrimary)),
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        PaymentCollectionScreen.routeName,
-                        arguments: {
-                          'customerId': id,
-                          'name': name,
-                          'code': code,
-                          'saleId':saleId,
-                          // 'returnId':returnId,
-                          'paymentTerms': payment,
-                          'outstandamt': paydata,
-                          'price_group_id': pricegroupId
-                        },
-                      );
-                    },
-                    child: Text('SKIP',style: TextStyle(color: Colors.white),),
-                  )
-                      : SizedBox.shrink(),
-
-                ],
-              )
+                    SizedBox(
+                      width: 10,
+                    ),
+                    _showButton
+                        ? ElevatedButton(
+                            style: ButtonStyle(
+                                shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10))),
+                                backgroundColor: WidgetStatePropertyAll(
+                                    AppConfig.colorPrimary)),
+                            onPressed: () {
+                              Navigator.pushReplacementNamed(
+                                context,
+                                PaymentCollectionScreen.routeName,
+                                arguments: {
+                                  'customerId': id,
+                                  'name': name,
+                                  'code': code,
+                                  'saleId': saleId,
+                                  // 'returnId':returnId,
+                                  'paymentTerms': payment,
+                                  'outstandamt': paydata,
+                                  'price_group_id': pricegroupId
+                                },
+                              );
+                            },
+                            child: Text(
+                              'SKIP',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+                        : SizedBox.shrink(),
+                  ],
+                )
               : Text('Return Type Not\n      Available'),
         ),
         appBar: AppBar(
@@ -764,10 +788,10 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                       'customerId': id,
                       'name': name,
                       'code': code,
-                      'saleId':saleId,
+                      'saleId': saleId,
                       'paymentTerms': payment,
-                      'outstandamt':paydata,
-                      'price_group_id':pricegroupId
+                      'outstandamt': paydata,
+                      'price_group_id': pricegroupId
                       // 'dataId': dataId
                     }).then((value) {
                   // _initDone = false;
@@ -942,31 +966,32 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                   Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       // SizedBox(
-                                        // width: 50,
-                                        // height: 60,
-                                        // child: ClipRRect(
-                                        //   borderRadius:
-                                        //       BorderRadius.circular(10),
-                                        //   child: FadeInImage(
-                                        //     image: NetworkImage(
-                                        //       '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
-                                        //     ),
-                                        //     placeholder: const AssetImage(
-                                        //       'Assets/Images/no_image.jpg',
-                                        //     ),
-                                        //     imageErrorBuilder:
-                                        //         (context, error, stackTrace) {
-                                        //       return Image.asset(
-                                        //         'Assets/Images/no_image.jpg',
-                                        //         fit: BoxFit.fitWidth,
-                                        //       );
-                                        //     },
-                                        //     fit: BoxFit.fitWidth,
-                                        //   ),
-                                        // ),
+                                      // width: 50,
+                                      // height: 60,
+                                      // child: ClipRRect(
+                                      //   borderRadius:
+                                      //       BorderRadius.circular(10),
+                                      //   child: FadeInImage(
+                                      //     image: NetworkImage(
+                                      //       '${RestDatasource().Product_URL}/uploads/product/${cartItems[index].proImage}',
+                                      //     ),
+                                      //     placeholder: const AssetImage(
+                                      //       'Assets/Images/no_image.jpg',
+                                      //     ),
+                                      //     imageErrorBuilder:
+                                      //         (context, error, stackTrace) {
+                                      //       return Image.asset(
+                                      //         'Assets/Images/no_image.jpg',
+                                      //         fit: BoxFit.fitWidth,
+                                      //       );
+                                      //     },
+                                      //     fit: BoxFit.fitWidth,
+                                      //   ),
+                                      // ),
                                       // ),
                                       // CommonWidgets.horizontalSpace(1),
                                       Column(
@@ -999,7 +1024,7 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                           cartItems[index].defaultValue == 0)
                                         CircleAvatar(
                                           backgroundColor:
-                                          Colors.grey.withOpacity(0.2),
+                                              Colors.grey.withOpacity(0.2),
                                           radius: 10,
                                           child: GestureDetector(
                                             onTap: () async {
@@ -1014,7 +1039,9 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                         )
                                     ],
                                   ),
-                                  SizedBox(height: 20,),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
                                   Row(
                                     children: [
                                       SizedBox(
@@ -1122,8 +1149,14 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                         onTap: () {
                                           setInitialQty();
                                           String initialQty;
-                                          if (dataId != null || cartItems[index].defaultValue == 1) {
-                                            initialQty = cartItems[index].units[0].stock?.toString() ?? '1';
+                                          if (dataId != null ||
+                                              cartItems[index].defaultValue ==
+                                                  1) {
+                                            initialQty = cartItems[index]
+                                                    .units[0]
+                                                    .stock
+                                                    ?.toString() ??
+                                                '1';
                                           } else {
                                             initialQty = qtys[index] ?? '1';
                                           }
@@ -1160,11 +1193,16 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                                     child: Text('OK'),
                                                     onPressed: () {
                                                       setState(() {
-                                                        qtys[index] = qtyController
-                                                            .text;
-                                                        saveToSharedPreferences('qtyreturn$index', qtyController.text);// Update qtys w
-                                                        print("objectValues");// ith new value
-                                                        print( qtyController.text);
+                                                        qtys[index] =
+                                                            qtyController.text;
+                                                        saveToSharedPreferences(
+                                                            'qtyreturn$index',
+                                                            qtyController
+                                                                .text); // Update qtys w
+                                                        print(
+                                                            "objectValues"); // ith new value
+                                                        print(
+                                                            qtyController.text);
                                                       });
                                                       Navigator.pop(context);
                                                     },
@@ -1178,17 +1216,24 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                           children: [
                                             Text('Qty: '),
                                             Text(
-                                              (qtys[index] != null && qtys[index] != '')
-                                                  ? qtys[index]!  // Force unwrap since we check for null already
-                                                  : (cartItems[index].defaultValue == 1
-                                                  ? cartItems[index].units[0].stock?.toString() ?? '1' // Fallback to '1' if stock is null
-                                                  : '1'), // Default to '1' if no quantity is set
+                                              (qtys[index] != null &&
+                                                      qtys[index] != '')
+                                                  ? qtys[
+                                                      index]! // Force unwrap since we check for null already
+                                                  : (cartItems[index]
+                                                              .defaultValue ==
+                                                          1
+                                                      ? cartItems[index]
+                                                              .units[0]
+                                                              .stock
+                                                              ?.toString() ??
+                                                          '1' // Fallback to '1' if stock is null
+                                                      : '1'), // Default to '1' if no quantity is set
                                               style: TextStyle(
                                                 color: AppConfig.colorPrimary,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-
                                           ],
                                         ),
                                       ),
@@ -1278,7 +1323,8 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                             if (cartItems.isNotEmpty &&
                                 cartItems[0].defaultValue == 1 &&
                                 qtys[specificIndex] != null &&
-                                double.parse(qtys[specificIndex]!) < double.parse(initialQty))
+                                double.parse(qtys[specificIndex]!) <
+                                    double.parse(initialQty))
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -1296,10 +1342,12 @@ class _CustomerreturndetailState extends State<Customerreturndetail> {
                                       });
                                     },
                                     items: _reasonList
-                                        .map<DropdownMenuItem<Reason>>((Reason reason) {
+                                        .map<DropdownMenuItem<Reason>>(
+                                            (Reason reason) {
                                       return DropdownMenuItem<Reason>(
                                         value: reason,
-                                        child: Text(reason.reason), // Display the reason text (String)
+                                        child: Text(reason
+                                            .reason), // Display the reason text (String)
                                       );
                                     }).toList(),
                                   ),

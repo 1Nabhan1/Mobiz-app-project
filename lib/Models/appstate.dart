@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 class AppState {
   //////// Login Information
   /// Login state : LOGGED_IN , LOGGED_OUT
@@ -9,6 +11,7 @@ class AppState {
   String? email;
   String? vatState;
   String? validate_qtySO;
+  String? validate_qtySales;
   String? discountState;
   String? attendanceState;
   String? printer;
@@ -33,7 +36,7 @@ class AppState {
   static final AppState _appState = new AppState._internal();
 
   AppState._internal() {
-    loginState = "LOGGED_OUT";
+  loginState = "LOGGED_OUT";
     isExistingUser = false;
     token = "";
     userType = "";
@@ -44,9 +47,10 @@ class AppState {
     storeId;
     vatState;
     validate_qtySO;
+    validate_qtySales;
     discountState;
     attendanceState;
-    printer;
+    printer= "";
     routeId;
     vanId;
     appVersion = "";
@@ -74,6 +78,7 @@ class AppState {
     storeId = json['store_id'];
     vatState = json['vat_no_vat'];
     validate_qtySO = json['validate_qty_in_so'];
+    validate_qtySales = json['validate_qty_in_sales'];
     discountState = json['discount'];
     attendanceState = json['attendance'];
     printer = json['printer'];
@@ -113,6 +118,7 @@ class AppState {
     data['store_id'] = storeId;
     data['vat_no_vat'] = vatState;
     data['validate_qty_in_so'] = validate_qtySO;
+    data['validate_qty_in_sales'] = validate_qtySales;
     data['discount'] = discountState;
     data['attendance'] = attendanceState;
     data['printer'] = printer;
@@ -132,4 +138,15 @@ class AppState {
     data['van_id'] = vanId;
     return data;
   }
+
+  // Future<void> _loadPrinter() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   printer = prefs.getString('printer') ?? "Wifi"; // Default to "Wifi"
+  // }
+  //
+  // Future<void> savePrinter(String value) async {
+  //   printer = value;
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.setString('printer', value);
+  // }
 }

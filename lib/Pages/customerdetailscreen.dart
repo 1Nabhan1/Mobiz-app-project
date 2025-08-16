@@ -180,12 +180,13 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
       code = params['code'];
       pricegroupId = params['price_group_id'];
     }
+    // print("uggug$img");
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppConfig.colorPrimary,
         title: const Text(
-          'Customer',
+          'Customers',
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),

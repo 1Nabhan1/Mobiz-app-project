@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -32,54 +33,37 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
   List<Products> filteredProducts = [];
   bool _isDialogOpen = false;
   final TextEditingController _searchData = TextEditingController();
+  bool _isSearching = false;
+  Timer? _debounce;
+
   @override
   void initState() {
     super.initState();
     fetchProducts(currentPage); // Initial fetch
-    _searchData.addListener(() {
-      _filterProducts(_searchData.text);
+    // _searchData.addListener(() {
+    //   _filterProducts(_searchData.text);
+    // });
+  }
+
+  @override
+  void dispose() {
+    _searchData.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _filterProducts(query);
     });
   }
 
   Future<void> fetchProducts(int page) async {
-    if (isLoading) return;
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_and_sales?store_id=${AppState().storeId}&page=$page'));
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List<Products> fetchedProducts = (data['data'] as List)
-          .map((json) => Products.fromJson(json))
-          .toList();
-      final pagination = data['pagination'];
-
-      setState(() {
-        isLoading = false;
-        products.addAll(fetchedProducts);
-        filteredProducts = List.from(products); // Update filtered products
-        currentPage++;
-        hasMoreProducts = currentPage <= pagination['last_page'];
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
-      throw Exception('Failed to load products');
-    }
-  }
-
-  void _filterProducts(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        filteredProducts = List.from(products);
-      });
-      return;
-    }
+    if (isLoading || _isSearching)
+      return; // <- strictly prevents background loading
 
     setState(() {
       isLoading = true;
@@ -87,29 +71,76 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
     try {
       final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_and_sales?store_id=${AppState().storeId}&page=$page'));
+
+      if (!_isSearching && response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<Products> fetchedProducts = (data['data'] as List)
+            .map((json) => Products.fromJson(json))
+            .toList();
+        final pagination = data['pagination'];
+
+        setState(() {
+          products.addAll(fetchedProducts);
+          filteredProducts = List.from(products);
+          currentPage++;
+          hasMoreProducts = currentPage <= pagination['last_page'];
+        });
+      }
+    } catch (e) {
+      print('Error loading products: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _filterProducts(String query) async {
+    if (query != _searchData.text) return;
+
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        filteredProducts = List.from(products);
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(
           '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
 
-      if (response.statusCode == 200) {
+      if (_isSearching && response.statusCode == 200) {
+        print(query);
         final data = jsonDecode(response.body);
         final List<Products> fetchedProducts = (data['data'] as List)
             .map((json) => Products.fromJson(json))
             .toList();
 
-        setState(() {
-          isLoading = false;
-          filteredProducts = fetchedProducts; // Update the filtered products with the search results
-        });
-      } else {
-        throw Exception('Failed to load search results');
+        if (mounted && query == _searchData.text) {
+          setState(() {
+            filteredProducts = fetchedProducts;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       print('Error fetching search results: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
-
 
   Future<void> clearCart() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -118,7 +149,6 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
 
   Future<void> _onBackPressed() async {
     clearCart();
-    // Your custom function logic here
     print('Back button pressed');
     // You can also show a dialog, navigate to another page, etc.
   }
@@ -129,23 +159,18 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       final Map<String, dynamic>? params =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       name = params!['name'];
-      id = params!['customerId'];
+      id = params['customerId'];
     }
+
     return WillPopScope(
       onWillPop: () async {
-        // Call your custom function here
         await _onBackPressed();
-        // Return true to allow the page to be popped
-        // Return false to prevent the page from being popped
         return true;
       },
       child: Scaffold(
         appBar: AppBar(
           leading: GestureDetector(
-              onTap: () {
-                Navigator.pushReplacementNamed(context, SalesScreen.routeName,
-                    arguments: {'name': name, 'customerId': id});
-              },
+              onTap: () => Navigator.pop(context),
               child: Icon(Icons.arrow_back)),
           iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
           title: const Text(
@@ -160,15 +185,14 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                     width: SizeConfig.blockSizeHorizontal * 76,
                     decoration: BoxDecoration(
                       color: AppConfig.colorPrimary,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(10),
-                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
                       border: Border.all(color: AppConfig.colorPrimary),
                     ),
                     child: TextField(
                       autofocus: true,
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                       controller: _searchData,
+                      onChanged: _onSearchChanged,
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.all(5),
                           hintText: "Search...",
@@ -183,9 +207,9 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
               onTap: () {
                 setState(() {
                   _search = !_search;
-                  if (!_search) {
-                    _searchData.clear();
-                  }
+                  _isSearching = false;
+                  _searchData.clear();
+                  filteredProducts = List.from(products);
                 });
               },
               child: Icon(
@@ -204,32 +228,19 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                         baseColor:
                             AppConfig.buttonDeactiveColor.withOpacity(0.1),
                         highlightColor: AppConfig.backButtonColor,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CommonWidgets.loadingContainers(
+                        child: Column(
+                          children: List.generate(
+                              5,
+                              (index) => CommonWidgets.loadingContainers(
                                   height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                              CommonWidgets.loadingContainers(
-                                  height: SizeConfig.blockSizeVertical * 10,
-                                  width: SizeConfig.blockSizeHorizontal * 90),
-                            ],
-                          ),
+                                  width: SizeConfig.blockSizeHorizontal * 90)),
                         ),
                       )
-                    : Text('No products found'))
+                    : const Text('No products found'))
             : NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification scrollInfo) {
-                  if (!isLoading &&
+                  if (!_isSearching &&
+                      !isLoading &&
                       hasMoreProducts &&
                       scrollInfo.metrics.pixels ==
                           scrollInfo.metrics.maxScrollExtent) {
@@ -238,22 +249,16 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                   return false;
                 },
                 child: ListView.builder(
-                  itemCount:
-                      filteredProducts.length + (hasMoreProducts ? 1 : 0),
+                  itemCount: filteredProducts.length + (_isSearching ? 0 : 1),
                   itemBuilder: (context, index) {
-                    if (index == filteredProducts.length) {
-                      return Center(
-                          child: Column(
-                        children: [
-                          SizedBox(
-                            height: 10.h,
-                          ),
-                          Text(
-                            "That's All",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ));
+                    if (!_isSearching && index == filteredProducts.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: Text("That's All",
+                              style: TextStyle(color: Colors.grey)),
+                        ),
+                      );
                     }
 
                     final product = filteredProducts[index];
@@ -273,9 +278,8 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.transparent),
                             color: AppConfig.backgroundColor,
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(10),
-                            ),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(5.0),
@@ -340,6 +344,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
         .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_type'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      print(response.request);
       print(AppState().storeId);
       print(AppState().vanId);
       print(product.id);
@@ -349,7 +354,6 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
       final lastsale = data['lastsale'];
       final typeData = jsonDecode(typeResponse.body);
       final productTypes = typeData['data'] as List;
-
       String? selectedUnitId;
       String? selectedProductTypeId;
       String? quantity;
@@ -370,12 +374,23 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
             double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
       }
       bool isQuantityValid(String? value) {
+        if (AppState().validate_qtySales != 'Yes') {
+          return true;
+        }
         final quantityValue = double.tryParse(value ?? '') ?? 0;
         return value != null &&
             value.isNotEmpty &&
             quantityValue > 0 &&
             quantityValue <= (availableStock ?? 0);
       }
+
+      // bool isQuantityValid(String? value) {
+      //   final quantityValue = double.tryParse(value ?? '') ?? 0;
+      //   return value != null &&
+      //       value.isNotEmpty &&
+      //       quantityValue > 0 &&
+      //       quantityValue <= (availableStock ?? 0);
+      // }
 
       if (ModalRoute.of(context)!.settings.arguments != null) {
         final Map<String, dynamic>? params =
@@ -540,6 +555,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
                             onChanged: (value) {
                               quantity = value;
                               setDialogState(() {});
+                              print(AppState().validate_qtySales);
                             },
                             decoration: InputDecoration(
                                 labelText: 'Quantity',

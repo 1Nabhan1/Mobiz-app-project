@@ -49,7 +49,7 @@ class Data {
   num? amountOfSalesReturn; // Changed from int? to num?
   num? amountOfCollectionCash; // Changed from int? to num?
   num? amountOfExpense; // Changed from int? to num?
-  num? netCashBalance; // Changed from int? to num?
+  int? netCashBalance; // Changed from int? to num?
 
   Data({
     this.van,
@@ -73,7 +73,9 @@ class Data {
       amountOfSalesReturn: json['amount_of_sales_return'],
       amountOfCollectionCash: json['amount_of_collection_cash'],
       amountOfExpense: json['amount_of_expense'],
-      netCashBalance: json['net_cash_balance'],
+      netCashBalance: json['net_cash_balance'] != null
+          ? (json['net_cash_balance'] as num).toInt()
+          : null,
     );
   }
 }

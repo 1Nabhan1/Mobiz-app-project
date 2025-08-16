@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobizapp/Pages/salesscreen.dart';
-import 'package:mobizapp/sales_screen.dart';
+import 'package:mobizapp/DashBoardScreen.dart';
 import 'package:mobizapp/vanstocktst.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
@@ -33,12 +34,28 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
   int?dataId;
   List<Products> filteredProducts = [];
   final TextEditingController _searchData = TextEditingController();
+  bool _isSearching = false;
+  Timer? _debounce;
+
+
   @override
   void initState() {
     super.initState();
     fetchProducts(currentPage); // Initial fetch
-    _searchData.addListener(() {
-      _filterProducts(_searchData.text);
+  }
+
+  @override
+  void dispose() {
+    _searchData.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _filterProducts(query);
     });
   }
 
@@ -74,18 +91,49 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
     }
   }
 
-  void _filterProducts(String query) {
-    setState(() {
-      if (query.isEmpty) {
+  void _filterProducts(String query) async {
+    if (query != _searchData.text) return;
+
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
         filteredProducts = List.from(products);
-      } else {
-        filteredProducts = products
-            .where((product) =>
-                product.name!.toLowerCase().contains(query.toLowerCase()) ||
-                product.code!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      isLoading = true;
     });
+
+    try {
+      final response = await http.get(Uri.parse(
+          '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
+
+      if (_isSearching && response.statusCode == 200) {
+        print(query);
+        print(response.request);
+        final data = jsonDecode(response.body);
+        final List<Products> fetchedProducts = (data['data'] as List)
+            .map((json) => Products.fromJson(json))
+            .toList();
+
+        if (mounted && query == _searchData.text) {
+          setState(() {
+            filteredProducts = fetchedProducts;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching search results: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> clearCart() async {
@@ -134,6 +182,7 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
                       autofocus: true,
                       style: TextStyle(color: Colors.white),
                       controller: _searchData,
+                      onChanged: _onSearchChanged,
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.all(5),
                           hintText: "Search...",
@@ -294,14 +343,14 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
   void showProductDetailsDialog(BuildContext context, Products product) async {
     int? id;
     final response = await http.get(Uri.parse(
-        '${RestDatasource().BASE_URL}/api/get_product_with_units_by_products?store_id=${AppState().storeId}&van_id=${AppState().vanId}&id=${product.id}&customer_id=$id'));
-    final typeResponse = await http
-        .get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}'));
+        'http://68.183.92.8:3699/api/get_product_with_units_by_product_without_unit_price?store_id=${AppState().storeId}&id=${product.id}&user_id=${AppState().userId}&van_id=${AppState().vanId}'));
+    final typeResponse = await http.get(Uri.parse('${RestDatasource().BASE_URL}/api/get_product_return_type?store_id=${AppState().storeId}'));
 
     if (response.statusCode == 200 && typeResponse.statusCode == 200) {
+      print(response.request);
       final data = jsonDecode(response.body);
-      final units = data['data'] as List?;
-      final lastsale = data['lastsale'];
+      final productData = data['data'];
+      final productDetails = productData['product_detail'] as List?;  // New response key
       final typeData = jsonDecode(typeResponse.body);
       final productTypes = typeData['data'] as List;
 
@@ -312,35 +361,29 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
       double? availableStock;
       Map<String, dynamic>? selectedUnit;
       String? name;
+
       if (productTypes.isNotEmpty) {
-        // Look for the product type whose name is 'Normal'
         final normalType = productTypes.firstWhere(
               (type) => type['name'] == 'Normal',
-          orElse: () => null, // In case there's no 'Normal' type
+          orElse: () => null,
         );
         if (normalType != null) {
-          // Set selectedProductTypeId to the ID of the 'Normal' type
           selectedProductTypeId = normalType['id'].toString();
         } else {
-          // Fallback to the first product type if 'Normal' doesn't exist
           selectedProductTypeId = productTypes[0]['id'].toString();
         }
       }
 
       final amountController = TextEditingController();
-      if (units != null && units.any((unit) => unit != null)) {
-        selectedUnitId = units[0]['id'].toString();
-        selectedUnit = units[0];
+      if (productDetails != null && productDetails.isNotEmpty) {
+        selectedUnitId = productDetails[0]['id'].toString();
+        selectedUnit = productDetails[0];
         amountController.text = selectedUnit?['price']?.toString() ?? '';
-        availableStock =
-            double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
+        availableStock = double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
       }
+
       bool isQuantityValid(String? value) {
-        final quantityValue = double.tryParse(value ?? '') ?? 0;
-        return value != null &&
-            value.isNotEmpty &&
-            quantityValue > 0 &&
-            quantityValue <= (availableStock ?? 0);
+        return value != null && value.isNotEmpty;
       }
 
       if (ModalRoute.of(context)!.settings.arguments != null) {
@@ -348,8 +391,6 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
         name = params!['name'];
         id = params!['customerId'];
-        dataId = params!['id'];
-        print("Pro${dataId}");
       }
 
       showDialog(
@@ -360,7 +401,6 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
               return AlertDialog(
                 title: Text(
                   '${product.code} | ${product.name!}',
-                  // overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 13.sp),
                 ),
                 content: SingleChildScrollView(
@@ -380,22 +420,6 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
                                     height: 50.h);
                               },
                             ),
-                            // lastsale == null || lastsale.isEmpty
-                            //     ? Text('No last records found')
-                            //     : Column(
-                            //         crossAxisAlignment:
-                            //             CrossAxisAlignment.start,
-                            //         children: [
-                            //           Text(
-                            //             'Last Sale:',
-                            //             style: TextStyle(
-                            //                 fontWeight: FontWeight.bold),
-                            //           ),
-                            //           Text('Date: ${lastsale['date']}'),
-                            //           Text('Unit: ${lastsale['unit']}'),
-                            //           Text('Price: ${lastsale['price']}'),
-                            //         ],
-                            //       ),
                           ],
                         ),
                         SizedBox(height: 5.h),
@@ -405,119 +429,87 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
-                        if (units != null &&
-                            units.any((unit) => unit != null)) ...[
-                          SizedBox(height: 10.h),
-                          DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: 'Product Type',
+                        SizedBox(height: 10.h),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Product Type',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                            contentPadding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                          ),
+                          items: productTypes.map((type) {
+                            return DropdownMenuItem<String>(
+                              value: type['id'].toString(),
+                              child: Text(type['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedProductTypeId = value;
+
+                              final selectedType = productTypes.firstWhere(
+                                    (type) => type['id'].toString() == value,
+                                orElse: () => null,
+                              );
+
+                              if (selectedType != null && selectedType['name'] != 'Normal') {
+                                amountController.text = '0';
+                              } else if (selectedUnit != null) {
+                                amountController.text = selectedUnit?['price']?.toString() ?? '';
+                              }
+                            });
+                          },
+                          value: selectedProductTypeId,
+                          hint: Text('Select Product Type'),
+                        ),
+                        SizedBox(height: 10.h),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Unit',
+                            labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                            contentPadding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 10.w),
+                            border: OutlineInputBorder(borderSide: BorderSide.none),
+                            filled: true,
+                            fillColor: Colors.grey.shade300,
+                          ),
+                          items: productDetails?.map((unit) {
+                            return DropdownMenuItem<String>(
+                              value: unit['id'].toString(),
+                              child: Text(unit['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedUnitId = value;
+                              selectedUnit = productDetails?.firstWhere(
+                                      (unit) => unit['id'].toString() == value,
+                                  orElse: () => null);
+                              amountController.text = selectedUnit?['price']?.toString() ?? '';
+                              availableStock = double.tryParse(selectedUnit?['stock']?.toString() ?? '0');
+                            });
+                          },
+                          value: selectedUnitId,
+                          hint: Text('Select Unit'),
+                        ),
+                        SizedBox(height: 10.h),
+                        TextFormField(
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            quantity = value;
+                            setDialogState(() {});
+                          },
+                          decoration: InputDecoration(
+                              labelText: 'Quantity',
                               labelStyle: TextStyle(fontWeight: FontWeight.bold),
                               contentPadding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 10.w),
+                              hintText: 'Qty',
                               border: OutlineInputBorder(borderSide: BorderSide.none),
                               filled: true,
-                              fillColor: Colors.grey.shade300,
-                            ),
-                            items: productTypes.map((type) {
-                              return DropdownMenuItem<String>(
-                                value: type['id'].toString(),
-                                child: Text(type['name']),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedProductTypeId = value;
-
-                                final selectedType = productTypes.firstWhere(
-                                      (type) => type['id'].toString() == value,
-                                  orElse: () => null,
-                                );
-
-                                if (selectedType != null && selectedType['name'] != 'Normal') {
-                                  amountController.text = '0';
-                                } else if (selectedUnit != null) {
-                                  amountController.text = selectedUnit?['price']?.toString() ?? '';
-                                }
-                              });
-                            },
-                            value: selectedProductTypeId, // Pre-select based on 'Normal' or fallback to first item
-                            hint: Text('Select Product Type'),
-                          ),
-
-                          SizedBox(height: 10.h),
-                          DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: 'Unit',
-                              labelStyle:
-                              TextStyle(fontWeight: FontWeight.bold),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 2.h, horizontal: 10.w),
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none),
-                              filled: true,
-                              fillColor: Colors.grey.shade300,
-                            ),
-                            items:
-                            units.where((unit) => unit != null).map((unit) {
-                              return DropdownMenuItem<String>(
-                                value: unit['id'].toString(),
-                                child: Text(unit['name']),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setDialogState(() {
-                                selectedUnitId = value;
-                                selectedUnit = units.firstWhere(
-                                        (unit) => unit['id'].toString() == value,
-                                    orElse: () => null);
-                                amountController.text =
-                                    selectedUnit?['price']?.toString() ?? '';
-                                availableStock = double.tryParse(
-                                    selectedUnit?['stock']?.toString() ?? '0');
-                              });
-                            },
-                            value: selectedUnitId,
-                            hint: Text('Select Unit'),
-                          ),
-                          SizedBox(height: 10.h),
-                          // TextFormField(
-                          //   keyboardType: TextInputType.number,
-                          //   controller: amountController,
-                          //   decoration: InputDecoration(
-                          //       labelText: 'Amount',
-                          //       labelStyle:
-                          //           TextStyle(fontWeight: FontWeight.bold),
-                          //       contentPadding: EdgeInsets.symmetric(
-                          //           vertical: 2.h, horizontal: 10.w),
-                          //       hintText: 'Amt',
-                          //       border: OutlineInputBorder(
-                          //           borderSide: BorderSide.none),
-                          //       filled: true,
-                          //       fillColor: Colors.grey.shade300),
-                          // ),
-                          // SizedBox(height: 10.h),
-                          TextFormField(
-                            autofocus: true,
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) {
-                              quantity = value;
-                              setDialogState(() {});
-                            },
-                            decoration: InputDecoration(
-                                labelText: 'Quantity',
-                                labelStyle:
-                                TextStyle(fontWeight: FontWeight.bold),
-                                contentPadding: EdgeInsets.symmetric(
-                                    vertical: 2.h, horizontal: 10.w),
-                                hintText: 'Qty',
-                                border: OutlineInputBorder(
-                                    borderSide: BorderSide.none),
-                                filled: true,
-                                fillColor: Colors.grey.shade300),
-                          ),
-                          SizedBox(height: 10),
-                        ] else ...[
-                          Text('No units available for this product.'),
-                        ],
+                              fillColor: Colors.grey.shade300),
+                        ),
                         SizedBox(height: 10.h),
                       ],
                     ),
@@ -533,69 +525,67 @@ class _SelectProductsScreenoffState extends State<SelectProductsScreenoff> {
                       'Close',
                       style: TextStyle(color: Colors.white),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      print("DATAAAA${prefs.getStringList('selected_productss')}");
                       Navigator.of(context).pop();
                     },
                   ),
-                  if (units != null && units.any((unit) => unit != null)) ...[
-                    TextButton(
-                      style: TextButton.styleFrom(
-                          backgroundColor: isQuantityValid(quantity)
-                              ? AppConfig.colorPrimary
-                              : Colors.grey,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5.r))),
-                      child: Text(
-                        'Save',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onPressed: isQuantityValid(quantity)
-                          ? () async {
-                        final prefs =
-                        await SharedPreferences.getInstance();
-                        List<String>? selectedProducts =
-                        prefs.getStringList('selected_products');
-                        selectedProducts ??= [];
-                        final serialNumber = DateTime.now()
-                            .millisecondsSinceEpoch
-                            .toString() +
-                            '-' +
-                            (1000 + (DateTime.now().microsecond % 9000))
-                                .toString();
-                        final selectedProduct = {
-                          'serial_number': serialNumber,
-                          'id': product.id,
-                          'code': product.code,
-                          'name': product.name,
-                          'pro_image': product.proImage,
-                          'product_type':'Expired',
-                          'type_id': selectedProductTypeId,
-                          'type_name': productTypes.firstWhere((type) => type['id'].toString() == selectedProductTypeId)['name'],
-                          'unit_id': selectedUnitId,
-                          'unit_name': selectedUnit?['name'],
-                          'quantity': quantity ?? '',
-                          'amount': amountController.text ?? '',
-                        };
-                        selectedProducts.add(jsonEncode(selectedProduct));
-                        await prefs.setStringList(
-                            'selected_products', selectedProducts);
-                        Navigator.pop(context);
-                        Navigator.pushReplacementNamed(
-                            context, VanStocksoff.routeName, arguments: {
-                          'name': name,
-                          'customerId': id,
-                          'id':dataId
-                        }).then((value) {
-                          // _initDone = false;
-                          // _getTypes();
-                        });
-                        print(dataId);
-                      }
-                          : null,
+                  TextButton(
+                    style: TextButton.styleFrom(
+                        backgroundColor: isQuantityValid(quantity)
+                            ? AppConfig.colorPrimary
+                            : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.r))),
+                    child: Text(
+                      'Save',
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ] else ...[
-                    SizedBox.shrink(),
-                  ],
+                    onPressed: isQuantityValid(quantity)
+                        ? () async {
+                      final prefs =
+                      await SharedPreferences.getInstance();
+                      List<String>? selectedProducts =
+                      prefs.getStringList('selected_products');
+                      selectedProducts ??= [];
+                      final serialNumber = DateTime.now()
+                          .millisecondsSinceEpoch
+                          .toString() +
+                          '-' +
+                          (1000 + (DateTime.now().microsecond % 9000))
+                              .toString();
+                      final selectedProduct = {
+                        'serial_number': serialNumber,
+                        'id': product.id,
+                        'code': product.code,
+                        'name': product.name,
+                        'pro_image': product.proImage,
+                        'product_type':'Expired',
+                        'type_id': selectedProductTypeId,
+                        'type_name': productTypes.firstWhere((type) => type['id'].toString() == selectedProductTypeId)['name'],
+                        'unit_id': selectedUnitId,
+                        'unit_name': selectedUnit?['name'],
+                        'quantity': quantity ?? '',
+                        'amount': amountController.text ?? '',
+                      };
+                      selectedProducts.add(jsonEncode(selectedProduct));
+                      await prefs.setStringList(
+                          'selected_products', selectedProducts);
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(
+                          context, VanStocksoff.routeName, arguments: {
+                        'name': name,
+                        'customerId': id,
+                        'id':dataId
+                      }).then((value) {
+                        // _initDone = false;
+                        // _getTypes();
+                      });
+                      print(dataId);
+                    }
+                        : null,
+                  ),
                 ],
               );
             },

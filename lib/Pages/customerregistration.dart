@@ -29,7 +29,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   bool showFields = false;
   bool _initDone = false;
   int cud = 0;
-
+  bool _isLoading = false;
   Future<void> _pickImage() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -64,10 +64,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         return baseUrl;
       }
     } catch (e) {
-      // Log error if needed
     }
-
-    // If both fail, return an empty string or throw an error
     throw Exception('Image not found');
   }
 
@@ -730,28 +727,23 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
                                   height: SizeConfig.blockSizeVertical * 5,
                                   child: ElevatedButton(
                                     style: ButtonStyle(
-                                      shape: WidgetStateProperty.all<
-                                          RoundedRectangleBorder>(
+                                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                                         RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20.0),
+                                          borderRadius: BorderRadius.circular(20.0),
                                         ),
                                       ),
-                                      backgroundColor:
-                                          const WidgetStatePropertyAll(
-                                              AppConfig.colorPrimary),
+                                      backgroundColor: WidgetStatePropertyAll(
+                                        _isLoading ? Colors.grey : AppConfig.colorPrimary, // Disable button color
+                                      ),
                                     ),
-                                    onPressed:
-                                        //     () {
-                                        //   print(_selectedrouteid);
-                                        // },
-                                        _submitForm,
+                                    onPressed: _isLoading ? null : _submitForm, // Disable button when loading
                                     child: Text(
                                       _isUpdate ? 'UPDATE' : 'CREATE',
                                       style: TextStyle(
-                                          fontSize: AppConfig.textCaption3Size,
-                                          color: AppConfig.backgroundColor,
-                                          fontWeight: AppConfig.headLineWeight),
+                                        fontSize: AppConfig.textCaption3Size,
+                                        color: AppConfig.backgroundColor,
+                                        fontWeight: AppConfig.headLineWeight,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -871,7 +863,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   Future<void> _getRoutes() async {
     RestDatasource api = RestDatasource();
     dynamic resJson = await api.getDetails(
-        '/api/get_route?store_id=${AppState().storeId}', AppState().token);
+        '/api/get_route?store_id=${AppState().storeId}&user_id=${AppState().userId}', AppState().token);
     route = RouteDataModel.fromJson(resJson);
     if (route.data != null) {
       print(resJson);
@@ -916,6 +908,12 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
   }
 
   Future _postRecord() async {
+    if (_isLoading) return; // Prevent multiple submissions
+
+    setState(() {
+      _isLoading = true; // Disable the button
+    });
+
     int? pId;
     int? rId;
     for (var data in province.data!) {
@@ -932,8 +930,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     }
 
     RestDatasource api = RestDatasource();
-    String codeToPost = _customercode ??
-        (cuCodeData.isNotEmpty ? cuCodeData.join(', ') : '');
+    String codeToPost = _customercode ?? (cuCodeData.isNotEmpty ? cuCodeData.join(', ') : '');
     Map<String, dynamic> bodyJson = {
       'id': id,
       'name': _nameController.text,
@@ -944,9 +941,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
       'email': _emailController.text,
       'Building': _buildingController.text,
       'Flat_no': _flatNumberController.text,
-      'location': _locationController.text.isNotEmpty
-          ? _locationController.text
-          : _location,
+      'location': _locationController.text.isNotEmpty ? _locationController.text : _location,
       'trn': _trnController.text,
       'payment_terms': _selectPaymentTerms,
       'route_id': _selectedrouteid,
@@ -957,7 +952,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
     };
 
     print('Body data: $bodyJson');
-    print('Image: $codeToPost');
+    print('Image: $_image');
 
     try {
       dynamic resJson = await api.customerRegister(
@@ -967,6 +962,7 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
         context,
         _isUpdate,
       );
+      print('Image: $_image');
       print("Body${bodyJson}");
       print('Response: $resJson');
 
@@ -987,6 +983,12 @@ class _CustomerRegistrationState extends State<CustomerRegistration> {
           title: "Error",
           msg: "Something went wrong. Please try again.",
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Re-enable the button
+        });
       }
     }
   }

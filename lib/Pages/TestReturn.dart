@@ -626,13 +626,8 @@ class _HomereturnScreenState extends State<HomereturnScreen> {
       row.cells[1].value = '${invoice.data!.detail![k].name}';
       row.cells[2].value = '${invoice.data!.detail![k].unit}';
       row.cells[3].value = '${invoice.data!.detail![k].quantity}';
-      row.cells[4].value = (invoice.data!.detail![k].productType!
-                      .toLowerCase() ==
-                  "foc" ||
-              invoice.data!.detail![k].productType!.toLowerCase() == "FOC" ||
-              invoice.data!.detail![k].productType!.toLowerCase() == "Change")
-          ? 'Normal'
-          : 'Normal';
+      row.cells[4].value = (invoice.data!.detail![k].productType!);
+      // row.cells[4].value = (invoice.data!.detail![k].productType!.toLowerCase() == "foc" || invoice.data!.detail![k].productType!.toLowerCase() == "FOC" || invoice.data!.detail![k].productType!.toLowerCase() == "Change") ? 'Normal' : 'Normal';
       row.cells[5].value = '${invoice.data!.detail![k].mrp}';
       row.cells[6].value = '${invoice.data!.detail![k].taxable}';
       row.cells[7].value = '${invoice.data!.detail![k].taxAmt}';
@@ -981,7 +976,7 @@ Salesman: ${invoice.data!.user![0].name}
   Future<Uint8List> _readImageData(String? image) async {
     try {
       final response = await http
-          .get(Uri.parse('https://mobiz.yes45.in/uploads/store/$image'));
+          .get(Uri.parse('${RestDatasource().Image_URL}/uploads/store/$image'));
 
       print('Response Data $response');
 

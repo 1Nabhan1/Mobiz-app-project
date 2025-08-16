@@ -4,6 +4,8 @@ import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobizapp/Models/appstate.dart';
 import 'package:mobizapp/Utilities/rest_ds.dart';
+import 'package:mobizapp/confg/sizeconfig.dart';
+import 'package:mobizapp/confg/textconfig.dart';
 import 'package:mobizapp/main.dart';
 import 'package:open_file/open_file.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -29,7 +31,6 @@ class _DayReportState extends State<DayReport> {
   List<BluetoothDevice> _devices = [];
   BluetoothDevice? _selectedDevice;
 
-
   @override
   void initState() {
     super.initState();
@@ -41,11 +42,13 @@ class _DayReportState extends State<DayReport> {
         '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_report?user_id=${AppState().userId}&van_id=${AppState().vanId}&store_id=${AppState().storeId}'));
 
     if (response.statusCode == 200) {
+      print(response.request);
       return DayCloseOutstandingReport.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load report');
     }
   }
+
   void _initPrinter() async {
     bool? isConnected = await printer.isConnected;
     if (isConnected!) {
@@ -68,8 +71,6 @@ class _DayReportState extends State<DayReport> {
     }
   }
 
-
-
   void _getBluetoothDevices() async {
     List<BluetoothDevice> devices = await printer.getBondedDevices();
     BluetoothDevice? defaultDevice;
@@ -88,12 +89,10 @@ class _DayReportState extends State<DayReport> {
       _selectedDevice = defaultDevice;
     });
 
-    // Call _connect if a default device is selected
     if (_selectedDevice != null) {
       _connect();
     }
   }
-
 
   Future<void> generatePdf(DayCloseOutstandingReport report) async {
     final pdf = pw.Document();
@@ -124,8 +123,7 @@ class _DayReportState extends State<DayReport> {
           }).reduce((a, b) => a + b)
         : 0.0; // Default to 0 if the list is empty
 
-    pdf.addPage(
-        pw.Page(
+    pdf.addPage(pw.Page(
       build: (pw.Context context) {
         return pw.Column(
           children: [
@@ -151,7 +149,7 @@ class _DayReportState extends State<DayReport> {
                 border: pw.TableBorder.all(),
                 columnWidths: {
                   0: pw.FixedColumnWidth(50), // SI NO
-                  1: pw.FixedColumnWidth(120), // SHOP NAME
+                  1: pw.FixedColumnWidth(270), // SHOP NAME
                   2: pw.FlexColumnWidth(), // INVOICE NO
                   3: pw.FixedColumnWidth(70), // Amount
                 },
@@ -166,7 +164,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('INVOICE NO',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('Amount',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                   ...report.sales!.map((sale) {
@@ -180,10 +178,10 @@ class _DayReportState extends State<DayReport> {
 
                     return pw.TableRow(
                       children: [
-                        pw.Text('${report.sales!.indexOf(sale) + 1}'), // SI NO
+                        pw.Text('${report.sales!.indexOf(sale) + 1}',textAlign: pw.TextAlign.center), // SI NO
                         pw.Text(formattedShopName), // SHOP NAME
                         pw.Text('${sale.invoiceNo}'), // INVOICE NO
-                        pw.Text('${sale.grandTotal}'), // Amount
+                        pw.Text('${sale.grandTotal!.toStringAsFixed(2)}',textAlign: pw.TextAlign.right), // Amount
                       ],
                     );
                   }).toList(),
@@ -195,7 +193,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Total:',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('${totalSales.toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                 ],
@@ -216,7 +214,7 @@ class _DayReportState extends State<DayReport> {
                 border: pw.TableBorder.all(),
                 columnWidths: {
                   0: pw.FixedColumnWidth(50), // SI NO
-                  1: pw.FixedColumnWidth(120), // SHOP NAME
+                  1: pw.FixedColumnWidth(270), // SHOP NAME
                   2: pw.FlexColumnWidth(), // Reference
                   3: pw.FixedColumnWidth(70), // Amount
                 },
@@ -230,7 +228,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Reference',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('Amount',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                   ...report.salesReturn!.map((returns) {
@@ -244,11 +242,11 @@ class _DayReportState extends State<DayReport> {
                     return pw.TableRow(
                       children: [
                         pw.Text(
-                            '${report.salesReturn!.indexOf(returns) + 1}'), // SI NO
+                            '${report.salesReturn!.indexOf(returns) + 1}',textAlign: pw.TextAlign.center), // SI NO
                         pw.Text(formattedShopName), // SHOP NAME
                         pw.Text(
                             '${returns.invoiceNo ?? 'No Invoice'}'), // Reference
-                        pw.Text('${returns.grandTotal}'), // Amount
+                        pw.Text('${returns.grandTotal}',textAlign: pw.TextAlign.right), // Amount
                       ],
                     );
                   }).toList(),
@@ -259,7 +257,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Total:',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('${totalSalesreturn.toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                 ],
@@ -280,7 +278,7 @@ class _DayReportState extends State<DayReport> {
                 border: pw.TableBorder.all(),
                 columnWidths: {
                   0: pw.FixedColumnWidth(50), // SI NO
-                  1: pw.FixedColumnWidth(120), // SHOP NAME
+                  1: pw.FixedColumnWidth(270), // SHOP NAME
                   2: pw.FlexColumnWidth(), // TYPE
                   3: pw.FixedColumnWidth(70), // Amount
                 },
@@ -294,7 +292,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('TYPE',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('Amount',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                   ...report.collection!.map((collection) {
@@ -308,11 +306,11 @@ class _DayReportState extends State<DayReport> {
                     return pw.TableRow(
                       children: [
                         pw.Text(
-                            '${report.collection!.indexOf(collection) + 1}'), // SI NO
+                            '${report.collection!.indexOf(collection) + 1}',textAlign: pw.TextAlign.center), // SI NO
                         pw.Text(formattedShopName), // SHOP NAME
                         pw.Text(
                             '${collection.collectionType ?? 'No Type'}'), // TYPE
-                        pw.Text('${collection.totalAmount}'), // Amount
+                        pw.Text('${collection.totalAmount}',textAlign: pw.TextAlign.right), // Amount
                       ],
                     );
                   }).toList(),
@@ -323,7 +321,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Total:',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('${totalCollections.toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                 ],
@@ -344,7 +342,7 @@ class _DayReportState extends State<DayReport> {
                 border: pw.TableBorder.all(),
                 columnWidths: {
                   0: pw.FixedColumnWidth(50), // SI NO
-                  1: pw.FixedColumnWidth(120), // Type
+                  1: pw.FixedColumnWidth(270), // Type
                   2: pw.FlexColumnWidth(), // Remarks
                   3: pw.FixedColumnWidth(70), // Amount
                 },
@@ -358,7 +356,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Remarks',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('Amount',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.right),
                     ],
                   ),
                   ...report.expense!.map((expense) {
@@ -371,7 +369,7 @@ class _DayReportState extends State<DayReport> {
                         pw.Text(expenseTypes), // Type
                         pw.Text(
                             '${expense.description ?? 'No Remarks'}'), // Remarks
-                        pw.Text('${expense.amount}'), // Amount
+                        pw.Text('${expense.amount}',textAlign: pw.TextAlign.right), // Amount
                       ],
                     );
                   }).toList(),
@@ -382,7 +380,7 @@ class _DayReportState extends State<DayReport> {
                       pw.Text('Total:',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                       pw.Text('${totalExpenses.toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),textAlign: pw.TextAlign.center),
                     ],
                   ),
                 ],
@@ -394,7 +392,7 @@ class _DayReportState extends State<DayReport> {
             pw.Row(
               children: [
                 pw.Text(
-                    'Net Cash Balance: ${totalCollections - totalExpenses}'),
+                    'Net Cash Balance: ${report.data!.netCashBalance!.toStringAsFixed(2)}'),
               ],
             ),
           ],
@@ -407,11 +405,9 @@ class _DayReportState extends State<DayReport> {
     await OpenFile.open(file.path);
   }
 
-  // Function to format shop names
   String formatShopName(String name, int maxWordsPerLine) {
     List<String> words = name.split(' ');
 
-    // If the name has fewer words than maxWordsPerLine, return it as is
     if (words.isEmpty) {
       return '';
     }
@@ -438,41 +434,44 @@ class _DayReportState extends State<DayReport> {
     if (_connected) {
       double totalSales = report.sales != null && report.sales!.isNotEmpty
           ? report.sales!.map((sales) {
-        return double.tryParse(sales.grandTotal.toString()) ?? 0.0;
-      }).reduce((a, b) => a + b)
+              return double.tryParse(sales.grandTotal.toString()) ?? 0.0;
+            }).reduce((a, b) => a + b)
           : 0.0;
 
       double totalSalesreturn = report.salesReturn != null &&
-          report.salesReturn!.isNotEmpty
+              report.salesReturn!.isNotEmpty
           ? report.salesReturn!.map((salesReturn) {
-        return double.tryParse(salesReturn.grandTotal.toString()) ?? 0.0;
-      }).reduce((a, b) => a + b)
+              return double.tryParse(salesReturn.grandTotal.toString()) ?? 0.0;
+            }).reduce((a, b) => a + b)
           : 0.0;
 
       double totalCollections = report.collection != null &&
-          report.collection!.isNotEmpty
+              report.collection!.isNotEmpty
           ? report.collection!.map((collection) {
-        return double.tryParse(collection.totalAmount.toString()) ?? 0.0;
-      }).reduce((a, b) => a + b)
+              return double.tryParse(collection.totalAmount.toString()) ?? 0.0;
+            }).reduce((a, b) => a + b)
           : 0.0;
 
-      double totalExpenses = report.expense != null && report.expense!.isNotEmpty
-          ? report.expense!.map((expense) {
-        return double.tryParse(expense.amount.toString()) ?? 0.0;
-      }).reduce((a, b) => a + b)
-          : 0.0;
+      double totalExpenses =
+          report.expense != null && report.expense!.isNotEmpty
+              ? report.expense!.map((expense) {
+                  return double.tryParse(expense.amount.toString()) ?? 0.0;
+                }).reduce((a, b) => a + b)
+              : 0.0;
 
       // Printing section headers and key info
       printer.printCustom('Salesman: ${report.data!.user}', 1, 0);
       printer.printCustom(
           'Date: ${report.data?.date != null ? DateFormat('dd-MMM-yyyy').format(DateTime.parse(report.data!.date!)) : 'No Date'}',
-          1, 0);
+          1,
+          0);
       printer.printCustom('VAN NO: ${report.data!.van}', 1, 0);
-      printer.printCustom('Petty Cash: ${report.data!.pettyCash} in hand', 1, 0);
+      printer.printCustom(
+          'Petty Cash: ${report.data!.pettyCash} in hand', 1, 0);
       printer.printNewLine();
       void printAlignedText(String leftText, String rightText) {
         const int maxLineLength =
-        68; // Adjust the maximum line length as per your printer's character limit
+            68; // Adjust the maximum line length as per your printer's character limit
         int leftTextLength = leftText.length;
         int rightTextLength = rightText.length;
 
@@ -487,35 +486,40 @@ class _DayReportState extends State<DayReport> {
       // Printing Sales Section
       if (report.sales != null && report.sales!.isNotEmpty) {
         // Define column widths
-        const int columnWidth1 = 10;  // S.No
+        const int columnWidth1 = 10; // S.No
         const int columnWidth2 = 30; // Shop Name
         const int columnWidth3 = 12; // Invoice No
-        const int columnWidth4 = 8;  // Amount
+        const int columnWidth4 = 8; // Amount
 
         // Print the table header
         String headers = "${'SI NO'.padRight(columnWidth1)}"
             "${'SHOP NAME'.padRight(columnWidth2)}"
             "${'INVOICE NO'.padRight(columnWidth3)}"
             "${'Amount'.padLeft(columnWidth4)}";
-        printer.printCustom('Sales', 1, 0);  // Section title
-        printer.printCustom(headers, 1, 0);  // Print table headers
+        printer.printCustom('Sales', 1, 0); // Section title
+        printer.printCustom(headers, 1, 0); // Print table headers
 
         // Helper function to split text by word count
         List<String> splitByWords(String text, int maxWords) {
           List<String> words = text.split(' ');
           List<String> lines = [];
           for (int i = 0; i < words.length; i += maxWords) {
-            lines.add(words.sublist(i, i + maxWords > words.length ? words.length : i + maxWords).join(' '));
+            lines.add(words
+                .sublist(i,
+                    i + maxWords > words.length ? words.length : i + maxWords)
+                .join(' '));
           }
           return lines;
         }
 
         // Print each sale row
         for (var sale in report.sales!) {
-          String customerNames = sale.customer!.map((customer) => customer.name).join(", ");
+          String customerNames =
+              sale.customer!.map((customer) => customer.name).join(", ");
 
           List<String> customerNameLines = splitByWords(customerNames, 4);
-          String firstLine = "${(report.sales!.indexOf(sale) + 1).toString().padRight(columnWidth1)}"
+          String firstLine =
+              "${(report.sales!.indexOf(sale) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${sale.invoiceNo!.padRight(columnWidth3)}"
               "${sale.grandTotal!.toStringAsFixed(2).padLeft(columnWidth4)}";
@@ -523,45 +527,51 @@ class _DayReportState extends State<DayReport> {
           printer.printCustom(firstLine, 1, 0);
 
           for (int i = 1; i < customerNameLines.length; i++) {
-            String subsequentLine = "${''.padRight(columnWidth1)}"  // Empty space for SI NO
-                "${customerNameLines[i].padRight(columnWidth2)}";    // Print remaining shop name lines
+            String subsequentLine =
+                "${''.padRight(columnWidth1)}" // Empty space for SI NO
+                "${customerNameLines[i].padRight(columnWidth2)}"; // Print remaining shop name lines
             printer.printCustom(subsequentLine, 1, 0);
           }
         }
         printer.printNewLine();
-        printAlignedText('','Total Sales: ${totalSales.toStringAsFixed(2)}');
+        printAlignedText('', 'Total Sales: ${totalSales.toStringAsFixed(2)}');
         printer.printNewLine();
       }
 
-
       // Printing Return Section
       if (report.salesReturn != null && report.salesReturn!.isNotEmpty) {
-        const int columnWidth1 = 10;  // S.No
+        const int columnWidth1 = 10; // S.No
         const int columnWidth2 = 30; // Shop Name
         const int columnWidth3 = 12; // Invoice No
-        const int columnWidth4 = 8;  // Amount
+        const int columnWidth4 = 8; // Amount
 
         // Print the table header
         String headers = "${'SI NO'.padRight(columnWidth1)}"
             "${'SHOP NAME'.padRight(columnWidth2)}"
             "${'TYPE'.padRight(columnWidth3)}"
             "${'Amount'.padLeft(columnWidth4)}";
-        printer.printCustom('Sales Return', 1, 0);  // Section title
-        printer.printCustom(headers, 1, 0);       // Print table headers
+        printer.printCustom('Sales Return', 1, 0); // Section title
+        printer.printCustom(headers, 1, 0); // Print table headers
 
         // Helper function to split text by word count
         List<String> splitByWords(String text, int maxWords) {
           List<String> words = text.split(' ');
           List<String> lines = [];
           for (int i = 0; i < words.length; i += maxWords) {
-            lines.add(words.sublist(i, i + maxWords > words.length ? words.length : i + maxWords).join(' '));
+            lines.add(words
+                .sublist(i,
+                    i + maxWords > words.length ? words.length : i + maxWords)
+                .join(' '));
           }
           return lines;
         }
+
         for (var salesReturn in report.salesReturn!) {
-          String customerNames = salesReturn.customer!.map((customer) => customer.name).join(", ");
+          String customerNames =
+              salesReturn.customer!.map((customer) => customer.name).join(", ");
           List<String> customerNameLines = splitByWords(customerNames, 4);
-          String firstLine = "${(report.salesReturn!.indexOf(salesReturn) + 1).toString().padRight(columnWidth1)}"
+          String firstLine =
+              "${(report.salesReturn!.indexOf(salesReturn) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(salesReturn.invoiceNo ?? 'No Type').padRight(columnWidth3)}"
               "${salesReturn.grandTotal!.toStringAsFixed(2).padLeft(columnWidth4)}";
@@ -574,7 +584,8 @@ class _DayReportState extends State<DayReport> {
           }
         }
         printer.printNewLine();
-        printAlignedText('', 'Total Sales Return: ${totalSalesreturn.toStringAsFixed(2)}');
+        printAlignedText(
+            '', 'Total Sales Return: ${totalSalesreturn.toStringAsFixed(2)}');
         // printer.printCustom('Total Collections: $totalCollections', 1, 0);
         printer.printNewLine();
         // printer.printCustom('Return', 1, 0);
@@ -598,34 +609,39 @@ class _DayReportState extends State<DayReport> {
       // Printing Collection Section
       if (report.collection != null && report.collection!.isNotEmpty) {
         // Define column widths
-        const int columnWidth1 = 10;  // S.No
+        const int columnWidth1 = 10; // S.No
         const int columnWidth2 = 30; // Shop Name
         const int columnWidth3 = 12; // Invoice No
-        const int columnWidth4 = 8;  // Amount
+        const int columnWidth4 = 8; // Amount
 
         // Print the table header
         String headers = "${'SI NO'.padRight(columnWidth1)}"
             "${'SHOP NAME'.padRight(columnWidth2)}"
             "${'TYPE'.padRight(columnWidth3)}"
             "${'Amount'.padLeft(columnWidth4)}";
-        printer.printCustom('Collection', 1, 0);  // Section title
-        printer.printCustom(headers, 1, 0);       // Print table headers
+        printer.printCustom('Collection', 1, 0); // Section title
+        printer.printCustom(headers, 1, 0); // Print table headers
 
         // Helper function to split text by word count
         List<String> splitByWords(String text, int maxWords) {
           List<String> words = text.split(' ');
           List<String> lines = [];
           for (int i = 0; i < words.length; i += maxWords) {
-            lines.add(words.sublist(i, i + maxWords > words.length ? words.length : i + maxWords).join(' '));
+            lines.add(words
+                .sublist(i,
+                    i + maxWords > words.length ? words.length : i + maxWords)
+                .join(' '));
           }
           return lines;
         }
 
         // Print each collection row
         for (var collection in report.collection!) {
-          String customerNames = collection.customer!.map((customer) => customer.name).join(", ");
+          String customerNames =
+              collection.customer!.map((customer) => customer.name).join(", ");
           List<String> customerNameLines = splitByWords(customerNames, 4);
-          String firstLine = "${(report.collection!.indexOf(collection) + 1).toString().padRight(columnWidth1)}"
+          String firstLine =
+              "${(report.collection!.indexOf(collection) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(collection.collectionType ?? 'No Type').padRight(columnWidth3)}"
               "${(double.tryParse(collection.totalAmount ?? '0')?.toStringAsFixed(2) ?? '0.00').padLeft(columnWidth4)}";
@@ -638,46 +654,48 @@ class _DayReportState extends State<DayReport> {
           }
         }
         printer.printNewLine();
-        printAlignedText('', 'Total Collections: ${totalCollections.toStringAsFixed(2)}');
+        printAlignedText(
+            '', 'Total Collections: ${totalCollections.toStringAsFixed(2)}');
         // printer.printCustom('Total Collections: $totalCollections', 1, 0);
         printer.printNewLine();
       }
 
-
-
-
       // Printing Expense Section
       if (report.expense != null && report.expense!.isNotEmpty) {
-        const int columnWidth1 = 10;  // S.No
+        const int columnWidth1 = 10; // S.No
         const int columnWidth2 = 30; // Shop Name
         const int columnWidth3 = 12; // Invoice No
-        const int columnWidth4 = 8;  // Amount
+        const int columnWidth4 = 8; // Amount
 
         // Print the table header
         String headers = "${'SI NO'.padRight(columnWidth1)}"
             "${'SHOP NAME'.padRight(columnWidth2)}"
             "${'TYPE'.padRight(columnWidth3)}"
             "${'Amount'.padLeft(columnWidth4)}";
-        printer.printCustom('Expense', 1, 0);  // Section title
-        printer.printCustom(headers, 1, 0);       // Print table headers
+        printer.printCustom('Expense', 1, 0); // Section title
+        printer.printCustom(headers, 1, 0); // Print table headers
 
         // Helper function to split text by word count
         List<String> splitByWords(String text, int maxWords) {
           List<String> words = text.split(' ');
           List<String> lines = [];
           for (int i = 0; i < words.length; i += maxWords) {
-            lines.add(words.sublist(i, i + maxWords > words.length ? words.length : i + maxWords).join(' '));
+            lines.add(words
+                .sublist(i,
+                    i + maxWords > words.length ? words.length : i + maxWords)
+                .join(' '));
           }
           return lines;
         }
+
         for (var expense in report.expense!) {
           String expenseTypes = expense.expense!.map((e) => e.name).join(", ");
           List<String> customerNameLines = splitByWords(expenseTypes, 4);
-          String firstLine = "${(report.expense!.indexOf(expense) + 1).toString().padRight(columnWidth1)}"
+          String firstLine =
+              "${(report.expense!.indexOf(expense) + 1).toString().padRight(columnWidth1)}"
               "${customerNameLines[0].padRight(columnWidth2)}"
               "${(expense.description ?? 'No Type').padRight(columnWidth3)}"
               "${(double.tryParse(expense.amount ?? '0')?.toStringAsFixed(2) ?? '0.00').padLeft(columnWidth4)}";
-
 
           printer.printCustom(firstLine, 1, 0);
           for (int i = 1; i < customerNameLines.length; i++) {
@@ -694,23 +712,25 @@ class _DayReportState extends State<DayReport> {
           //     1, 0);
         }
         printer.printNewLine();
-        printAlignedText('','Total Expenses: ${totalExpenses.toStringAsFixed(2)}');
+        printAlignedText(
+            '', 'Total Expenses: ${totalExpenses.toStringAsFixed(2)}');
         printer.printNewLine();
       }
 
       // Net Cash Balance
-      double netCashBalance =
-          // (report.data!.pettyCash ?? 0) +
-              totalCollections - totalExpenses;
-      printer.printCustom('Net Cash Balance: $netCashBalance', 1, 0);
+      // double netCashBalance =
+      //     // (report.data!.pettyCash ?? 0) +
+      //         totalCollections - totalExpenses;
+      printer.printCustom(
+          'Net Cash Balance: ${report.data!.netCashBalance!.toStringAsFixed(2)}',
+          1,
+          0);
       printer.printNewLine();
 
       printer.printCustom('Thank you', 1, 1);
       printer.paperCut();
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -742,27 +762,31 @@ class _DayReportState extends State<DayReport> {
 
             double totalSale = sales.fold(0.0, (sum, returns) {
               return sum +
-                  (double.tryParse(returns.grandTotal!.toStringAsFixed(2)) ?? 0.0);
+                  (double.tryParse(returns.grandTotal!.toStringAsFixed(2)) ??
+                      0.0);
             });
             double totalSum = salesReturns.fold(0.0, (sum, returns) {
               return sum +
-                  (double.tryParse(returns.grandTotal!.toStringAsFixed(2)) ?? 0.0);
+                  (double.tryParse(returns.grandTotal!.toStringAsFixed(2)) ??
+                      0.0);
             });
             // Calculate totals only if the lists are not empty
             double totalCollections = collections.fold(0.0, (sum, returns) {
-              return sum + (double.tryParse(returns.totalAmount.toString()) ?? 0.0);
+              return sum +
+                  (double.tryParse(returns.totalAmount.toString()) ?? 0.0);
             });
 
-            String totalCollectionsFormatted = totalCollections.toStringAsFixed(2);
+            String totalCollectionsFormatted =
+                totalCollections.toStringAsFixed(2);
 
             double totalExpenses = expenses.fold(0.0, (sum, returns) {
               return sum + (double.tryParse(returns.amount.toString()) ?? 0.0);
             });
 
-            String totalExpenseFormated  = totalExpenses.toStringAsFixed(2);
+            String totalExpenseFormated = totalExpenses.toStringAsFixed(2);
             double netCashBalance =
                 // (report.data?.pettyCash ?? 0) +
-                    totalCollections - totalExpenses;
+                totalCollections - totalExpenses;
 
             return SingleChildScrollView(
               child: Padding(
@@ -775,10 +799,11 @@ class _DayReportState extends State<DayReport> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Salesman: ${report.data?.user ?? 'No User'}',
-                              style: TextStyle(fontSize: AppConfig.labelSize),
+                              // style: TextStyle(fontSize: AppConfig.labelSize),
                             ),
                             Text(
                               'Date: ${report.data?.date != null ? DateFormat('dd-MMM-yyyy').format(DateTime.parse(report.data!.date!)) : 'No Date'}',
@@ -829,35 +854,44 @@ class _DayReportState extends State<DayReport> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               SizedBox(
-                                width: 40, // Fixed width for SI NO
+                                width: AppConfig
+                                    .textSubTitleSize, // Fixed width for SI NO
                                 child: Text(
                                   'SI NO',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
-                                flex: 5, // Fixed width for SHOP NAME
+                                flex: 4, // Fixed width for SHOP NAME
                                 child: Text(
                                   'SHOP NAME',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
-                                flex: 11, // Less space for INVOICE NO
+                                flex: 9, // Less space for INVOICE NO
                                 child: Text(
                                   'INVOICE NO',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Expanded(
                                 flex: 3, // More space for Amount
                                 child: Text(
                                   'Amount',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                             ],
@@ -897,11 +931,13 @@ class _DayReportState extends State<DayReport> {
                                       ),
                                     ),
                                     Flexible(
-                                      flex: 6, // Fixed width for SHOP NAME
-                                      child: Text(
-                                        formattedShopName, // SHOP NAME
-                                        textAlign: TextAlign.center,
-                                        // overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                                      flex: 5,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          formattedShopName,
+                                          textAlign: TextAlign.left,
+                                        ),
                                       ),
                                     ),
                                     Flexible(
@@ -934,7 +970,7 @@ class _DayReportState extends State<DayReport> {
                                   'Total: ${totalSale.toStringAsFixed(2)}',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 16),
+                                      fontSize: 13),
                                 ),
                               ],
                             ),
@@ -961,11 +997,12 @@ class _DayReportState extends State<DayReport> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               SizedBox(
-                                width: 40, // Fixed width for SI NO
+                                width: AppConfig.textSubTitleSize,
                                 child: Text(
                                   'SI NO',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
@@ -973,7 +1010,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'SHOP NAME',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
@@ -981,7 +1019,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'Reference',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Expanded(
@@ -989,7 +1028,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'Amount',
                                   textAlign: TextAlign.right,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                             ],
@@ -1025,9 +1065,12 @@ class _DayReportState extends State<DayReport> {
                                     ),
                                     Flexible(
                                       flex: 6, // Fixed width for SHOP NAME
-                                      child: Text(
-                                        formattedShopName, // SHOP NAME
-                                        textAlign: TextAlign.center,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          formattedShopName, // SHOP NAME
+                                          textAlign: TextAlign.left,
+                                        ),
                                       ),
                                     ),
                                     Flexible(
@@ -1058,7 +1101,7 @@ class _DayReportState extends State<DayReport> {
                                   'Total: ${totalSum.toStringAsFixed(2)}',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 16),
+                                      fontSize: 13),
                                 ),
                               ],
                             ),
@@ -1083,32 +1126,50 @@ class _DayReportState extends State<DayReport> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('SI NO'),
-                                ],
+                              SizedBox(
+                                width: AppConfig
+                                    .textSubTitleSize, // Fixed width for SI NO
+                                child: Text(
+                                  'SI NO',
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
+                                ),
                               ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('SHOP NAME'),
-                                ],
+                              Flexible(
+                                flex: 4, // Fixed width for SHOP NAME
+                                child: Text(
+                                  'SHOP NAME',
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
+                                ),
                               ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('TYPE'),
-                                ],
+                              Flexible(
+                                flex: 9, // Less space for INVOICE NO
+                                child: Text(
+                                  'TYPE',
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
+                                ),
                               ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Amount'),
-                                ],
+                              Expanded(
+                                flex: 3, // More space for Amount
+                                child: Text(
+                                  'Amount',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
+                                ),
                               ),
                             ],
                           ),
+
                           // ListView for collections data
                           ListView.builder(
                             scrollDirection: Axis.vertical,
@@ -1117,51 +1178,63 @@ class _DayReportState extends State<DayReport> {
                             itemCount: collections.length,
                             itemBuilder: (context, index) {
                               final collection = collections[index];
-                              double totalAmountsss = double.tryParse(
-                                      collection.totalAmount.toString()) ??
-                                  0.0;
+                              String shopName =
+                                  '${collection.customer?.map((customer) => customer.name).join(", ") ?? 'No Customer'}';
 
+                              List<String> words = shopName.split(' ');
+
+                              String formattedShopName;
+                              if (words.length > 4 || shopName.length > 15) {
+                                int charCount = 0;
+                                int splitIndex = 0;
+
+                                for (int i = 0; i < words.length; i++) {
+                                  charCount += words[i].length + (i > 0 ? 1 : 0); // include spaces
+                                  if (charCount > 15 || i == 4) {
+                                    splitIndex = i;
+                                    break;
+                                  }
+                                }
+
+                                formattedShopName =
+                                '${words.take(splitIndex).join(' ')}\n${words.skip(splitIndex).join(' ')}';
+                              } else {
+                                formattedShopName = shopName;
+                              }
+
+                              final type =
+                                  collection.collectionType ?? 'No Type';
+                              final amount = collection.totalAmount.toString();
                               return Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text('${index + 1}'), // SI NO
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${collection.customer?.map((customer) => customer.name).join(", ") ?? 'No Customer'}',
-                                        overflow: TextOverflow.ellipsis,
+                                  SizedBox(
+                                      width: 60, child: Text('${index + 1}')),
+                                  Expanded(
+                                    flex: 6,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        formattedShopName,
+                                          textAlign: TextAlign.left,
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          '${collection.collectionType ?? 'No Type'}'), // TYPE
-                                    ],
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(type),
                                   ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          '${collection.totalAmount.toString()}'), // Amount
-                                    ],
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      amount,
+                                      textAlign: TextAlign.end,
+                                    ),
                                   ),
                                 ],
                               );
                             },
                           ),
+
                           // Total Row
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0),
@@ -1169,10 +1242,10 @@ class _DayReportState extends State<DayReport> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  'Total: ${totalCollectionsFormatted}',
+                                  'Total: $totalCollectionsFormatted',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 16),
+                                      fontSize: 13),
                                 ),
                               ],
                             ),
@@ -1200,11 +1273,12 @@ class _DayReportState extends State<DayReport> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               SizedBox(
-                                width: 40, // Fixed width for SI NO
+                                width: AppConfig.textSubTitleSize,
                                 child: Text(
                                   'SI NO',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
@@ -1212,7 +1286,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'EXPENSE NAME',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Flexible(
@@ -1220,7 +1295,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'Reference',
                                   textAlign: TextAlign.left,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                               Expanded(
@@ -1228,7 +1304,8 @@ class _DayReportState extends State<DayReport> {
                                 child: Text(
                                   'Amount',
                                   textAlign: TextAlign.right,
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  style: TextStyle(fontWeight: FontWeight.w600,
+                                      fontSize: AppConfig.text3Sizepre),
                                 ),
                               ),
                             ],
@@ -1243,6 +1320,8 @@ class _DayReportState extends State<DayReport> {
                             itemCount: expenses.length,
                             itemBuilder: (context, index) {
                               final expense = expenses[index];
+                              print(
+                                  "NetBamlance${report.data!.netCashBalance}");
                               String expenseName =
                                   '${expense.expense?.map((exp) => exp.name).join(", ") ?? 'No Expense'}';
 
@@ -1262,7 +1341,7 @@ class _DayReportState extends State<DayReport> {
                                       flex: 6, // Fixed width for EXPENSE NAME
                                       child: Text(
                                         expenseName, // EXPENSE NAME
-                                        textAlign: TextAlign.center,
+                                        textAlign: TextAlign.left,
                                       ),
                                     ),
                                     Flexible(
@@ -1293,7 +1372,7 @@ class _DayReportState extends State<DayReport> {
                                   'Total: $totalExpenseFormated',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 16),
+                                      fontSize: 13),
                                 ),
                               ],
                             ),
@@ -1313,7 +1392,9 @@ class _DayReportState extends State<DayReport> {
                           'Net Cash Balance',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        Text(netCashBalance.toStringAsFixed(2)),
+                        Text(
+                          report.data!.netCashBalance!.toStringAsFixed(2),
+                        )
                       ],
                     )
                   ],

@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart' as btp;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as ble;
 
 class PrinterTest extends StatefulWidget {
   @override
@@ -8,26 +10,36 @@ class PrinterTest extends StatefulWidget {
 }
 
 class _PrinterTestState extends State<PrinterTest> {
-  BlueThermalPrinter printer = BlueThermalPrinter.instance;
-  List<BluetoothDevice> _devices = [];
-  BluetoothDevice? _selectedDevice;
+  // Android Printer
+  btp.BlueThermalPrinter androidPrinter = btp.BlueThermalPrinter.instance;
+  List<btp.BluetoothDevice> _androidDevices = [];
+  btp.BluetoothDevice? _selectedAndroidDevice;
+
+  // iOS BLE
+  List<ble.BluetoothDevice> _iosDevices = [];
+  ble.BluetoothDevice? _selectedIosDevice;
 
   @override
   void initState() {
     super.initState();
-    _loadSelectedDevice();
-    _getBluetoothDevices();
+    if (Platform.isAndroid) {
+      _loadSelectedAndroidDevice();
+      _getAndroidDevices();
+    } else if (Platform.isIOS) {
+      _getIosDevices();
+    }
   }
 
-  void _loadSelectedDevice() async {
+  // Load selected device for Android
+  void _loadSelectedAndroidDevice() async {
     final prefs = await SharedPreferences.getInstance();
     final savedDeviceAddress = prefs.getString('selected_device_address');
 
     if (savedDeviceAddress != null && savedDeviceAddress.isNotEmpty) {
-      List<BluetoothDevice> devices = await printer.getBondedDevices();
-      BluetoothDevice? deviceToSelect;
+      List<btp.BluetoothDevice> devices = await androidPrinter.getBondedDevices();
+      btp.BluetoothDevice? deviceToSelect;
 
-      for (BluetoothDevice device in devices) {
+      for (btp.BluetoothDevice device in devices) {
         if (device.address == savedDeviceAddress) {
           deviceToSelect = device;
           break;
@@ -35,250 +47,86 @@ class _PrinterTestState extends State<PrinterTest> {
       }
 
       setState(() {
-        _devices = devices;
-        _selectedDevice = deviceToSelect;
+        _androidDevices = devices;
+        _selectedAndroidDevice = deviceToSelect;
       });
     }
   }
 
-  void _getBluetoothDevices() async {
-    List<BluetoothDevice> devices = await printer.getBondedDevices();
+  void _getAndroidDevices() async {
+    List<btp.BluetoothDevice> devices = await androidPrinter.getBondedDevices();
     setState(() {
-      _devices = devices;
+      _androidDevices = devices;
     });
   }
 
-  void _onDeviceSelected(BluetoothDevice device) async {
-    setState(() {
-      _selectedDevice = device;
+  void _getIosDevices() async {
+    _iosDevices.clear();
+    setState(() {});
+    await ble.FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+    ble.FlutterBluePlus.scanResults.listen((List<ble.ScanResult> results) {
+      setState(() {
+        _iosDevices = results.map((r) => r.device).toList();
+      });
     });
+  }
 
-    // Save the selected device's address to SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_device_address', device.address ?? '');
 
-    // Optionally show a snackbar or other UI feedback
+  // Select device
+  void _onDeviceSelected(dynamic device) async {
+    if (device is btp.BluetoothDevice) {
+      // Android device selection
+      setState(() {
+        _selectedAndroidDevice = device;
+      });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('selected_device_address', device.address ?? '');
+    } else if (device is ble.BluetoothDevice) {
+      // iOS device selection
+      setState(() {
+        _selectedIosDevice = device;
+      });
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Selected device saved: ${device.address}')),
+      SnackBar(content: Text('Selected device: ${device.name}')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Bluetooth Devices'),
-      ),
-      body: _devices.isEmpty
-          ? Center(child: Text('No devices found'))
+      appBar: AppBar(title: Text('Bluetooth Devices')),
+      body: Platform.isAndroid
+          ? _androidDevices.isEmpty
+          ? Center(child: Text('No Bluetooth devices found'))
           : ListView.builder(
-              itemCount: _devices.length,
-              itemBuilder: (context, index) {
-                final device = _devices[index];
-                return ListTile(
-                  title: Text(device.name ?? 'Unnamed Device'),
-                  trailing: _selectedDevice == device
-                      ? Icon(Icons.check, color: Colors.green)
-                      : null,
-                  onTap: () => _onDeviceSelected(device),
-                );
-              },
-            ),
+        itemCount: _androidDevices.length,
+        itemBuilder: (context, index) {
+          final device = _androidDevices[index];
+          return ListTile(
+            title: Text(device.name ?? 'Unnamed Device'),
+            trailing: _selectedAndroidDevice == device
+                ? Icon(Icons.check, color: Colors.green)
+                : null,
+            onTap: () => _onDeviceSelected(device),
+          );
+        },
+      )
+          : _iosDevices.isEmpty
+          ? Center(child: Text('No BLE printers found'))
+          : ListView.builder(
+        itemCount: _iosDevices.length,
+        itemBuilder: (context, index) {
+          final device = _iosDevices[index];
+          return ListTile(
+            title: Text(device.name ?? 'Unnamed BLE Device'),
+            trailing: _selectedIosDevice == device
+                ? Icon(Icons.check, color: Colors.green)
+                : null,
+            onTap: () => _onDeviceSelected(device),
+          );
+        },
+      ),
     );
   }
 }
-// import 'dart:convert';
-// import 'dart:typed_data';
-// import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:blue_thermal_printer/blue_thermal_printer.dart';
-//
-// class PrinterTest extends StatefulWidget {
-//   @override
-//   _PrinterTestState createState() => _PrinterTestState();
-// }
-//
-// class _PrinterTestState extends State<PrinterTest> {
-//   BlueThermalPrinter printer = BlueThermalPrinter.instance;
-//   List<BluetoothDevice> _devices = [];
-//   BluetoothDevice? _selectedDevice;
-//   bool _connected = false;
-//
-//   // Default Bluetooth device address
-//   final String _defaultDeviceAddress = "00:13:7B:09:DC:E7";
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _initPrinter();
-//   }
-//
-//   void _initPrinter() async {
-//     bool? isConnected = await printer.isConnected;
-//     if (isConnected!) {
-//       setState(() {
-//         _connected = true;
-//       });
-//     }
-//     _getBluetoothDevices();
-//   }
-//
-//   void _getBluetoothDevices() async {
-//     List<BluetoothDevice> devices = await printer.getBondedDevices();
-//     BluetoothDevice? defaultDevice;
-//
-//     for (BluetoothDevice device in devices) {
-//       if (device.address == _defaultDeviceAddress) {
-//         defaultDevice = device;
-//         break;
-//       }
-//     }
-//
-//     setState(() {
-//       _devices = devices;
-//       _selectedDevice = defaultDevice;
-//     });
-//   }
-//
-//   Future<void> _connect() async {
-//     if (_selectedDevice != null) {
-//       await printer.connect(_selectedDevice!);
-//       setState(() {
-//         _connected = true;
-//       });
-//     }
-//   }
-//
-//   void _disconnect() async {
-//     await printer.disconnect();
-//     setState(() {
-//       _connected = false;
-//     });
-//   }
-//
-//   Future<String> _getImageData(String imageUrl) async {
-//     http.Response response = await http.get(Uri.parse(imageUrl));
-//     Uint8List bytes = response.bodyBytes;
-//     return base64Encode(bytes);
-//   }
-//
-//   void _print() async {
-//     if (_connected) {
-//       // Example data
-//       String companyName = "Testing Company";
-//       String companyAddress = "null";
-//       String companyTRN = "TRN: hhd672653ugdb";
-//       String customerName = "null | fresh Store";
-//       String customerEmail = "freshst@gmail.com";
-//       String customerContact = "215128758";
-//       String customerTRN = "hhd672653ugdb";
-//       String invoiceNumber = "SI0037";
-//       String invoiceDate = "03 July 2024";
-//       String dueDate = "03 July 2024";
-//       String productDescription =
-//           "Samsung Galaxy S24 Ultra 5G AI Smartphone (Titanium Gray, 12GB, 512GB Storage)";
-//       String productRate = "100";
-//       String productQty = "1";
-//       String productTotal = "100";
-//       String tax = "10";
-//       String grandTotal = "110";
-//       String amountInWords = "ONE HUNDRED TEN";
-//       String van = "VAN10";
-//       String salesman = "tcsalex";
-//
-//       // Print company logo
-//       String imageUrl =
-//           "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRQ0HqT9dk3DeLLbBHebie1wSK7HYWCudOCw&s";
-//       String imageData = await _getImageData(imageUrl);
-//       printer.printImage(imageData);
-//
-//       // Print company details
-//       printer.printNewLine();
-//       printer.printCustom(companyName, 3, 1);
-//       printer.printCustom(companyAddress, 1, 1);
-//       printer.printCustom(companyTRN, 1, 1);
-//       printer.printNewLine();
-//       printer.printCustom(
-//           "------------------------------------------------", 1, 0);
-//       // Print customer details
-//       printer.printCustom("Customer: $customerName", 1, 0);
-//       printer.printCustom("Email: $customerEmail", 1, 0);
-//       printer.printCustom("Contact No: $customerContact", 1, 0);
-//       printer.printCustom("TRN: $customerTRN", 1, 0);
-//       printer.printNewLine();
-//
-//       // Print invoice details
-//       printer.printCustom("Invoice No: $invoiceNumber", 1, 2);
-//       printer.printCustom("Date: $invoiceDate", 1, 2);
-//       printer.printCustom("Due Date: $dueDate", 1, 2);
-//       printer.printNewLine();
-//       printer.printCustom(
-//           "------------------------------------------------", 1, 0);
-//       // Print product details
-//       printer.printCustom("S.No  Product Unit  Rate  Qty  Tax  Amount", 1, 0);
-//       printer.printCustom(
-//           "1     $productDescription PCS   $productRate   $productQty   $tax   $productTotal",
-//           1,
-//           0);
-//       printer.printCustom(
-//           "------------------------------------------------", 1, 0);
-//       // printer.printCustom("Unit  Rate  Qty  Tax  Amount", 1, 0);
-//       // printer.printCustom(
-//       //     "PCS   $productRate   $productQty   $tax   $productTotal", 1, 0);
-//       printer.printNewLine();
-//
-//       // Print totals
-//       printer.printCustom("Total: $productTotal", 1, 2);
-//       printer.printCustom("Tax: $tax", 1, 2);
-//       printer.printCustom("Grand Total: $grandTotal", 1, 2);
-//       printer.printNewLine();
-//
-//       // Print amount in words
-//       printer.printCustom("Amount in Words: $amountInWords", 1, 0);
-//       printer.printNewLine();
-//
-//       // Print van and salesman details
-//       printer.printCustom("Van: $van", 1, 0);
-//       printer.printCustom("Salesman: $salesman", 1, 0);
-//       printer.printNewLine();
-//
-//       // Cut the paper
-//       printer.paperCut();
-//     } else {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Printer not connected')),
-//       );
-//     }
-//   }
-//
-//   void _connectAndPrint() async {
-//     if (_selectedDevice == null) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Default device not found')),
-//       );
-//       return;
-//     }
-//     if (!_connected) {
-//       await _connect();
-//     }
-//     _print();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Bluetooth Printer Demo'),
-//       ),
-//       body: Column(
-//         children: [
-//           SizedBox(height: 20),
-//           ElevatedButton(
-//             onPressed: _connectAndPrint,
-//             child: Text('Connect and Print using Default Device'),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

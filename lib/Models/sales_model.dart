@@ -146,7 +146,7 @@ class Units {
   final String name;
   final double price;
   final double minPrice;
-  final int stock;
+  final num stock; // Changed to `num` to handle both int and double
 
   Units({
     required this.unit,
@@ -164,7 +164,7 @@ class Units {
       name: json['name'] ?? '',
       price: double.tryParse(json['price'].toString()) ?? 0.0,
       minPrice: double.tryParse(json['min_price'].toString()) ?? 0.0,
-      stock: int.tryParse(json['stock'].toString()) ?? 0,
+      stock: num.tryParse(json['stock'].toString()) ?? 0, // Handles both int and double
     );
   }
 
@@ -175,10 +175,11 @@ class Units {
       'name': name,
       'price': price.toString(),
       'min_price': minPrice.toString(),
-      'stock': stock,
+      'stock': stock, // Keeps the original type (int or double)
     };
   }
 }
+
 
 class Link {
   final String? url;

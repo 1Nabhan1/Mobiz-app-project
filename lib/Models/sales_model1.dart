@@ -47,14 +47,14 @@ class Unit {
   final String name;
   final String price;
   final String minPrice;
-  final int? stock;
+  final num stock;
 
   Unit({
     required this.id,
     required this.name,
     required this.price,
     required this.minPrice,
-    this.stock,
+    required this.stock,
   });
 
   factory Unit.fromJson(Map<String, dynamic> json) {
@@ -63,7 +63,7 @@ class Unit {
       name: json['name'],
       price: json['price'],
       minPrice: json['min_price']??'',
-      stock: json['stock'],
+      stock: num.tryParse(json['stock'].toString()) ?? 0, // Handles both int and double
     );
   }
 }

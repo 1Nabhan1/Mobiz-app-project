@@ -100,17 +100,21 @@ class Settings {
   String? discountState;
   String? soValQtyState;
   String? attendanceState;
+  String? qtySalesvalidate;
   String? printer;
   Settings(
       {this.discountState,
       this.soValQtyState,
       this.vatState,
-      this.attendanceState});
+      this.attendanceState,
+      this.printer,
+      this.qtySalesvalidate});
   Settings.fromJson(Map<String, dynamic> json) {
     vatState = json['vat_no_vat'];
     soValQtyState = json['validate_qty_in_so'];
     discountState = json['discount'];
     attendanceState = json['attendance'];
+    qtySalesvalidate = json['validate_qty_in_sales'];
     printer = json['printer'];
   }
 }

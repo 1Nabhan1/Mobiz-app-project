@@ -98,7 +98,7 @@ class _SOAState extends State<SOA> {
   // }
   void sortDataByDate(List<List<dynamic>> data) {
     data.sort((a, b) {
-      DateTime dateA = DateTime.parse(a[0]); // Assuming date is in 'yyyy-MM-dd' format
+      DateTime dateA = DateTime.parse(a[0]);
       DateTime dateB = DateTime.parse(b[0]);
       return dateA.compareTo(dateB);
     });
@@ -136,27 +136,35 @@ class _SOAState extends State<SOA> {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Center(
-                    child: pw.Column(
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Center(
-                          child: pw.Image(
-                            pw.MemoryImage(logoBytes),
-                            height: 100,
-                            width: 100,
-                            fit: pw.BoxFit.cover,
-                          ),
+                        pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                storeDetail.name,
+                                style: pw.TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                              if (storeDetail.address != null)
+                                pw.Text(storeDetail.address!),
+                              if (storeDetail.trn != null)
+                                pw.Text('TRN: ${storeDetail.trn}'),
+                            ]
                         ),
-                        pw.Text(
-                          storeDetail.name,
-                          style: pw.TextStyle(
-                            fontSize: 18,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
+                        pw.Column(
+                          children: [
+                            pw.Image(
+                              pw.MemoryImage(logoBytes),
+                              height: 100,
+                              width: 150,
+                              fit: pw.BoxFit.fitWidth,
+                            ),
+                          ]
                         ),
-                        if (storeDetail.address != null)
-                          pw.Text(storeDetail.address!),
-                        if (storeDetail.trn != null)
-                          pw.Text('TRN: ${storeDetail.trn}'),
                       ],
                     ),
                   ),
@@ -526,6 +534,12 @@ class _SOAState extends State<SOA> {
               final data = snapshot.data!.data;
               final opening = snapshot.data!.opening;
               var closing = snapshot.data!.closing;
+              double balanceDue = 0;
+              for (var item in data) {
+                if (item is List && item.length > 4) {
+                  balanceDue += double.tryParse(item[4].toString()) ?? 0;
+                }
+                print(double.tryParse(item[4].toString()));              }
               sortDataByDate(data);
 
               return SingleChildScrollView(
@@ -869,6 +883,8 @@ class _SOAState extends State<SOA> {
                                   double payment = row[3] != null
                                       ? double.parse(row[3].toString())
                                       : 0.0;
+                                  // double babalance = row[5] != null
+                                  // ? double.parse(row[5].toString()):0.0;
                                   // Adjust the balance
                                   balance += amount;
                                   balance -= payment;
@@ -923,7 +939,7 @@ class _SOAState extends State<SOA> {
                                             Padding(
                                               padding: EdgeInsets.all(6.0),
                                               child: Text(
-                                                balance.toStringAsFixed(2),
+                                                row[4].toString(),
                                                 style: TextStyle(fontSize: 13),
                                               ),
                                             ),
@@ -945,7 +961,7 @@ class _SOAState extends State<SOA> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Text(
-                                    "Balance Due:${closing.toStringAsFixed(2)}",
+                                    "Balance Due: ${balanceDue.toStringAsFixed(2)}",
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1058,6 +1074,8 @@ class _SOAState extends State<SOA> {
                                     double payment = data[i][3] != null
                                         ? double.parse(data[i][3].toString())
                                         : 0.0;
+                                    // double babalance = data[i][5] != null
+                                    //     ? double.parse(data[i][5].toString()):0.0;
                                     balance += amount;
                                     balance -= payment;
                                   }
@@ -1163,7 +1181,7 @@ class _SOAState extends State<SOA> {
                                             Padding(
                                               padding: EdgeInsets.all(6.0),
                                               child: Text(
-                                                balance.toStringAsFixed(2),
+                                                row[4].toString(),
                                                 style: TextStyle(fontSize: 13),
                                               ),
                                             ),
@@ -1185,7 +1203,7 @@ class _SOAState extends State<SOA> {
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Text(
-                                    "Balance Due:${closing.toStringAsFixed(2)}",
+                                    "Balance Due: ${balanceDue.toStringAsFixed(2)}",
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),

@@ -23,10 +23,12 @@ class _ExpensespageState extends State<Expensespage> {
   bool _hasMore = true;
   late List<bool> isExpandedList = [];
   final ScrollController _scrollController = ScrollController();
+  int _pendingExpensesCount = 0;
 
   @override
   void initState() {
     super.initState();
+    // _fetchPendingExpenses();
     _fetchExpenses();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
@@ -37,6 +39,41 @@ class _ExpensespageState extends State<Expensespage> {
       }
     });
   }
+
+  // Future<void> _fetchPendingExpenses() async {
+  //   final url = "${RestDatasource().BASE_URL}/api/get_pending_expense?store_id=${AppState().storeId}";
+  //
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+  //     if (response.statusCode == 200) {
+  //       final jsonData = json.decode(response.body);
+  //       final pendingExpenses = jsonData['data'] as int;
+  //
+  //       setState(() {
+  //         _pendingExpensesCount = pendingExpenses;
+  //       });
+  //
+  //       if (_pendingExpensesCount == 0) {
+  //         Navigator.push(
+  //           context,
+  //           MaterialPageRoute(builder: (context) => ExpenseAdd()),
+  //         );
+  //       } else {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(
+  //             content: Text(
+  //                 "$_pendingExpensesCount number of expenses are pending to be approved"),
+  //             duration: Duration(seconds: 3),
+  //           ),
+  //         );
+  //       }
+  //     } else {
+  //       throw Exception("Failed to load pending expenses");
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching pending expenses: $e");
+  //   }
+  // }
 
   Future<void> _fetchExpenses() async {
     if (_isLoading || !_hasMore) return;
@@ -108,15 +145,27 @@ class _ExpensespageState extends State<Expensespage> {
             padding: const EdgeInsets.only(right: 10.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => ExpenseAdd()));
+                // if (_pendingExpensesCount == 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ExpenseAdd()),
+                  );
+                // } else {
+                //   ScaffoldMessenger.of(context).showSnackBar(
+                //     SnackBar(
+                //       content: Text(
+                //           "$_pendingExpensesCount number of expenses are pending to be approved"),
+                //       duration: Duration(seconds: 3),
+                //     ),
+                //   );
+                // }
               },
               child: Icon(
                 Icons.add,
                 color: Colors.white,
               ),
             ),
-          )
+          ),
         ],
       ),
       body:  _expenses.isEmpty && _isLoading

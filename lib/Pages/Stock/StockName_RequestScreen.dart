@@ -209,6 +209,54 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
   }
 
   Widget _requestsTab(int index, StockData data) {
+    Future<void> saveCompleteData() async {
+      final url = Uri.parse('${RestDatasource().BASE_URL}/api/stock-take.complete');
+      final headers = {"Content-Type": "application/json"};
+
+      final body = jsonEncode({
+        'id': data.id,
+        'store_id': AppState().storeId
+      });
+
+      try {
+        final response = await http.post(url, headers: headers, body: body);
+        print(dataId);
+
+        if (response.statusCode == 200) {
+          print(response.body);
+          print(body);
+
+          // Refresh the data after successful completion
+          await _getRequests();
+
+          if (mounted) {
+            // Option 1: Show a snackbar
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Completed successfully')),
+            );
+
+            // Option 2: Or show a dialog (choose one)
+            // CommonWidgets.showDialogueBox(
+            //   context: context,
+            //   title: "Success",
+            //   msg: "Completed successfully",
+            // );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to complete: ${response.body}')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
     return Card(
       elevation: 3,
       child: Container(
@@ -329,7 +377,7 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
                             Row(
                               children: [
                                 Text(
-                                  '${data.detail![i].unit}: ${data.detail![i].approvedQuantity} | ${data.detail![i].productType == null ? 'Normal' : data.detail![i].productType}',
+                                  '${data.detail![i].unit}: ${data.detail![i].quantity} | ${data.detail![i].productType == null ? 'Normal' : data.detail![i].productType}',
                                   style: TextStyle(
                                     fontSize: AppConfig.textCaption3Size,
                                     fontWeight: AppConfig.headLineWeight,
@@ -364,7 +412,9 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
                                 fixedSize: WidgetStatePropertyAll(Size(
                                     SizeConfig.blockSizeHorizontal * 30,
                                     SizeConfig.blockSizeVertical * 3))),
-                            onPressed: () {},
+                            onPressed: () {
+                              saveCompleteData();
+                            },
                             child: Text(
                               'Complete',
                               style: TextStyle(color: Colors.white),
@@ -386,6 +436,7 @@ class _StockName_RequestScreenState extends State<StockName_RequestScreen> {
         AppState().token);
 
     if (resJson['data'] != null) {
+      print(request);
       request = StockResponse.fromJson(resJson);
       if (mounted) {
         setState(

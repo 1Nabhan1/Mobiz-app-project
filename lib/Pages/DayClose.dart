@@ -33,7 +33,7 @@ TextEditingController ChequeHandedOverAmountcontrol = TextEditingController();
 
 class _DaycloseState extends State<Dayclose> {
   late Future<Map<String, dynamic>> futureData;
-  String formattedDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
+  String formattedDate = DateFormat('dd/MM/yyyy', 'en_US').format(DateTime.now());
   String cashdeposit = '0';
   String cashHanded = '0';
   String Ncheqdepo = '0';
@@ -45,17 +45,49 @@ class _DaycloseState extends State<Dayclose> {
   String amtinhand = '';
   // var selectedDate = DateTime.now();
   var selectedDate = DateTime.now();
+  bool isPending = false;
+  bool _isPosting = false;
+  int _pendingExpensesCount = 0;
 
   Random random = Random();
   @override
   void initState() {
     super.initState();
+    _fetchPendingExpenses();
     fetchData();
     futureData = fetchDayCloseOutstanding();
+    fetchPendingStatus().then((status) {
+      setState(() {
+        isPending = status;
+      });
+      if (isPending && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pending approvals found'),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
   }
 
   bool isdayclose = false;
   Map<String, dynamic>? Dayclosedata;
+
+
+  Future<bool> fetchPendingStatus() async {
+    var apiUrl = '${RestDatasource().BASE_URL}/api/get_dayclose_user_pending?user_id=${AppState().userId}&store_id=${AppState().storeId}';
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      print(response.request);
+      final data = jsonDecode(response.body);
+      return data['data'] == 'pending'; // Adjust this based on the actual response structure
+    } else {
+      throw Exception('Failed to load pending status');
+    }
+  }
 
   void fetchData() async {
     try {
@@ -71,10 +103,11 @@ class _DaycloseState extends State<Dayclose> {
   Future<Map<String, dynamic>> fetchDayclose() async {
     var apiUrl =
         // '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}&user_id=${AppState().userId}';
-        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&user_id=${AppState().userId}';
+        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding_by_date?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=$formattedDate';
     final response = await http.get(Uri.parse(apiUrl));
 
     if (response.statusCode == 200) {
+      print(response.request);
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to load data');
@@ -138,12 +171,12 @@ class _DaycloseState extends State<Dayclose> {
               return Text('Error: ${snapshot.error}');
             } else if (snapshot.hasData) {
               final data = snapshot.data!['data'];
-              void postData() async {
+              Future<bool> postData() async {
                 var url = '${RestDatasource().BASE_URL}/api/dayclose.store';
 
                 var Data = {
                   "expense": data['expense'],
-                  "petty_cash":data['petty_cash'],
+                  "petty_cash": data['petty_cash'],
                   "in_date": formattedDate,
                   "store_id": AppState().storeId,
                   "van_id": AppState().vanId,
@@ -161,10 +194,8 @@ class _DaycloseState extends State<Dayclose> {
                   "collection_cash_amount": data['collection_cash'],
                   "collection_cheque_amount": data['collection_cheque'],
                   "last_day_balance_amount": data['last_day_balance_amount'],
-                  "last_day_balance_no_of_cheque":
-                      data['last_day_balance_no_of_cheque'],
-                  "last_day_balance_cheque_amount":
-                      data['last_day_balance_cheque_amount'],
+                  "last_day_balance_no_of_cheque": data['last_day_balance_no_of_cheque'],
+                  "last_day_balance_cheque_amount": data['last_day_balance_cheque_amount'],
                   "cash_deposited": cashdeposit,
                   "cash_hand_over": cashHanded,
                   "no_of_cheque_deposited": Ncheqdepo,
@@ -176,24 +207,26 @@ class _DaycloseState extends State<Dayclose> {
                   "cheque_amount_in_hand": amtinhand,
                   "collection_no_of_cheque": data['collection_no_cheque']
                 };
+                try {
+                  var response = await http.post(
+                    Uri.parse(url),
+                    headers: <String, String>{
+                      'Content-Type': 'application/json; charset=UTF-8',
+                    },
+                    body: jsonEncode(Data),
+                  );
 
-                var response = await http.post(
-                  Uri.parse(url),
-                  headers: <String, String>{
-                    'Content-Type': 'application/json; charset=UTF-8',
-                  },
-                  body: jsonEncode(Data),
-                );
+                  if (response.statusCode == 200) {
+                    print('Data posted successfully');
+                    if (mounted) {
+                      await CommonWidgets.showDialogueBox(
+                        context: context,
+                        title: "",
+                        msg: "Data Inserted Successfully",
+                      );
 
-                if (response.statusCode == 200) {
-                  if (mounted) {
-                    CommonWidgets.showDialogueBox(
-                      context: context,
-                      title: "",
-                      msg: "Data Inserted Successfully",
-                    ).then((value) {
-                      // Clear displayed data after dialog dismissal
                       setState(() {
+                        // clear input values
                         cashdeposit = '';
                         cashHanded = '';
                         Ncheqdepo = '';
@@ -209,16 +242,25 @@ class _DaycloseState extends State<Dayclose> {
                         ChequeHandedOverAmountcontrol.clear();
                       });
 
-                      // Navigate to the HomeScreen after clearing data
                       Navigator.pushNamed(context, HomeScreen.routeName);
-                    });
+                    }
+                    return true; // ✅ success
+                  } else {
+                    print('Failed to post data');
+                    print('Response status: ${response.statusCode}');
+                    print('Response body: ${response.body}');
+                    return false; // ❌ fail
                   }
-                  print('Data posted successfully');
-                  print('Response: ${response.body}');
-                } else {
-                  print('Failed to post data');
-                  print('Response status: ${response.statusCode}');
-                  print('Response body: ${response.body}');
+                } catch (e) {
+                  print("Error: $e");
+                  if (mounted) {
+                    CommonWidgets.showDialogueBox(
+                      context: context,
+                      title: "Error",
+                      msg: "Something went wrong. Please try again.",
+                    );
+                  }
+                  return false; // ❌ fail
                 }
               }
               if (cashdeposit.isNotEmpty && cashHanded.isNotEmpty) {
@@ -251,110 +293,123 @@ class _DaycloseState extends State<Dayclose> {
                         double.parse(cheqhandedamt)))
                     .toString();
               }
-              Future<void> _showDialog(
-                  TextEditingController control, String field) async {
+              Future<void> _showDialog(TextEditingController control, String field,String title) async {
                 String? dialogValue = await showDialog<String>(
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      title: Text('Enter a value'),
+                      title: Text('$title'),
                       content: TextField(
                         keyboardType: TextInputType.number,
                         controller: control,
-                        decoration: InputDecoration(hintText: "Enter here"),
+                        decoration: const InputDecoration(hintText: "Enter here"),
                       ),
                       actions: <Widget>[
                         TextButton(
                           style: TextButton.styleFrom(
-                            fixedSize: Size(100, 10),
+                            fixedSize: const Size(100, 10),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(3)),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                             backgroundColor: AppConfig.colorPrimary,
                           ),
                           onPressed: () {
-                            double? enteredValue = double.tryParse(control.text);
-                            if ((field == 'cheqdepoamt') &&
-                                enteredValue != null) {
-                              // Perform validation
-                              double maxAllowedValue =
-                              field == 'cheqdepoamt' && Dayclosedata != null
-                                  ? double.tryParse(
-                                  Dayclosedata!['cheque_amount_in_hand']
-                                      ?.toString() ??
-                                      '0') ??
-                                  0.0
-                                  : 0.0;
+                            // Validate input first
+                            final enteredValue = double.tryParse(control.text);
+
+                            if (enteredValue == null || enteredValue < 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please enter a valid positive number"),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                              return;
+                            }
+
+                            // Field-specific validations
+                            if (field == 'cheqdepoamt') {
+                              double amtssinhand = ((data['collection_cheque'] as num).toDouble() +
+                                  (data['last_day_balance_cheque_amount'] as num).toDouble()) -
+                                  ((num.tryParse(cheqdepo) ?? 0) + (num.tryParse(cheqhandedamt) ?? 0));
+
+                              final maxAllowedValue = Dayclosedata != null
+                                  ? double.tryParse(Dayclosedata!['cheque_amount_in_hand']?.toString() ?? '0') ?? 0.0
+                                  : amtssinhand;
 
                               if (enteredValue > maxAllowedValue) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(
-                                        "Value cannot exceed $maxAllowedValue."),
-                                    duration: Duration(seconds: 2),
+                                    content: Text("Value cannot exceed $maxAllowedValue."),
+                                    duration: const Duration(seconds: 2),
                                   ),
                                 );
-                                return; // Prevent closing the dialog
+                                return;
                               }
                             }
 
-                            int? enteredValue1 = int.tryParse(control.text);
-                            if (field == 'cheqhandedovr' && enteredValue1 != null) {
-                              // Perform validation for number of cheques deposited
-                              int maxChequesInHand = Dayclosedata != null
-                                  ? int.tryParse(Dayclosedata!['no_of_cheque_in_hand']
-                                  ?.toString() ??
-                                  '0') ??
-                                  0
-                                  : 0;
+                            // Cheque count validation
+                            if (field == 'Ncheqdepo' || field == 'cheqhandedovr') {
+                              final chequeInHand = isdayclose == false
+                                  ? Dayclosedata == null
+                                  ? '0'
+                                  : "${Dayclosedata!['no_of_cheque_in_hand']}"
+                                  : cheqhand;
 
-                              if (enteredValue1 > maxChequesInHand) {
+                              final chequeInHandValue = double.tryParse(chequeInHand) ?? 0;
+                              double currentDeposited = double.tryParse(Ncheqdepo) ?? 0;
+                              double currentHandedOver = double.tryParse(cheqhandedovr) ?? 0;
+
+                              if (field == 'Ncheqdepo') {
+                                currentDeposited = enteredValue;
+                              } else if (field == 'cheqhandedovr') {
+                                currentHandedOver = enteredValue;
+                              }
+
+                              if ((currentDeposited + currentHandedOver) > chequeInHandValue) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(
-                                        "Number of cheques handedOver cannot exceed $maxChequesInHand."),
-                                    duration: Duration(seconds: 2),
+                                    content: Text("Total cheques cannot exceed available cheques in hand $chequeInHandValue"),
+                                    duration: const Duration(seconds: 3),
                                   ),
                                 );
-                                return; // Prevent closing the dialog
+                                return;
                               }
                             }
-                            Navigator.of(context).pop(control.text); // Return the value
+
+                            Navigator.of(context).pop(control.text);
                           },
-                          child: Text('OK',
-                              style: TextStyle(color: AppConfig.backgroundColor)),
+                          child: Text('OK', style: TextStyle(color: AppConfig.backgroundColor)),
                         ),
                       ],
                     );
                   },
                 );
 
+                // Update state if value entered
                 if (dialogValue != null) {
                   setState(() {
                     switch (field) {
-                      case 'cashdeposit':
-                        cashdeposit = dialogValue;
-                        break;
-                      case 'cashHanded':
-                        cashHanded = dialogValue;
-                        break;
-                      case 'Ncheqdepo':
-                        Ncheqdepo = dialogValue;
-                        break;
-                      case 'cheqdepoamt':
-                        cheqdepo = dialogValue;
-                        break;
-                      case 'cheqhandedovr':
-                        cheqhandedovr = dialogValue;
-                        break;
-                      case 'cheqhandedamt':
-                        cheqhandedamt = dialogValue;
-                        break;
-                      default:
-                        break;
+                      case 'cashdeposit': cashdeposit = dialogValue; break;
+                      case 'cashHanded': cashHanded = dialogValue; break;
+                      case 'Ncheqdepo': Ncheqdepo = dialogValue; break;
+                      case 'cheqdepoamt': cheqdepo = dialogValue; break;
+                      case 'cheqhandedovr': cheqhandedovr = dialogValue; break;
+                      case 'cheqhandedamt': cheqhandedamt = dialogValue; break;
+                    }
+
+                    if (field == 'Ncheqdepo' || field == 'cheqhandedovr') {
+                      final collectionCheque = double.tryParse(Dayclosedata?['collection_no_cheque']?.toString() ?? '0') ?? 0;
+                      final lastDayBalanceCheque = double.tryParse(Dayclosedata?['last_day_balance_no_of_cheque']?.toString() ?? '0') ?? 0;
+                      final deposited = double.tryParse(Ncheqdepo) ?? 0;
+                      final handed = double.tryParse(cheqhandedovr) ?? 0;
+
+                      cheqhand = (collectionCheque + lastDayBalanceCheque - deposited - handed).toString();
                     }
                   });
                 }
               }
+
 
 
               return Scaffold(
@@ -365,76 +420,6 @@ class _DaycloseState extends State<Dayclose> {
                       SizedBox(
                         height: 10,
                       ),
-                      // GestureDetector(
-                      //   onLongPress: () async {
-                      //     DateTime? pickedDate = await showDatePicker(
-                      //       context: context,
-                      //       initialDate: selectedDate,
-                      //       firstDate: DateTime(2023, 12, 31),
-                      //       lastDate: DateTime(2028, 1, 31),
-                      //       builder: (context, child) {
-                      //         return Theme(
-                      //           data: Theme.of(context).copyWith(
-                      //             colorScheme: ColorScheme.light(
-                      //               primary: AppConfig
-                      //                   .colorPrimary, // header background color
-                      //               onPrimary:
-                      //                   Colors.white, // header text color
-                      //               onSurface: AppConfig
-                      //                   .colorPrimary, // body text color
-                      //             ),
-                      //             textButtonTheme: TextButtonThemeData(
-                      //               style: TextButton.styleFrom(
-                      //                 foregroundColor: Colors
-                      //                     .deepPurple, // button text color
-                      //               ),
-                      //             ),
-                      //           ),
-                      //           child: child!,
-                      //         );
-                      //       },
-                      //     );
-                      //     if (pickedDate != null) {
-                      //       setState(() {
-                      //         selectedDate = pickedDate;
-                      //       });
-                      //     }
-                      //   },
-                      //
-                      //   child: Padding(
-                      //     padding: const EdgeInsets.symmetric(horizontal: 8.0,),
-                      //     child: HorizontalWeekCalendar(
-                      //       key: ValueKey(
-                      //           selectedDate), // Use ValueKey to trigger rebuild
-                      //       minDate: DateTime(2023, 12, 31),
-                      //       maxDate: DateTime(2028, 1, 31),
-                      //       initialDate: selectedDate,
-                      //       onDateChange: (date) {
-                      //         setState(() {
-                      //           selectedDate = date;
-                      //           futureData;
-                      //           fetchData();
-                      //         });
-                      //       },
-                      //       showTopNavbar: false,
-                      //       monthFormat: "MMMM yyyy",
-                      //       showNavigationButtons: true,
-                      //       weekStartFrom: WeekStartFrom.Monday,
-                      //       borderRadius: BorderRadius.circular(7),
-                      //       activeBackgroundColor: AppConfig.colorPrimary,
-                      //       activeTextColor: Colors.white,
-                      //       inactiveBackgroundColor:
-                      //           Colors.deepPurple.withOpacity(.3),
-                      //       inactiveTextColor: Colors.white,
-                      //       disabledTextColor: Colors.grey,
-                      //       disabledBackgroundColor:
-                      //           Colors.grey.withOpacity(.3),
-                      //       activeNavigatorColor: Colors.deepPurple,
-                      //       inactiveNavigatorColor: Colors.grey,
-                      //       monthColor: AppConfig.colorPrimary,
-                      //     ),
-                      //   ),
-                      // ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 15.0, vertical: 20),
@@ -480,17 +465,6 @@ class _DaycloseState extends State<Dayclose> {
                                         style: TextStyle(color: Colors.grey))
                                   ]),
                             ),
-                            // RichText(
-                            //   text: TextSpan(
-                            //       text: 'Orders  ',
-                            //       style: TextStyle(color: Colors.black),
-                            //       children: [
-                            //         TextSpan(
-                            //             text:
-                            //                 '${data['no_of_sales_order']} | ${data['amount_of_sales_order']}',
-                            //             style: TextStyle(color: Colors.grey))
-                            //       ]),
-                            // ),
                             RichText(
                               text: TextSpan(
                                   text: 'Returns  ',
@@ -533,44 +507,44 @@ class _DaycloseState extends State<Dayclose> {
                             children: [
                               Text('Petty Cash'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Text('Expense'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Text('Cash Deposited'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Text('Cash Handed Over'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              Text('No of Cheque Deposited'),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // Text('No of Cheque Deposited'),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               Text('Cheque Deposited Amount'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              Text('No of Cheque Handed Over'),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // Text('No of Cheque Handed Over'),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               Text('Cheque Handed Over Amount'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Text('Balance Cash in Hand'),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              Text('No of Cheque in Hand'),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // Text('No of Cheque in Hand'),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               Text('Cheque Amount in Hand'),
                             ],
                           ),
@@ -579,35 +553,35 @@ class _DaycloseState extends State<Dayclose> {
                               Container(
                                 child:
                                 Center(child: Text("${data['petty_cash']}")),
-                                width: 70,
-                                height: 20,
+                                width: SizeConfig.safeBlockHorizontal!*17,
+                                height: SizeConfig.safeBlockVertical!*2.4,
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade300,
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Container(
                                 child:
                                     Center(child: Text("${data['expense']}")),
-                                width: 70,
-                                height: 20,
+                                width: SizeConfig.safeBlockHorizontal!*17,
+                                height: SizeConfig.safeBlockVertical!*2.4,
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade300,
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               GestureDetector(
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
                                         _showDialog(CashDepositedcontrol,
-                                            'cashdeposit');
+                                            'cashdeposit', 'Cash Deposited');
                                       },
                                 child: Container(
                                   child: Center(
@@ -616,22 +590,22 @@ class _DaycloseState extends State<Dayclose> {
                                               ? ''
                                               : Dayclosedata!['cash_deposited']
                                           : cashdeposit)),
-                                  width: 70,
-                                  height: 20,
+                                  width: SizeConfig.safeBlockHorizontal!*17,
+                                  height: SizeConfig.safeBlockVertical!*2.4,
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(3),
                                       border: Border.all(color: Colors.grey)),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               GestureDetector(
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
                                         _showDialog(CashHandedOvercontrol,
-                                            'cashHanded');
+                                            'cashHanded', 'Cash Handed Over');
                                       },
                                 child: Container(
                                   child: Center(
@@ -640,48 +614,54 @@ class _DaycloseState extends State<Dayclose> {
                                               ? ''
                                               : Dayclosedata!['cash_hand_over']
                                           : cashHanded)),
-                                  width: 70,
-                                  height: 20,
+                                  width: SizeConfig.safeBlockHorizontal!*17,
+                                  height: SizeConfig.safeBlockVertical!*2.4,
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(3),
                                       border: Border.all(color: Colors.grey)),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              GestureDetector(
-                                onTap: isdayclose == false
-                                    ? null
-                                    : () {
-                                        _showDialog(NoofChequeDepositedcontrol,
-                                            'Ncheqdepo');
-                                      },
-                                child: Container(
-                                  child: Center(
-                                      child: Text(isdayclose == false
-                                          ? Dayclosedata == null
-                                              ? ''
-                                              : "${Dayclosedata!['no_of_cheque_deposited']}"
-                                          : Ncheqdepo)),
-                                  width: 70,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      border: Border.all(color: Colors.grey)),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // GestureDetector(
+                              //   onTap: isdayclose == false
+                              //       ? null
+                              //       :
+                              //       () {
+                              //         print("Ncheqdepo$Ncheqdepo");
+                              //           _showDialog(NoofChequeDepositedcontrol,
+                              //               'Ncheqdepo');
+                              //           print(Ncheqdepo);
+                              //         },
+                              //   child: Container(
+                              //     child: Center(
+                              //         child: Text(isdayclose == false
+                              //             ? Dayclosedata == null
+                              //                 ? ''
+                              //                 : "${Dayclosedata!['no_of_cheque_deposited']}"
+                              //             : Ncheqdepo)),
+                              //     width: SizeConfig.safeBlockHorizontal!*17,
+                              //     height: SizeConfig.safeBlockVertical!*2.4,
+                              //     decoration: BoxDecoration(
+                              //         borderRadius: BorderRadius.circular(3),
+                              //         border: Border.all(color: Colors.grey)),
+                              //   ),
+                              // ),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               GestureDetector(
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
                                         _showDialog(
                                             ChequeDepositedAmountcontrol,
-                                            'cheqdepoamt');
-                                      },
+                                            'cheqdepoamt','Cheque Deposited Amount');
+                                        print(double.tryParse(
+                                            Dayclosedata?['cheque_amount_in_hand']?.toString() ?? '0'
+                                        ) ?? 0.0);
+                                },
                                 child: Container(
                                   child: Center(
                                       child: Text(isdayclose == false
@@ -690,47 +670,47 @@ class _DaycloseState extends State<Dayclose> {
                                               : Dayclosedata![
                                                   'cheque_deposited_amount']
                                           : cheqdepo)),
-                                  width: 70,
-                                  height: 20,
+                                  width: SizeConfig.safeBlockHorizontal!*17,
+                                  height: SizeConfig.safeBlockVertical!*2.4,
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(3),
                                       border: Border.all(color: Colors.grey)),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              GestureDetector(
-                                onTap: isdayclose == false
-                                    ? null
-                                    : () {
-                                        _showDialog(NoofChequeHandedOvercontrol,
-                                            'cheqhandedovr');
-                                      },
-                                child: Container(
-                                  child: Center(
-                                      child: Text(isdayclose == false
-                                          ? Dayclosedata == null
-                                              ? ''
-                                              : "${Dayclosedata!['no_of_cheque_hand_over']}"
-                                          : cheqhandedovr)),
-                                  width: 70,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      border: Border.all(color: Colors.grey)),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // GestureDetector(
+                              //   onTap: isdayclose == false
+                              //       ? null
+                              //       : () {
+                              //           _showDialog(NoofChequeHandedOvercontrol,
+                              //               'cheqhandedovr');
+                              //         },
+                              //   child: Container(
+                              //     child: Center(
+                              //         child: Text(isdayclose == false
+                              //             ? Dayclosedata == null
+                              //                 ? ''
+                              //                 : "${Dayclosedata!['no_of_cheque_hand_over']}"
+                              //             : cheqhandedovr)),
+                              //     width: SizeConfig.safeBlockHorizontal!*17,
+                              //     height: SizeConfig.safeBlockVertical!*2.4,
+                              //     decoration: BoxDecoration(
+                              //         borderRadius: BorderRadius.circular(3),
+                              //         border: Border.all(color: Colors.grey)),
+                              //   ),
+                              // ),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               GestureDetector(
                                 onTap: isdayclose == false
                                     ? null
                                     : () {
                                         _showDialog(
                                             ChequeHandedOverAmountcontrol,
-                                            'cheqhandedamt');
+                                            'cheqhandedamt', 'Cheque Handed Over Amount');
                                       },
                                 child: Container(
                                   child: Center(
@@ -740,15 +720,15 @@ class _DaycloseState extends State<Dayclose> {
                                               : Dayclosedata![
                                                   'cheque_hand_over_amount']
                                           : cheqhandedamt)),
-                                  width: 70,
-                                  height: 20,
+                                  width: SizeConfig.safeBlockHorizontal!*17,
+                                  height: SizeConfig.safeBlockVertical!*2.4,
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(3),
                                       border: Border.all(color: Colors.grey)),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
                               Container(
                                 child: Center(
@@ -759,34 +739,42 @@ class _DaycloseState extends State<Dayclose> {
                                             : "${Dayclosedata!['balance_cash_in_hand']}"
                                         : balcash
                                     )),
-                                width: 70,
-                                height: 20,
+                                width: SizeConfig.safeBlockHorizontal!*17,
+                                height: SizeConfig.safeBlockVertical!*2.4,
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade300,
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: SizeConfig.safeBlockVertical!*1.2,
                               ),
-                              Container(
-                                child: Center(
-                                  child: Text(isdayclose == false
-                                      ? Dayclosedata == null
-                                          ? ''
-                                          : "${Dayclosedata!['no_of_cheque_in_hand']}"
-                                      : cheqhand),
-                                ),
-                                width: 70,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 10,
-                              ),
+                              // GestureDetector(
+                              //   onTap: () {
+                              //     print("isdayclose$isdayclose");
+                              //     print("Dayclosedata${Dayclosedata == null?'':Dayclosedata!['no_of_cheque_in_hand']}");
+                              //     print("cheqhand$cheqhand");
+                              //   },
+                              //   child: Container(
+                              //     child: Center(
+                              //       child: Text(
+                              //           isdayclose == false
+                              //           ? Dayclosedata == null
+                              //               ? ''
+                              //               : "${Dayclosedata!['no_of_cheque_in_hand']}"
+                              //           : cheqhand),
+                              //     ),
+                              //     width: SizeConfig.safeBlockHorizontal!*17,
+                              //     height: SizeConfig.safeBlockVertical!*2.4,
+                              //     decoration: BoxDecoration(
+                              //       color: Colors.grey.shade300,
+                              //       borderRadius: BorderRadius.circular(3),
+                              //     ),
+                              //   ),
+                              // ),
+                              // SizedBox(
+                              //   height: SizeConfig.safeBlockVertical!*1.2,
+                              // ),
                               Container(
                                 child: Center(
                                   child: Text(isdayclose == false
@@ -795,8 +783,8 @@ class _DaycloseState extends State<Dayclose> {
                                           : "${Dayclosedata!['cheque_amount_in_hand']}"
                                       : amtinhand),
                                 ),
-                                width: 70,
-                                height: 20,
+                                width: SizeConfig.safeBlockHorizontal!*17,
+                                height: SizeConfig.safeBlockVertical!*2.4,
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade300,
                                   borderRadius: BorderRadius.circular(3),
@@ -825,32 +813,34 @@ class _DaycloseState extends State<Dayclose> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ElevatedButton(
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(
-                                  isdayclose == false
-                                      ? Colors.grey
-                                      : AppConfig.colorPrimary),
-                              shape: WidgetStateProperty.all(
-                                  BeveledRectangleBorder()),
-                              minimumSize:
-                                  WidgetStateProperty.all(Size(70, 30)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: (isPending || _pendingExpensesCount != 0 || _isPosting)
+                                  ? Colors.grey
+                                  : AppConfig.colorPrimary,
+                              minimumSize: Size(SizeConfig.safeBlockHorizontal! * 40, 40), // Wider min size
+                              shape: BeveledRectangleBorder(),
                             ),
-                            onPressed: isdayclose == false
+                            onPressed: (isPending || _pendingExpensesCount != 0 || _isPosting)
                                 ? null
-                                : () {
-                                    postData();
-                                    // print(DateFormat('dd/MM/yyyy').format(selectedDate));
-                                  },
-                            child: SizedBox(
-                              width: 120,
-                              child: Center(
-                                child: Text(
-                                  "Send for Approval",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
+                                : () async {
+                              setState(() => _isPosting = true);
+                              bool success = await postData();
+                              if (!success && mounted) {
+                                setState(() => _isPosting = false);
+                              }
+                            },
+                            child: _isPosting
+                                ? SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                                : FittedBox(
+                              child: Text("Send for Approval", style: TextStyle(color: Colors.white)),
                             ),
                           ),
+
+
                         ],
                       ),
                     ],
@@ -864,12 +854,44 @@ class _DaycloseState extends State<Dayclose> {
         ));
   }
 
+  Future<void> _fetchPendingExpenses() async {
+    final url = "${RestDatasource().BASE_URL}/api/get_pending_expense?store_id=${AppState().storeId}&user_id=${AppState().userId}";
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        print(response.request);
+        final jsonData = json.decode(response.body);
+        final pendingExpenses = jsonData['data'] as int;
+
+        setState(() {
+          _pendingExpensesCount = pendingExpenses;
+        });
+
+        if (_pendingExpensesCount != 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "$_pendingExpensesCount number of expenses are pending to be approved"),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          throw Exception("Failed to load pending expenses");
+        }
+      }
+    } catch (e) {
+      print("Error fetching pending expenses: $e");
+    }
+  }
+
   Future<Map<String, dynamic>> fetchDayCloseOutstanding() async {
     final response = await http.get(Uri.parse(
         // '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}'
-        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=${DateFormat('dd/MM/yyyy').format(selectedDate)}&user_id=${AppState().userId}'));
+        '${RestDatasource().BASE_URL}/api/get_dayclose_outstanding?van_id=${AppState().vanId}&store_id=${AppState().storeId}&in_date=$formattedDate&user_id=${AppState().userId}'));
 
     if (response.statusCode == 200) {
+      print(response.request);
       print(response.body);
       return json.decode(response.body);
     } else {

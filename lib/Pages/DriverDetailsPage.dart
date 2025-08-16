@@ -212,7 +212,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                 "user_id": AppState().userId.toString(),
                 "invoice_no": invoiceNos,
                 "goods_out_id": goodsOutIds,
-                "recieved_by": _RecieveController.text,
+                "received_by": _RecieveController.text,
                 "remarks": _RmarksController.text
               });
               var request = http.MultipartRequest(
@@ -422,7 +422,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                             controller: _RecieveController,
                             decoration: InputDecoration(
                               filled: true, fillColor: Colors.white,
-                              labelText: 'Recieved By',
+                              labelText: 'Received By',
                               labelStyle: TextStyle(fontSize: 14),
                               border: OutlineInputBorder(
                                   borderSide: BorderSide.none),

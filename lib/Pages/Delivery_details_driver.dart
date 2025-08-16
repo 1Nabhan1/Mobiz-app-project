@@ -23,6 +23,7 @@ class DeliveryDetailsDriver extends StatefulWidget {
 class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
     with SingleTickerProviderStateMixin {
   List<bool> isSelected = [true, false, false];
+  bool _isButtonDisabled = false;
   // void _onContainerTap(int index) {
   //   setState(() {
   //     for (int i = 0; i < isSelected.length; i++) {
@@ -85,6 +86,11 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
   }
 
   Future<void> postDeliveryDriverConfirm(int id) async {
+    // Disable the button
+    setState(() {
+      _isButtonDisabled = true;
+    });
+
     // Define the URL of the API
     final url = Uri.parse(
         '${RestDatasource().BASE_URL}/api/delivery_driver_confirm?id=$id');
@@ -94,23 +100,18 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
       'Content-Type': 'application/json',
     };
 
-    // Define the body
-    // final body = jsonEncode({
-    //   'id': id,
-    // });
-
     try {
       // Send the POST request
       final response = await http.post(
         url,
         headers: headers,
-        // body: body,
       );
 
       // Check if the request was successful
       if (response.statusCode == 200) {
         // Successfully received response
         print('Success: ${response.body}');
+        print("sjdbjsbdjsbds");
         futureLoading = fetchDeliverLoadingPending();
         futurePending = fetchDeliverstatusPending();
         futureDelivered = fetchDeliverstatusDelivered();
@@ -122,6 +123,11 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
     } catch (e) {
       // Handle any errors that occur
       print('Exception: $e');
+    } finally {
+      // Re-enable the button regardless of the outcome
+      setState(() {
+        _isButtonDisabled = false;
+      });
     }
   }
 
@@ -476,21 +482,20 @@ class _DeliveryDetailsDriverState extends State<DeliveryDetailsDriver>
                                                           }).toList(),
                                                         ),
                                                         ElevatedButton(
-                                                            style: ElevatedButton
-                                                                .styleFrom(
-                                                                    backgroundColor:
-                                                                        AppConfig
-                                                                            .colorPrimary),
-                                                            onPressed: () {
-                                                              postDeliveryDriverConfirm(
-                                                                  delivery.id);
-                                                            },
-                                                            child: Text(
-                                                              'Confirm',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .white),
-                                                            ))
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                            _isButtonDisabled ? Colors.grey : AppConfig.colorPrimary,
+                                                          ),
+                                                          onPressed: _isButtonDisabled
+                                                              ? null
+                                                              : () {
+                                                            postDeliveryDriverConfirm(delivery.id);
+                                                          },
+                                                          child: Text(
+                                                            'Confirm',
+                                                            style: TextStyle(color: Colors.white),
+                                                          ),
+                                                        )
                                                       ],
                                                     ),
                                                   ))

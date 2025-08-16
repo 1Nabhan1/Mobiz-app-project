@@ -33,7 +33,7 @@ class _SalesScreenState extends State<SalesScreen> {
   double totalAmount = 0.0;
   double roundOffValue = 0.0;
   bool _isDialogOpen = false;
-  bool _isButtonDisabled = true;
+  bool _isButtonDisabled = false;
   String _remarksText = "";
   List<ProductType> productTypes = [];
   List<ProductType?> selectedProductTypes = [];
@@ -283,105 +283,123 @@ class _SalesScreenState extends State<SalesScreen> {
       name = params['name'];
     }
     void postDataToApi() async {
-      var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
+      setState(() {
+        _isButtonDisabled = true; // Disable the button when the request starts
+      });
+      try {
+        var url = Uri.parse('${RestDatasource().BASE_URL}/api/vansale.store');
 
-      // for (int index = 0; index < savedProducts.length; index++) {
-      //   String? selectedUnitName = savedProducts[index].selectedUnitName;
-      //   int selectedUnitId;
-      //   // if (selectedUnitName != null) {
-      //   //   selectedUnitId = savedProducts[index]
-      //   //       .units
-      //   //       .firstWhere((unit) => unit.name == selectedUnitName)
-      //   //       .unit!;
-      //   // } else {
-      //   //   selectedUnitId = savedProducts[index].units.first.unit!;
-      //   // }
-      //
-      //   // selectedUnitIds.add(selectedUnitId);
-      //   // String? qty = qtys[index];
-      //   // int quantity = qty != null ? int.parse(qty) : 1;
-      //   // quantities.add(quantity);
-      //
-      //   ProductType? selectedProductType = selectedProductTypes[index];
-      //   Object productType =
-      //       selectedProductType != null ? selectedProductType.id : 1;
-      //   productTypesList.add(productType);
-      // }
-      // List<double> amountsList = amounts.entries.map((entry) {
-      //   return double.parse(entry.value);
-      // }).toList();
+        // for (int index = 0; index < savedProducts.length; index++) {
+        //   String? selectedUnitName = savedProducts[index].selectedUnitName;
+        //   int selectedUnitId;
+        //   // if (selectedUnitName != null) {
+        //   //   selectedUnitId = savedProducts[index]
+        //   //       .units
+        //   //       .firstWhere((unit) => unit.name == selectedUnitName)
+        //   //       .unit!;
+        //   // } else {
+        //   //   selectedUnitId = savedProducts[index].units.first.unit!;
+        //   // }
+        //
+        //   // selectedUnitIds.add(selectedUnitId);
+        //   // String? qty = qtys[index];
+        //   // int quantity = qty != null ? int.parse(qty) : 1;
+        //   // quantities.add(quantity);
+        //
+        //   ProductType? selectedProductType = selectedProductTypes[index];
+        //   Object productType =
+        //       selectedProductType != null ? selectedProductType.id : 1;
+        //   productTypesList.add(productType);
+        // }
+        // List<double> amountsList = amounts.entries.map((entry) {
+        //   return double.parse(entry.value);
+        // }).toList();
 
-      // int jsonAmounts = jsonEncode(amountsList);
-      List<int> productIds = savedProducts.map<int>((product) {
-        return product['id'];
-      }).toList();
-      List<int> unitIds = savedProducts.map<int>((product) {
-        // Assuming product['unit_id'] already contains the selected unit ID
-        return int.parse(product['unit_id']);
-      }).toList();
-      List<double> amounts = savedProducts.map<double>((product) {
-        return double.parse(product['amount'].toString());
-      }).toList();
-      List<double> quantity = savedProducts.map<double>((product) {
-        return double.parse(product['quantity'].toString());
-      }).toList();
+        // int jsonAmounts = jsonEncode(amountsList);
+        List<int> productIds = savedProducts.map<int>((product) {
+          return product['id'];
+        }).toList();
+        List<int> unitIds = savedProducts.map<int>((product) {
+          // Assuming product['unit_id'] already contains the selected unit ID
+          return int.parse(product['unit_id']);
+        }).toList();
+        List<double> amounts = savedProducts.map<double>((product) {
+          return double.parse(product['amount'].toString());
+        }).toList();
+        List<double> quantity = savedProducts.map<double>((product) {
+          return double.parse(product['quantity'].toString());
+        }).toList();
 
-      List<int> productTypes = savedProducts.map<int>((product) {
-        return int.parse(product['type_id']);
-      }).toList();
-      // print(productIds);
-      var data = {
-        'van_id': AppState().vanId,
-        'store_id': AppState().storeId,
-        'user_id': AppState().userId,
-        'item_id': productIds,
-        'quantity': quantity,
-        'unit': unitIds,
-        'mrp': amounts,
-        'discount_type': _isPercentage ? 'percentage' : 'amount',
-        'customer_id': id,
-        'if_vat': _ifVat == 1 ? 1 : 0,
-        'product_type': productTypes,
-        'total_tax': tax,
-        "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
-        "total": totalAmount,
-        "round_off": roundOffValue,
-        "grand_total": roundedGrandTotal,
-        'remarks': _remarksText
-      };
-      var body = json.encode(data);
+        List<int> productTypes = savedProducts.map<int>((product) {
+          return int.parse(product['type_id']);
+        }).toList();
+        // print(productIds);
+        var data = {
+          'van_id': AppState().vanId,
+          'store_id': AppState().storeId,
+          'user_id': AppState().userId,
+          'item_id': productIds,
+          'quantity': quantity,
+          'unit': unitIds,
+          'mrp': amounts,
+          'discount_type': _isPercentage ? 'percentage' : 'amount',
+          'customer_id': id,
+          'if_vat': _ifVat == 1 ? 1 : 0,
+          'product_type': productTypes,
+          'total_tax': tax,
+          "discount": _discountData.text.isEmpty ? '0' : _discountData.text,
+          "total": totalAmount,
+          "round_off": roundOffValue,
+          "grand_total": roundedGrandTotal.toStringAsFixed(2),
+          'remarks': _remarksText
+        };
+        var body = json.encode(data);
 
-      var response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        // print(_isPercentage ? '1' : '0');
-        // print('fjnvjksdnvsbjvnsjkvhSDhv');
-        // print(cartItems.map((item) => item.price).toList());
-        // print(AppState().storeId);
-        print('Post successful');
-        if (mounted) {
-          CommonWidgets.showDialogueBox(
+        var response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: body,
+        );
+        print("data$body dddd");
+        if (response.statusCode == 200) {
+          print(response.body);
+          print("roundedGrandTotal: ${roundedGrandTotal.toStringAsFixed(2)}");
+          var jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['success'] == true) {
+            print('Post successful');
+            if (mounted) {
+              CommonWidgets.showDialogueBox(
                   context: context, title: "Alert", msg: "Created Successfully")
-              .then(
-            (value) {
-              clearCart();
-              Navigator.pushReplacementNamed(
-                context,
-                SaleInvoiceScrreen.routeName,
+                  .then((value) {
+                clearCart();
+                Navigator.pushReplacementNamed(
+                  context,
+                  SaleInvoiceScrreen.routeName,
+                );
+              });
+            }
+          } else {
+            String errorMessage = jsonResponse['messages'] != null && jsonResponse['messages'].isNotEmpty
+                ? jsonResponse['messages'][0]
+                : 'Something went wrong';
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(errorMessage)),
               );
-            },
-          );
+            }
+          }
+        } else {
+          print('Post failed with status: ${response.statusCode}');
+          print(response.body);
         }
-        print(response.body);
-      } else {
-        print('Post failed with status: ${response.statusCode}');
-        print(response.body);
+      }catch (e) {
+        print('An error occurred: $e');
+      } finally {
+        setState(() {
+          _isButtonDisabled = false;
+        });
       }
     }
 
@@ -487,20 +505,17 @@ class _SalesScreenState extends State<SalesScreen> {
                   borderRadius: BorderRadius.circular(7.0),
                 ),
               ),
-              backgroundColor: (savedProducts.isNotEmpty)
-                  ? const WidgetStatePropertyAll(AppConfig.colorPrimary)
-                  : const WidgetStatePropertyAll(AppConfig.buttonDeactiveColor),
+              backgroundColor: WidgetStateProperty.all(
+                savedProducts.isNotEmpty && !_isButtonDisabled
+                    ? AppConfig.colorPrimary
+                    : AppConfig.buttonDeactiveColor,
+              ),
             ),
-            onPressed: (savedProducts.isNotEmpty && _isButtonDisabled)
-                ? () async {
-                    setState(() {
-                      _isButtonDisabled =
-                          true; // Disable the button after it's pressed
-                    });
-                    postDataToApi();
-                    // print(roundOffValue);
-                  }
-                : null,
+            onPressed: _isButtonDisabled || savedProducts.isEmpty
+                ? null
+                : () async {
+              postDataToApi();
+            },
             child: Text(
               'SAVE',
               style: TextStyle(
@@ -1015,9 +1030,9 @@ class _SalesScreenState extends State<SalesScreen> {
       String? selectedUnitId = existingProduct['unit_id'];
       String? selectedProductTypeId = existingProduct['type_id'];
       String? quantity = existingProduct['quantity'];
+
       bool isQuantityValid(String? value) {
         final quantityValue = double.tryParse(value ?? '') ?? 0;
-
         return value != null &&
             value.isNotEmpty &&
             quantityValue > 0 &&

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -43,6 +44,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   int _currentPage = 1;
   bool _isLoading = false;
   bool _hasMore = true;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  Timer? _searchDebounce;
+
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +63,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         _fetchData();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _initPrinter() async {
@@ -95,6 +108,84 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     });
   }
 
+  void _onSearchChanged() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _currentPage = 1;
+        _hasMore = true;
+        receiptsData.clear();
+      });
+      _fetchData();
+    } else {
+      setState(() {
+        _isSearching = true;
+        _currentPage = 1;
+        _hasMore = true;
+        receiptsData.clear();
+      });
+      _fetchData(searchQuery: _searchController.text);
+    }
+  }
+
+  Future<void> _fetchData({String? searchQuery}) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final Uri apiUrl;
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        apiUrl = Uri.parse(
+            "${RestDatasource().BASE_URL}/api/get_collection_report_search?"
+                "store_id=${AppState().storeId}&"
+                "van_id=${AppState().vanId}&"
+                "user_id=${AppState().userId}&"
+                "page=$_currentPage&"
+                "value=$searchQuery");
+      } else {
+        apiUrl = Uri.parse(
+            "${RestDatasource().BASE_URL}/api/get_collection_report?"
+                "store_id=${AppState().storeId}&"
+                "van_id=${AppState().vanId}&"
+                "user_id=${AppState().userId}&"
+                "page=$_currentPage");
+      }
+
+      final http.Response response = await http.get(apiUrl);
+
+      if (response.statusCode == 200) {
+        print(response.request);
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final CollectionReport report = CollectionReport.fromJson(responseData);
+
+        setState(() {
+          receiptsData.addAll(report.data?.reportData ?? []);
+          _hasMore = report.data?.nextPageUrl != null;
+          if (report.data?.reportData?.isNotEmpty ?? false) {
+            _currentPage++;
+          }
+          _initDone = true;
+        });
+      } else {
+        throw Exception("Failed to fetch data");
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading data: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _initDone = true;
+      });
+    }
+  }
+
   Future<void> generatePdf(ReportData data) async {
     final response = await http.get(Uri.parse(
         '${RestDatasource().BASE_URL}/api/get_store_detail?store_id=${AppState().storeId}'));
@@ -118,36 +209,42 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
+                pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.SizedBox(height: 10),
+                        pw.Text(
+                          storeDetail.name,
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 3),
+                        pw.Text('${storeDetail.address ?? 'N/A'}'),
+                        pw.SizedBox(height: 3),
+                        pw.Text('TRN: ${storeDetail.trn ?? 'N/A'}'),
+                        pw.SizedBox(height: 3),
+                      ]
+                    ),
+                    pw.Image(
+                      pw.MemoryImage(logoBytes),
+                      height: 100,
+                      width: 100,
+                      fit: pw.BoxFit.fitWidth,
+                    ),
+                  ]
+                ),
                 pw.Center(
-                  child: pw.Column(
-                    children: [
-                      pw.Image(
-                        pw.MemoryImage(logoBytes),
-                        height: 100,
-                        width: 100,
-                        fit: pw.BoxFit.cover,
-                      ),
-                      pw.SizedBox(height: 10),
-                      pw.Text(
-                        storeDetail.name,
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text('${storeDetail.address ?? 'N/A'}'),
-                      pw.SizedBox(height: 3),
-                      pw.Text('TRN: ${storeDetail.trn ?? 'N/A'}'),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'RECEIPT VOUCHER',
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  child: pw.Text(
+                    'RECEIPT VOUCHER',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ),
                 pw.SizedBox(height: 20),
@@ -447,14 +544,58 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: AppConfig.backgroundColor),
-        title: const Text(
+        title: _isSearching
+            ? TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Search by voucher or customer...',
+            hintStyle: TextStyle(color: Colors.white70),
+            border: InputBorder.none,
+          ),
+          style: const TextStyle(color: Colors.white),
+          onChanged: (value) {
+            // Cancel previous debounce timer
+            _searchDebounce?.cancel();
+
+            // Start new debounce timer
+            _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+              _onSearchChanged();
+            });
+          },
+        )
+            : const Text(
           'Receipts',
           style: TextStyle(color: AppConfig.backgroundColor),
         ),
         backgroundColor: AppConfig.colorPrimary,
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  // Clear search
+                  _searchController.clear();
+                  _onSearchChanged();
+                } else {
+                  // Start searching
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
+        ],
       ),
+
       body: Column(
         children: [
+          if (_isSearching && receiptsData.isEmpty && _searchController.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text('No results found'),
+            ),
+
           CommonWidgets.verticalSpace(1),
           (_initDone && !_noData)
               ? SizedBox(
@@ -605,22 +746,28 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     Row(
                       children: [
                         Text(
-                          (data.customer!.isNotEmpty)
+                          (data.customer != null && data.customer!.isNotEmpty)
                               ? data.customer![0].code ?? ''
+                              : (data.customerdata != null)
+                              ? data.customerdata![0].code ?? ''
                               : '',
                           style: TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
-                              fontWeight: AppConfig.headLineWeight),
+                            fontSize: AppConfig.textCaption3Size,
+                            fontWeight: AppConfig.headLineWeight,
+                          ),
                         ),
                         Text(' | '),
                         Text(
                           overflow: TextOverflow.fade,
-                          (data.customer!.isNotEmpty)
+                          (data.customer != null && data.customer!.isNotEmpty)
                               ? data.customer![0].name ?? ''
+                              : (data.customerdata != null)
+                              ? data.customerdata![0].name ?? ''
                               : '',
                           style: TextStyle(
-                              fontSize: AppConfig.textCaption3Size,
-                              fontWeight: AppConfig.headLineWeight),
+                            fontSize: AppConfig.textCaption3Size,
+                            fontWeight: AppConfig.headLineWeight,
+                          ),
                         ),
                       ],
                     ),
@@ -787,7 +934,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         printer.printCustom(companyName, 3, 1);
         printer.printNewLine();
 
-        printer.printCustom("TRN: ${storeDetail.trn ?? "N/A"}", 1, 1);
+        printer.printCustom("${storeDetail.address ?? 'N/A'}", 1, 1);
         printer.printCustom("RECEIPT VOUCHER", 3, 1);
         printer.printNewLine();
         printer.printCustom("-" * 72, 1, 1);
@@ -931,48 +1078,48 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   //   }
   //   print('Response Data $response');
   // }
-  Future<void> _fetchData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // final String baseUrl =
-      //     "http://68.183.92.8:3699/api/get_collection_test_report";
-
-      // Build the API URL with query parameters
-      final Uri apiUrl = Uri.parse(
-          "${RestDatasource().BASE_URL}/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}&page=$_currentPage");
-
-      // Fetch the data from the API
-      final http.Response response = await http.get(apiUrl);
-
-      if (response.statusCode == 200) {
-        print(response.request);
-        // Parse the JSON response
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-
-        // Convert the JSON into the CollectionReport model
-        final CollectionReport report = CollectionReport.fromJson(responseData);
-
-        // Update the state with the fetched data
-        setState(() {
-          receiptsData.addAll(report.data?.reportData ?? []);
-          _hasMore = report.data?.nextPageUrl != null;
-          _currentPage++;
-          _initDone = true;
-        });
-      } else {
-        throw Exception("Failed to fetch data");
-      }
-    } catch (e) {
-      print(e);
-    } finally {
-      setState(() {
-        _isLoading = false;
-        _initDone = true;
-        // _noData = true;
-      });
-    }
-  }
+  // Future<void> _fetchData() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+  //
+  //   try {
+  //     // final String baseUrl =
+  //     //     "http://68.183.92.8:3699/api/get_collection_test_report";
+  //
+  //     // Build the API URL with query parameters
+  //     final Uri apiUrl = Uri.parse(
+  //         "${RestDatasource().BASE_URL}/api/get_collection_report?store_id=${AppState().storeId}&van_id=${AppState().vanId}&user_id=${AppState().userId}&page=$_currentPage");
+  //
+  //     // Fetch the data from the API
+  //     final http.Response response = await http.get(apiUrl);
+  //
+  //     if (response.statusCode == 200) {
+  //       print(response.request);
+  //       // Parse the JSON response
+  //       final Map<String, dynamic> responseData = jsonDecode(response.body);
+  //
+  //       // Convert the JSON into the CollectionReport model
+  //       final CollectionReport report = CollectionReport.fromJson(responseData);
+  //
+  //       // Update the state with the fetched data
+  //       setState(() {
+  //         receiptsData.addAll(report.data?.reportData ?? []);
+  //         _hasMore = report.data?.nextPageUrl != null;
+  //         _currentPage++;
+  //         _initDone = true;
+  //       });
+  //     } else {
+  //       throw Exception("Failed to fetch data");
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   } finally {
+  //     setState(() {
+  //       _isLoading = false;
+  //       _initDone = true;
+  //       // _noData = true;
+  //     });
+  //   }
+  // }
 }

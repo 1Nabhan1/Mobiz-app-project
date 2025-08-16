@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -123,13 +124,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (value.isNotEmpty) {
         double amount = double.parse(value);
         String invoiceType = invoices[index].invoiceType.toLowerCase();
-        if (invoiceType == "sales" || invoiceType == "balance") {
-          return amount;
-        } else if (invoiceType == "salesreturn" ||
+        if (invoiceType == "sales" || invoiceType == "balance"||invoiceType == "salesreturn" ||
             invoiceType == "payment_voucher" ||
             invoiceType == "balance_minus") {
-          return -amount;
+          return amount;
         }
+        // else if (invoiceType == "salesreturn" ||
+        //     invoiceType == "payment_voucher" ||
+        //     invoiceType == "balance_minus") {
+        //   return -amount;
+        // }
       }
       return 0.0;
     }).fold(0.0, (sum, amount) => sum + amount);
@@ -171,13 +175,16 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       if (value.isNotEmpty) {
         double amount = double.parse(value);
         String invoiceType = invoices[index].invoiceType.toLowerCase();
-        if (invoiceType == "sales" || invoiceType == "balance") {
-          return -amount;
-        } else if (invoiceType == "salesreturn" ||
+        if (invoiceType == "sales" || invoiceType == "balance"||invoiceType == "salesreturn" ||
             invoiceType == "payment_voucher" ||
             invoiceType == "balance_minus") {
-          return amount;
+          return -amount;
         }
+        // else if (invoiceType == "salesreturn" ||
+        //     invoiceType == "payment_voucher" ||
+        //     invoiceType == "balance_minus") {
+        //   return amount;
+        // }
       }
       return 0.0;
     }).fold(0.0, (sum, amount) => sum + amount);
@@ -185,8 +192,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     double balance = paidAmount + allocatedAmount - roundOff;
 
     // Truncate the balance to two decimal places
-    balance = (balance * 100).truncateToDouble() / 100;
-
+    balance = double.parse(balance.toStringAsFixed(2));
     print("BAL $balance");
     print("PAy $paidAmount");
     print("allocated $allocatedAmount");
@@ -1016,7 +1022,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       'invoice_date': invoicedate,
       'invoice_id': invoiceid,
     };
-    print('Request Body: ${json.encode(body)}');
+    log('Request Body: ${json.encode(body)}');
     print('processedValues');
     print(processedValues);
 
@@ -1027,13 +1033,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
       },
       body: json.encode(body),
     );
-
+print(response.body);
+print(AppState().storeId);
     if (response.statusCode == 200) {
       var responseBody = json.decode(response.body);
       if (responseBody['success'] == true) {
         print('Data posted successfully');
 
-        // Check if 'data' is not empty
         int? payId;
         if (responseBody['data'].isNotEmpty) {
           payId = responseBody['data'][0]['id'];
@@ -1051,7 +1057,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               'price_group_id': pricegroupId,
               'saleId': saleId,
               'returnId': returnId,
-              'payId': payId, // This will be null if 'data' is empty
+              'payId': payId,
             },
           );
         } else {
@@ -1062,9 +1068,27 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
         }
       } else {
         print('Failed: success is false');
+        // ✅ Show SnackBar with API error message
+        String errorMessage = responseBody['messages'] != null &&
+            responseBody['messages'].isNotEmpty
+            ? responseBody['messages'][0]
+            : 'Something went wrong';
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
+        setState(() {
+          isSaving = false;
+        });
       }
     } else {
-      print('Failed to post data: ${response.statusCode}');
+      print('Post failed with status: ${response.statusCode}');
     }
   }
 
