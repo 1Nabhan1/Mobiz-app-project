@@ -159,7 +159,9 @@ class StockDetail {
       productType: json['product_type'],
       itemId: json['item_id'],
       unit: json['unit'],
-      quantity: json['quantity'],
+      quantity: (json['quantity'] is int)
+          ? json['quantity']
+          : (json['quantity'] as double).toInt(),
       approvedQuantity: json['approved_quantity'],
       convertQty: json['convert_qty'],
       vanId: json['van_id'],

@@ -43,6 +43,9 @@ import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
 import 'Customer Dues/Customer Dues.dart';
+import 'Picking/pickingList.dart';
+import 'Production/ProductionOrder.dart';
+import 'Stock/StockTransfer_Page.dart';
 import 'TestExpensePage.dart';
 import 'Cheque/Cheque_Colection.dart';
 import 'Cheque_Receipt.dart';
@@ -282,6 +285,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.wallet_travel_outlined;
       case 'money':
         return Icons.money;
+        case 'call_missed_outgoing_rounded':
+        return Icons.call_missed_outgoing_rounded;
+      case 'transfer_within_a_station':
+        return Icons.transfer_within_a_station;
+        case 'production_quantity_limits_outlined':
+        return Icons.production_quantity_limits_outlined;
       default:
         return Icons.help;
     }
@@ -290,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Color> colorList = [
     Colors.green.shade300,
     Colors.blue,
-    Colors.white, // Added the new color
+    Colors.white,
   ];
 
   // List<_SalesData> data = [
@@ -1116,6 +1125,7 @@ class _HomeScreenState extends State<HomeScreen> {
               break;
             case 'SchedulePage':
               Navigator.pushNamed(context, SchedulePage.routeName);
+              // Navigator.pushNamed(context, Productionorder.routeName);
               break;
             case 'ScheduleDriver':
               Navigator.pushNamed(context, ScheduleDriver.routeName);
@@ -1144,6 +1154,9 @@ class _HomeScreenState extends State<HomeScreen> {
             case 'StockName_RequestScreen':
               Navigator.pushNamed(context, StockName_RequestScreen.routeName);
               break;
+            case 'StockTransferPage':
+              Navigator.pushNamed(context, StockTransferPage.routeName);
+              break;
             case 'ChequeReceipt':
               Navigator.pushNamed(context, ChequeReceipt.routeName);
               break;
@@ -1156,8 +1169,14 @@ class _HomeScreenState extends State<HomeScreen> {
             case 'PDC':
               Navigator.pushNamed(context, BankReconciliationScreen.routeName);
               break;
-              case 'DUE':
+              case 'PickingListPage':
+              Navigator.pushNamed(context, PickingListPage.routeName);
+              break;
+            case 'DUE':
               Navigator.pushNamed(context, CustomerDues.routeName);
+              break;
+            case 'Productionorder':
+              Navigator.pushNamed(context, Productionorder.routeName);
               break;
             default:
               Navigator.pushNamed(context, routeName);

@@ -119,6 +119,7 @@ class _SalesSelectProductsScreenState extends State<SalesSelectProductsScreen> {
           '${RestDatasource().BASE_URL}/api/get_product_with_van_stock_for_search?store_id=${AppState().storeId}&value=$query'));
 
       if (_isSearching && response.statusCode == 200) {
+        print(response.request);
         print(query);
         final data = jsonDecode(response.body);
         final List<Products> fetchedProducts = (data['data'] as List)

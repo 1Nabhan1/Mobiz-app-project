@@ -774,7 +774,7 @@ class _SaleInvoiceScrreenState extends State<SaleInvoiceScrreen> {
       printer.printCustom(companyName, 3, 1); // Centered
       printer.printCustom(companyAddress, 1, 1); // Centered
       printer.printCustom(companyMail, 1, 1);
-      printer.printCustom(companyTRN, 1, 1); // Centered
+      // printer.printCustom(companyTRN, 1, 1); // Centered
       printer.printCustom(billtype, 1, 1); // Centered
       printer.printNewLine();
 
@@ -1742,6 +1742,7 @@ Salesman: ${invoice.data!.user![0].name}
     RestDatasource api = RestDatasource();
     dynamic response =
         await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
+    print("IIDD$id");
     if (response['data'] != null) {
       print("DDDDDD${id}");
       invoice = Invoice.InvoiceData.fromJson(response);
@@ -1786,7 +1787,7 @@ Salesman: ${invoice.data!.user![0].name}
     RestDatasource api = RestDatasource();
     dynamic response =
         await api.getDetails('/api/get_sales_invoice?id=$id', AppState().token);
-
+    print("IIDD$id");
     if (response['data'] != null) {
       print("IIDD$id");
       invoice = Invoice.InvoiceData.fromJson(response);

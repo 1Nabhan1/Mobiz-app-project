@@ -5,8 +5,8 @@ class Products {
   final String proImage;
   final double price;
   final int taxPercentage;
-  final String lastdate; // New field
-  final String lastUnit; // New field
+  final String? lastdate;
+  final String? lastUnit;
   final double lastPrice; // New field
   final List<Unit> units;
 
@@ -24,22 +24,23 @@ class Products {
   });
 
   factory Products.fromJson(Map<String, dynamic> json) {
-    var unitList = json['units'] as List;
+    var unitList = json['units'] as List? ?? [];
     List<Unit> unitsList = unitList.map((i) => Unit.fromJson(i)).toList();
 
     return Products(
-      id: json['id'],
-      code: json['code'],
-      name: json['name'],
-      proImage: json['pro_image'],
-      price: json['price'].toDouble(),
-      taxPercentage: json['tax_percentage'],
-      lastdate: json['lastdate'] ?? '', // New field
-      lastUnit: json['lastunit'] ?? '', // New field
-      lastPrice: json['lastprice']?.toDouble() ?? 0.0, // New field
+      id: json['id'] ?? 0,
+      code: (json['code'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
+      proImage: (json['pro_image'] as String?) ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      taxPercentage: json['tax_percentage'] ?? 0,
+      lastdate: (json['lastdate'] as String?) ?? '',
+      lastUnit: (json['lastunit'] as String?) ?? '',
+      lastPrice: (json['lastprice'] as num?)?.toDouble() ?? 0.0,
       units: unitsList,
     );
   }
+
 }
 
 class Unit {

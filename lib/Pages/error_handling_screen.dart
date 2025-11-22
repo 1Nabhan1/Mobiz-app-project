@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mobizapp/DashBoardScreen.dart';
+import 'package:mobizapp/Pages/store/StorePage.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../Models/appstate.dart';
@@ -40,6 +41,10 @@ class _ErrorHandlingScreenState extends State<ErrorHandlingScreen> {
       if (AppState().rolId == 2 || AppState().rolId == 5) {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+        }
+      } else if (AppState().rolId == 3) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(TransferOptionsPage.routeName);
         }
       } else if (AppState().rolId == 4) {
         if (mounted) {

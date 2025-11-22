@@ -974,12 +974,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
     if (response.statusCode == 200) {
       print(response.request);
-      // print('llllllllllllllllllllllllll');
       print("objectIIDD");
       print(id.toString());
       ApiResponse apiResponse = ApiResponse.fromJson(jsonDecode(response.body));
       invoices = apiResponse.data;
-      // Initialize enteredValues list with the length of fetched invoices
       enteredValues = List.filled(invoices.length, '');
       return apiResponse;
     } else {
@@ -1088,7 +1086,8 @@ print(AppState().storeId);
         });
       }
     } else {
-      print('Post failed with status: ${response.statusCode}');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Failed: ${response.body.toString()}")));
     }
   }
 

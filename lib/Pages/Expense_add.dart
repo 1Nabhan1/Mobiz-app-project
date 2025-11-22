@@ -17,9 +17,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Components/commonwidgets.dart';
 import '../Models/ExpenseDrop_model.dart';
+import '../Models/LoginModelClass.dart';
 import '../Utilities/rest_ds.dart';
 import '../confg/appconfig.dart';
 import '../confg/sizeconfig.dart';
+import 'homepage_Driver.dart';
 
 class ExpenseAdd extends StatefulWidget {
   static const routeName = "/ExpenseAdd";
@@ -470,10 +472,9 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     request.fields['vat_amount'] = _vatAmountController.text;
     request.fields['total_amount'] = _totalAmountController.text;
 
-    // Add files to the request
     for (var file in _attachedImages) {
       request.files.add(await http.MultipartFile.fromPath(
-        'upload_document[]', // API expects an array of files, adjust as per API documentation
+        'document_name[]', // API expects an array of files, adjust as per API documentation
         file.path,
       ));
     }
@@ -481,18 +482,45 @@ class _ExpenseAddState extends State<ExpenseAdd> {
     // Send the request
     var streamedResponse = await request.send();
     var response = await http.Response.fromStream(streamedResponse);
+    print("FIELDS:");
+    request.fields.forEach((key, value) {
+      print("$key : $value");
+    });
 
+    print("\nFILES:");
+    for (var file in _attachedImages) {
+      print("upload_document[] : ${file.path}");
+    }
+    print(response.body);
+    print("response.body");
     if (response.statusCode == 200) {
+      print(response.body);
       if (mounted) {
         CommonWidgets.showDialogueBox(
-                context: context, title: "", msg: "Data Inserted Successfully")
-            .then(
-                (value) => Navigator.pushNamed(context, HomeScreen.routeName));
+          context: context,
+          title: "",
+          msg: "Data Inserted Successfully",
+        ).then((value) {
+          if (AppState().rolId == 4) {
+            Navigator.pushNamed(context, HomepageDriver.routeName);
+          } else {
+            Navigator.pushNamed(context, HomeScreen.routeName);
+          }
+        });
       }
       print('Request successful');
       print('Response: ${response.body}');
-    } else {
-      print('Request failed with status: ${response.statusCode}');
+    }
+    else {
+      print('Request failed with status: ${response.statusCode} ${response.body}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to insert data. Please try again. ${response.statusCode} ${response.body}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

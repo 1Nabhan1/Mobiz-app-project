@@ -46,11 +46,16 @@ import 'Pages/Expense_add.dart';
 import 'Pages/Delivery_details_driver.dart';
 import 'Pages/Group_Print.dart';
 import 'Pages/All Due/OverdueCustomerPage.dart';
+import 'Pages/Picking/AddPicking.dart';
+import 'Pages/Picking/pickingList.dart';
+import 'Pages/Production/ProductionOrder.dart';
 import 'Pages/SaleInvoiceSearchPage.dart';
 import 'Pages/Schedule_page.dart';
 import 'Pages/Stock/StockName_RequestScreen.dart';
+import 'Pages/Stock/StockTransfer_Page.dart';
 import 'Pages/Stock/Stock_Name.dart';
 import 'Pages/Stock/Stock_SelectProducts.dart';
+import 'Pages/Stock/Stock_Transfer.dart';
 import 'Pages/TestInvoice.dart';
 import 'Pages/TestReturn.dart';
 import 'Pages/Total_sales.dart';
@@ -68,6 +73,7 @@ import 'Pages/salesselectproductorder.dart';
 import 'Pages/salesselectproductreturn.dart';
 import 'Pages/salesselectproducts.dart';
 import 'Pages/schedule_Driver.dart';
+import 'Pages/store/StorePage.dart';
 import 'Pages/van_transfer.dart';
 
 void main() {
@@ -171,9 +177,15 @@ class MyApp extends StatelessWidget {
             CustomerWater.routeName: (context) => CustomerWater(),
             DashboardScreen.routeName: (context) => DashboardScreen(),
             AgeingSummaryScreen.routeName: (context) => AgeingSummaryScreen(),
-            BankReconciliationScreen .routeName: (context) => BankReconciliationScreen (),
-            OverdueCustomerPage .routeName: (context) => OverdueCustomerPage (),
-            CustomerDues .routeName: (context) => CustomerDues (),
+            BankReconciliationScreen .routeName: (context) => BankReconciliationScreen(),
+            OverdueCustomerPage .routeName: (context) => OverdueCustomerPage(),
+            CustomerDues.routeName: (context) => CustomerDues(),
+            StockTransferPage.routeName: (context) => StockTransferPage(),
+            StocKTransfer_Inner.routeName: (context) => StocKTransfer_Inner(),
+            PickingListPage.routeName: (context) => PickingListPage(),
+            TransferOptionsPage.routeName: (context) => TransferOptionsPage(),
+            Productionorder.routeName: (context) => Productionorder(),
+            // PickingAddPage.routeName: (context) => PickingAddPage(),
             // SaleInvoiceSearchPage.routeName: (context) => SaleInvoiceSearchPage(),
           }),
     );

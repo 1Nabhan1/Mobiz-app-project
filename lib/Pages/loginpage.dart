@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobizapp/Pages/store/StorePage.dart';
 import 'package:mobizapp/confg/appconfig.dart';
 import 'package:mobizapp/DashBoardScreen.dart';
 
@@ -241,40 +242,34 @@ class _LoginScreenState extends State<LoginScreen> {
           loginResp.settings != null ? loginResp.settings!.soValQtyState : '';
           appState.validate_qtySales =
           loginResp.settings != null ? loginResp.settings!.qtySalesvalidate : '';
-          appState.attendanceState = loginResp.settings != null
-              ? loginResp.settings!.attendanceState
-              : '';
-          appState.printer =
-              loginResp.settings != null ? loginResp.settings!.printer : '';
+          appState.attendanceState = loginResp.settings != null ? loginResp.settings!.attendanceState : '';
+          appState.printer = loginResp.settings != null ? loginResp.settings!.printer : '';
           appState.loginState = 'LOGGED_IN';
-
           bool appStateRetrieved = await sharedPref.containsKey('app_state');
           if (appStateRetrieved == true) {
             sharedPref.removeAll();
           }
           print('letsgop');
-          // Save to shared preferences
           sharedPref.save("app_state", appState);
-          // Navigation logic based on rol_id
           if (loginResp.user!.rolId == 2 || loginResp.user!.rolId == 5) {
-            // Navigate to current page (assuming it's the same login page)
             if (mounted) {
               Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
             }
           } else if (loginResp.user!.rolId == 4) {
-            // Navigate to ErrorHandlingScreen
             if (mounted) {
               Navigator.of(context)
                   .pushReplacementNamed(HomepageDriver.routeName);
             }
+          } else if (loginResp.user!.rolId == 3) {
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed(TransferOptionsPage.routeName);
+            }
           } else if (loginResp.user!.rolId == 7) {
             if (mounted) {
-              Navigator.of(context)
-                  .pushReplacementNamed(DashboardScreen.routeName);
+              Navigator.of(context).pushReplacementNamed(DashboardScreen.routeName);
             }
           }
         } else {
-          // Handle null user or authorisation
           if (mounted) {
             CommonWidgets.showDialogueBox(
                 context: context, title: "Error", msg: "Something went wrong");

@@ -245,5 +245,4 @@ class RestDatasource {
       rethrow;
     }
   }
-
 }

@@ -266,7 +266,9 @@ class Store {
     bufferDays = json['buffer_days'];
     description = json['description'];
     currency = json['currency'];
-    vatPercentage = json['vat_percentage'];
+    vatPercentage = json['vat_percentage'] == null
+        ? null
+        : num.tryParse(json['vat_percentage'].toString());
     trn = json['trn'];
     invoice_footer = json['invoice_footer']??'';
     invoice_heading = json['invoice_heading']??'';

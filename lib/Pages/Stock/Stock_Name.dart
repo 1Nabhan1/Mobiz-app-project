@@ -17,6 +17,7 @@ import '../../confg/sizeconfig.dart';
 import 'package:http/http.dart' as http;
 
 import '../homepage.dart';
+import 'Stock_Scanner.dart';
 import 'Stock_SelectProducts.dart';
 
 class Stock_Name extends StatefulWidget {

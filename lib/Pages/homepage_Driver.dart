@@ -16,6 +16,7 @@ import '../Models/appstate.dart';
 import '../Models/userDetails.dart';
 import '../selectproduct.dart';
 import 'Delivery_details_driver.dart';
+import 'TestExpensePage.dart';
 import 'driver_customer_screen.dart';
 import 'package:http/http.dart'as http;
 
@@ -111,6 +112,8 @@ class _HomepageDriverState extends State<HomepageDriver> {
         return Icons.calendar_today;
       case 'insert_drive_file_rounded':
         return Icons.insert_drive_file_rounded;
+      case 'menu_book':
+        return Icons.menu_book;
       default:
         return Icons.help;
     }
@@ -555,6 +558,10 @@ class _HomepageDriverState extends State<HomepageDriver> {
               break;
             case 'DeliveryDetailsDriver':
               Navigator.pushNamed(context,DeliveryDetailsDriver.routeName);
+              break;
+            case 'Expensespage':
+              Navigator.pushNamed(context, Expensespage.routeName);
+              break;
           }
         }
       },
